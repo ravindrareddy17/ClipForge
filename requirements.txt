@@ -12,3 +12,4 @@ llvmlite>=0.48.0
 openai-whisper
 chromadb
 pysqlite3-binary
+yt-dlp

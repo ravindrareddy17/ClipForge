@@ -511,7 +511,14 @@ elif tab_name == "Video Library & Import":
             conn = get_db_connection()
             
             # Check if it is a video link
-            if "youtube.com" in source_input or "youtu.be" in source_input:
+            is_youtube_video = (
+                ("youtube.com/watch" in source_input) or 
+                ("youtu.be/" in source_input) or 
+                ("youtube.com/shorts" in source_input) or 
+                ("youtube.com/embed" in source_input)
+            )
+            
+            if is_youtube_video:
                 vid_id = str(uuid.uuid4())
                 filename = f"video_{int(datetime.utcnow().timestamp())}.mp4"
                 conn.execute(
@@ -525,9 +532,16 @@ elif tab_name == "Video Library & Import":
                 )
                 conn.commit()
                 st.success("YouTube video link registered in library!")
-            # Otherwise assume channel handle
+            # Otherwise assume channel handle or page
             else:
-                handle = source_input if source_input.startswith("@") else f"@{source_input}"
+                # Clean handle from full URL if they pasted it
+                handle = source_input
+                if "youtube.com/" in handle:
+                    parts = handle.split("youtube.com/")
+                    if len(parts) > 1:
+                        handle = parts[1].replace("c/", "").replace("channel/", "").replace("user/", "")
+                
+                handle = handle if handle.startswith("@") else f"@{handle}"
                 sid = str(uuid.uuid4())
                 conn.execute(
                     """INSERT INTO source_channels (id, project_id, handle, name, avatar, subscribers, video_count, latest_upload, status, created_at) 

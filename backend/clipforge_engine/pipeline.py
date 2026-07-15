@@ -15,6 +15,38 @@ from clipforge_engine.agents import (
     run_summary_agent, run_topic_detector, run_entity_extractor, run_knowledge_graph_agent
 )
 
+def fetch_youtube_metadata_and_audio(url, output_wav_path):
+    import yt_dlp
+    base_path, _ = os.path.splitext(output_wav_path)
+    ydl_opts = {
+        'format': 'bestaudio/best',
+        'outtmpl': base_path + '.%(ext)s',
+        'postprocessors': [{
+            'key': 'FFmpegExtractAudio',
+            'preferredcodec': 'wav',
+            'preferredquality': '192',
+        }],
+        'quiet': True,
+    }
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        info = ydl.extract_info(url, download=True)
+        duration = float(info.get("duration", 0.0) or 300.0)
+        width = int(info.get("width", 1920) or 1920)
+        height = int(info.get("height", 1080) or 1080)
+        fps = float(info.get("fps", 30.0) or 30.0)
+        
+    if not os.path.exists(output_wav_path):
+        actual_wav = base_path + '.wav'
+        if os.path.exists(actual_wav):
+            os.rename(actual_wav, output_wav_path)
+            
+    return {
+        "duration": duration,
+        "width": width,
+        "height": height,
+        "fps": fps
+    }
+
 async def run_processing_pipeline(video_id: str):
     """
     Run the video import, transcribing, scene detection, and moment extraction pipeline.
@@ -28,10 +60,22 @@ async def run_processing_pipeline(video_id: str):
         print(f"Starting processing pipeline for video: {video['filename']} (ID: {video_id})")
         update_video_status(video_id, "processing")
         
-        # 1. Read metadata
-        meta = get_video_metadata(video["file_path"])
-        print(f"Metadata read: {meta}")
+        # Check if the path is a URL
+        is_url = video["file_path"].startswith("http://") or video["file_path"].startswith("https://")
         
+        temp_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "temp")
+        os.makedirs(temp_dir, exist_ok=True)
+        audio_path = os.path.join(temp_dir, f"{video_id}.wav")
+        
+        if is_url:
+            print("Video source is a URL. Downloading audio and metadata using yt-dlp...")
+            meta = fetch_youtube_metadata_and_audio(video["file_path"], audio_path)
+            scenes = [0.0]
+        else:
+            # 1. Read metadata
+            meta = get_video_metadata(video["file_path"])
+            print(f"Metadata read: {meta}")
+            
         # Update video record with metadata
         conn = get_db_connection()
         conn.execute(
@@ -44,20 +88,18 @@ async def run_processing_pipeline(video_id: str):
         # Refresh local data
         duration = meta["duration"]
         
-        # 2. Scene detection
-        print("Detecting scenes...")
-        scenes = detect_scenes(video["file_path"])
-        print(f"Detected {len(scenes)} scene cuts: {scenes}")
+        if not is_url:
+            # 2. Scene detection
+            print("Detecting scenes...")
+            scenes = detect_scenes(video["file_path"])
+            print(f"Detected {len(scenes)} scene cuts: {scenes}")
+            
         update_video_status(video_id, "processing", scenes=scenes)
         
         # 3. Audio Extraction & Transcription
         print("Extracting audio and transcribing...")
-        # Save audio temporarily in backend/data/temp
-        temp_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "temp")
-        os.makedirs(temp_dir, exist_ok=True)
-        audio_path = os.path.join(temp_dir, f"{video_id}.wav")
-        
-        extract_audio(video["file_path"], audio_path)
+        if not is_url:
+            extract_audio(video["file_path"], audio_path)
         
         # Get transcription (Whisper or mock fallback)
         transcript = transcribe_audio(audio_path, duration=duration)
