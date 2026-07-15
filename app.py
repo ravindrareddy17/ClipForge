@@ -235,12 +235,27 @@ if 'show_oauth_modal' not in st.session_state:
     st.session_state.show_oauth_modal = False
 if 'chat_session_id' not in st.session_state:
     st.session_state.chat_session_id = str(uuid.uuid4())
+# Try loading Ollama settings from Streamlit Secrets
+default_ollama_url = "http://localhost:11434"
+default_ollama_model = "qwen2.5:3b"
+default_embedding_model = "nomic-embed-text"
+
+try:
+    if "OLLAMA_URL" in st.secrets:
+        default_ollama_url = st.secrets["OLLAMA_URL"]
+    if "OLLAMA_MODEL" in st.secrets:
+        default_ollama_model = st.secrets["OLLAMA_MODEL"]
+    if "OLLAMA_EMBEDDING_MODEL" in st.secrets:
+        default_embedding_model = st.secrets["OLLAMA_EMBEDDING_MODEL"]
+except Exception:
+    pass
+
 if 'ollama_url' not in st.session_state:
-    st.session_state.ollama_url = "http://localhost:11434"
+    st.session_state.ollama_url = default_ollama_url
 if 'ollama_model' not in st.session_state:
-    st.session_state.ollama_model = "qwen2.5:3b"
+    st.session_state.ollama_model = default_ollama_model
 if 'embedding_model' not in st.session_state:
-    st.session_state.embedding_model = "nomic-embed-text"
+    st.session_state.embedding_model = default_embedding_model
 if 'active_video_preview' not in st.session_state:
     st.session_state.active_video_preview = None
 if 'preview_start_time' not in st.session_state:
