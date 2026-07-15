@@ -143,47 +143,94 @@ Return ONLY a valid JSON list of objects, with no explanation or conversational 
             
     # Heuristic fallback if Ollama failed or returned no clips
     if not clips:
-        print("Using heuristic fallback for viral moment detection.")
-        # Divide into ~30 second chunks
-        chunk_size = 30.0
-        num_chunks = int(duration_seconds // chunk_size)
-        if num_chunks == 0:
-            num_chunks = 1
-            chunk_size = duration_seconds
+        print("Using speech-boundary and text-hook heuristics for viral moment detection.")
+        current_clip_segments = []
+        current_duration = 0.0
+        clip_index = 1
+        hook_words = ["how", "why", "secret", "amazing", "today", "welcome", "look", "learn", "this", "never", "always", "stop", "start"]
+        
+        i = 0
+        while i < len(transcript_segments):
+            seg = transcript_segments[i]
+            seg_dur = seg["end"] - seg["start"]
             
-        for i in range(num_chunks):
-            start_t = i * chunk_size
-            end_t = min(duration_seconds, (i + 1) * chunk_size)
+            if not current_clip_segments:
+                current_clip_segments.append(seg)
+                current_duration = seg_dur
+            else:
+                if current_duration + seg_dur <= 45.0:
+                    current_clip_segments.append(seg)
+                    current_duration += seg_dur
+                else:
+                    start_time = current_clip_segments[0]["start"]
+                    end_time = current_clip_segments[-1]["end"]
+                    
+                    # Compile words
+                    words_in_clip = []
+                    for s in current_clip_segments:
+                        if "words" in s:
+                            words_in_clip.extend(s["words"])
+                        else:
+                            words = s["text"].split()
+                            s_dur = s["end"] - s["start"]
+                            w_dur = s_dur / max(1, len(words))
+                            for idx, w in enumerate(words):
+                                words_in_clip.append({
+                                    "word": w,
+                                    "start": s["start"] + idx * w_dur,
+                                    "end": s["start"] + (idx + 1) * w_dur
+                                })
+                                
+                    first_few = " ".join([w["word"] for w in words_in_clip[:4]]).strip()
+                    title = f"Hook: \"{first_few}...\"" if first_few else f"Viral Spotlight #{clip_index}"
+                    
+                    # Score calculation based on hook words presence
+                    score = 90 if any(hw in title.lower() for hw in hook_words) else (85 - clip_index)
+                    score = max(50, score)
+                    
+                    clips.append({
+                        "title": title,
+                        "start_time": start_time,
+                        "end_time": end_time,
+                        "duration": end_time - start_time,
+                        "score": score,
+                        "explanation": f"Speech-aligned segment beginning exactly at '{first_few}' ({start_time:.1f}s) and ending cleanly at {end_time:.1f}s.",
+                        "hook": f"Watch: {first_few}!" if first_few else "Unmissable insight!",
+                        "words": words_in_clip
+                    })
+                    
+                    clip_index += 1
+                    current_clip_segments = [seg]
+                    current_duration = seg_dur
+            i += 1
             
-            # Map words in range
+        if current_clip_segments:
+            start_time = current_clip_segments[0]["start"]
+            end_time = current_clip_segments[-1]["end"]
             words_in_clip = []
-            for seg in transcript_segments:
-                for w in seg.get("words", []):
-                    if start_t <= w["start"] <= end_t:
-                        words_in_clip.append(w)
-                        
-            # Basic fallback words if none mapped
-            if not words_in_clip:
-                for seg in transcript_segments:
-                    if start_t <= seg["start"] <= end_t:
-                        words = seg["text"].split()
-                        seg_dur = seg["end"] - seg["start"]
-                        word_dur = seg_dur / max(1, len(words))
-                        for idx, w in enumerate(words):
-                            words_in_clip.append({
-                                "word": w,
-                                "start": seg["start"] + idx * word_dur,
-                                "end": seg["start"] + (idx + 1) * word_dur
-                            })
-                            
+            for s in current_clip_segments:
+                if "words" in s:
+                    words_in_clip.extend(s["words"])
+                else:
+                    words = s["text"].split()
+                    s_dur = s["end"] - s["start"]
+                    w_dur = s_dur / max(1, len(words))
+                    for idx, w in enumerate(words):
+                        words_in_clip.append({
+                            "word": w,
+                            "start": s["start"] + idx * w_dur,
+                            "end": s["start"] + (idx + 1) * w_dur
+                        })
+            first_few = " ".join([w["word"] for w in words_in_clip[:4]]).strip()
+            title = f"Hook: \"{first_few}...\"" if first_few else f"Viral Spotlight #{clip_index}"
             clips.append({
-                "title": f"Clip Spotlight #{i+1}",
-                "start_time": start_t,
-                "end_time": end_t,
-                "duration": end_t - start_t,
-                "score": 85 - i * 5,
-                "explanation": "Segment selected based on timeline division.",
-                "hook": "This will change your perspective...",
+                "title": title,
+                "start_time": start_time,
+                "end_time": end_time,
+                "duration": end_time - start_time,
+                "score": 80,
+                "explanation": f"Speech-aligned final segment starting at {start_time:.1f}s and finishing on sentence completion.",
+                "hook": f"Watch: {first_few}!" if first_few else "Final viral segment!",
                 "words": words_in_clip
             })
             

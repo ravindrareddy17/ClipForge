@@ -348,14 +348,14 @@ if not projects:
     create_project("Workspace 1", "Automated YouTube Shorts Workspace")
     projects = get_projects()
 
-# Sidebar layout
+# Sidebar layout - DEDICATED SOLELY TO CHAT THREAD HISTORY (Gemini style)
 with st.sidebar:
     st.markdown("""
     <div style='display: flex; align-items: center; gap: 10px; margin-bottom: 25px;'>
-        <div style='width: 38px; height: 38px; border-radius: 12px; background: linear-gradient(135deg, #1a73e8 0%, #d93025 100%); display: flex; align-items: center; justify-content: center; font-weight: 900; color: white; box-shadow: 0 2px 10px rgba(0,0,0,0.15);'>✨</div>
+        <div style='width: 36px; height: 36px; border-radius: 12px; background: linear-gradient(135deg, #1a73e8 0%, #d93025 100%); display: flex; align-items: center; justify-content: center; font-weight: 900; color: white; font-size: 1.1rem; box-shadow: 0 2px 10px rgba(0,0,0,0.1);'>✨</div>
         <div>
-            <h2 style='margin: 0; font-size: 1.25rem; font-weight: 700; color: #1f1f1f;'>ClipForge AI</h2>
-            <span style='font-size: 0.58rem; color: #1a73e8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;'>Gemini Intelligence Platform</span>
+            <h2 style='margin: 0; font-size: 1.2rem; font-weight: 700; color: #1f1f1f;'>ClipForge AI</h2>
+            <span style='font-size: 0.58rem; color: #1a73e8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;'>Gemini Intelligence</span>
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -366,44 +366,28 @@ with st.sidebar:
     
     st.markdown("<hr style='border-color: #dee2e6; margin: 15px 0;'>", unsafe_allow_html=True)
 
-    # 5 simplified tabs
-    tabs = [
-        "Dashboard",
-        "Video Library & Import",
-        "Generated Clips",
-        "AI Knowledge Chat",
-        "Settings"
-    ]
+    # Chat controls & thread listings
+    st.markdown("<h4 style='font-size:0.82rem; color:#5f6368; font-weight:600; margin-bottom:10px;'>Chat History</h4>", unsafe_allow_html=True)
     
-    for tab in tabs:
-        active = st.session_state.active_tab == tab
-        label = f"✦ {tab}" if active else tab
-        if st.button(label, key=f"nav_{tab}", use_container_width=True):
-            st.session_state.active_tab = tab
-            st.rerun()
-            
-    # Recent Chats list in sidebar (Gemini style)
-    if st.session_state.active_tab == "AI Knowledge Chat":
-        st.markdown("<hr style='border-color: #dee2e6; margin: 15px 0;'>", unsafe_allow_html=True)
-        st.markdown("<h4 style='font-size:0.82rem; color:#5f6368; font-weight:600; margin-bottom:10px;'>Recent Chats</h4>", unsafe_allow_html=True)
+    # Prominent New Chat button
+    if st.button("+ New Chat", key="btn_new_chat", use_container_width=True):
+        st.session_state.chat_session_id = str(uuid.uuid4())
+        st.session_state.active_tab = "AI Knowledge Chat"
+        st.rerun()
         
-        # New Chat button
-        if st.button("+ New Chat", key="btn_new_chat", use_container_width=True):
-            st.session_state.chat_session_id = str(uuid.uuid4())
-            st.rerun()
-            
-        sessions = get_chat_sessions(active_project["id"])
-        if not sessions:
-            st.caption("No recent chats.")
-        else:
-            for s in sessions[:8]:
-                title = s["message"][:22] + "..." if len(s["message"]) > 22 else s["message"]
-                is_curr = st.session_state.chat_session_id == s["session_id"]
-                btn_label = f"💬 {title}" if not is_curr else f"👉 💬 {title}"
-                if st.button(btn_label, key=f"sess_{s['session_id']}", use_container_width=True):
-                    st.session_state.chat_session_id = s["session_id"]
-                    st.rerun()
-                    
+    sessions = get_chat_sessions(active_project["id"])
+    if not sessions:
+        st.caption("No recent conversations.")
+    else:
+        for s in sessions[:12]:
+            title = s["message"][:22] + "..." if len(s["message"]) > 22 else s["message"]
+            is_curr = st.session_state.chat_session_id == s["session_id"]
+            btn_label = f"💬 {title}" if not is_curr else f"👉 💬 {title}"
+            if st.button(btn_label, key=f"sess_{s['session_id']}", use_container_width=True):
+                st.session_state.chat_session_id = s["session_id"]
+                st.session_state.active_tab = "AI Knowledge Chat"
+                st.rerun()
+                
     st.markdown("<hr style='border-color: #dee2e6; margin: 15px 0;'>", unsafe_allow_html=True)
 
 # Fetch database metrics for active Workspace
@@ -431,6 +415,36 @@ tab_name = st.session_state.active_tab
 # Header branding banner
 st.markdown("<h1 class='header-glow' style='margin: 0;'>ClipForge AI</h1>", unsafe_allow_html=True)
 st.markdown("<div class='header-subtitle' style='margin-bottom: 20px;'>Google Gemini Inspired repurposing platform</div>", unsafe_allow_html=True)
+
+# TOP-LEVEL HORIZONTAL TABS NAVIGATION BAR
+col_t1, col_t2, col_t3, col_t4, col_t5 = st.columns(5)
+with col_t1:
+    btn_l = "✦ Dashboard" if tab_name == "Dashboard" else "📊 Dashboard"
+    if st.button(btn_l, key="top_nav_dash", use_container_width=True):
+        st.session_state.active_tab = "Dashboard"
+        st.rerun()
+with col_t2:
+    btn_l = "✦ Video Library" if tab_name == "Video Library & Import" else "📥 Video Library"
+    if st.button(btn_l, key="top_nav_lib", use_container_width=True):
+        st.session_state.active_tab = "Video Library & Import"
+        st.rerun()
+with col_t3:
+    btn_l = "✦ Generated Clips" if tab_name == "Generated Clips" else "🎬 Generated Clips"
+    if st.button(btn_l, key="top_nav_clips", use_container_width=True):
+        st.session_state.active_tab = "Generated Clips"
+        st.rerun()
+with col_t4:
+    btn_l = "✦ AI Knowledge Chat" if tab_name == "AI Knowledge Chat" else "✨ AI Knowledge Chat"
+    if st.button(btn_l, key="top_nav_chat", use_container_width=True):
+        st.session_state.active_tab = "AI Knowledge Chat"
+        st.rerun()
+with col_t5:
+    btn_l = "✦ Settings" if tab_name == "Settings" else "⚙ Settings"
+    if st.button(btn_l, key="top_nav_settings", use_container_width=True):
+        st.session_state.active_tab = "Settings"
+        st.rerun()
+
+st.markdown("<hr style='border-color: #dee2e6; margin: 15px 0;'>", unsafe_allow_html=True)
 
 # Real-time Connection status checker banner at the top of the app
 is_ollama_online, connected_models = test_ollama_connection(st.session_state.ollama_url)
