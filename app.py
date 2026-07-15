@@ -258,8 +258,8 @@ with st.sidebar:
     <div style='display: flex; align-items: center; gap: 10px; margin-bottom: 25px;'>
         <div style='width: 38px; height: 38px; border-radius: 12px; background: linear-gradient(135deg, #7b2cbf 0%, #00f0ff 100%); display: flex; align-items: center; justify-content: center; font-weight: 900; color: white; box-shadow: 0 0 15px rgba(0,240,255,0.3);'>⚡</div>
         <div>
-            <h2 style='margin: 0; font-size: 1.2rem; font-weight: 900; color: white;'>ClipForge</h2>
-            <span style='font-size: 0.62rem; color: #00f0ff; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em;'>Enterprise Engine</span>
+            <h2 style='margin: 0; font-size: 1.2rem; font-weight: 900; color: white;'>ClipForge AI</h2>
+            <span style='font-size: 0.58rem; color: #00f0ff; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em;'>Content Repurposing Platform</span>
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -309,6 +309,11 @@ conn.close()
 
 # Main layout content
 tab_name = st.session_state.active_tab
+
+# Header branding banner
+st.markdown("<h1 class='header-glow' style='margin: 0;'>ClipForge AI</h1>", unsafe_allow_html=True)
+st.markdown("<div class='header-subtitle' style='margin-bottom: 20px;'>AI-Powered Content Repurposing Platform</div>", unsafe_allow_html=True)
+
 st.subheader(f"{tab_name}")
 st.caption(f"Workspace Context: {active_project['name']}")
 
