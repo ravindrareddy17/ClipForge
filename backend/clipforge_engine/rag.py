@@ -235,7 +235,8 @@ def generate_grounded_answer(project_id, query, retrieved_chunks, model="llama3.
         resp = requests.post(f"{base_url}/api/chat", json=payload, headers=headers, timeout=45)
         if resp.status_code == 200:
             return resp.json()["message"]["content"]
+        else:
+            return f"Ollama returned status code {resp.status_code} for endpoint {base_url}/api/chat (Model: {model}). Details: {resp.text}"
     except Exception as e:
         print(f"Error calling local Ollama chat: {e}")
-
-    return "Error calling local Ollama. Please ensure your local Ollama server is serving on http://localhost:11434 and you have pulled the requested models."
+        return f"Failed to connect to Ollama server at {base_url} (Model: {model}). Connection error: {str(e)}"
