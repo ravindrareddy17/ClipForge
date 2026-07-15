@@ -80,8 +80,8 @@ st.markdown("""
     /* Main App overrides */
     .stApp {
         background-color: #0d0f14;
-        background-image: radial-gradient(circle at 50% 0%, #1a1e29 0%, #0d0f14 100%);
-        color: #cbd5e1;
+        background-image: radial-gradient(circle at 50% 0%, #171d2b 0%, #0d0f14 100%);
+        color: #e2e8f0;
         font-family: 'Inter', sans-serif !important;
     }
     
@@ -107,25 +107,27 @@ st.markdown("""
     .stApp label,
     .stApp label[data-testid="stWidgetLabel"] p,
     .stApp div[data-testid="stWidgetLabel"] p {
-        color: #e2e8f0 !important;
+        color: #f1f5f9 !important;
         font-weight: 600 !important;
         font-family: 'Inter', sans-serif !important;
     }
     
-    /* Cards styling */
-    .glass-card {
-        background: rgba(22, 28, 38, 0.8);
-        backdrop-filter: blur(16px);
-        border: 1px solid rgba(255, 255, 255, 0.12);
-        border-radius: 12px;
-        padding: 1.5rem;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
-        margin-bottom: 1.25rem;
-        transition: all 0.25s ease;
+    /* Global Cards styling (Applies to static HTML cards & native container borders) */
+    .glass-card,
+    div[data-testid="stVerticalBlockBorderDiv"] {
+        background: rgba(20, 26, 38, 0.75) !important;
+        backdrop-filter: blur(20px) !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        border-radius: 14px !important;
+        padding: 1.5rem !important;
+        box-shadow: 0 12px 36px rgba(0, 0, 0, 0.45) !important;
+        margin-bottom: 1.25rem !important;
+        transition: all 0.25s ease !important;
     }
-    .glass-card:hover {
-        border-color: rgba(6, 182, 212, 0.3);
-        transform: translateY(-1px);
+    .glass-card:hover,
+    div[data-testid="stVerticalBlockBorderDiv"]:hover {
+        border-color: rgba(6, 182, 212, 0.3) !important;
+        transform: translateY(-2px) !important;
     }
     
     /* Metrics numbers */
@@ -151,9 +153,9 @@ st.markdown("""
     div[data-testid="stTextArea"] textarea,
     div[data-testid="stNumberInput"] input,
     div[data-testid="stSelectbox"] > div {
-        background-color: #171c26 !important;
+        background-color: #121824 !important;
         color: #ffffff !important;
-        border: 1px solid rgba(255, 255, 255, 0.15) !important;
+        border: 1px solid rgba(255, 255, 255, 0.12) !important;
         border-radius: 8px !important;
     }
     div[data-testid="stTextInput"] input:focus, 
@@ -161,25 +163,27 @@ st.markdown("""
     div[data-testid="stNumberInput"] input:focus,
     div[data-testid="stSelectbox"] > div:focus-within {
         border-color: #00f0ff !important;
-        box-shadow: 0 0 10px rgba(0, 240, 255, 0.25) !important;
+        box-shadow: 0 0 12px rgba(0, 240, 255, 0.3) !important;
     }
     
     /* Action buttons overrides */
-    button {
-        background: #7b2cbf !important;
-        background-image: none !important;
+    button, div[data-testid="stFormSubmitButton"] button {
+        background: linear-gradient(135deg, #7b2cbf 0%, #00f0ff 100%) !important;
+        background-image: linear-gradient(135deg, #7b2cbf 0%, #00f0ff 100%) !important;
         color: #ffffff !important;
         border: 1px solid rgba(255, 255, 255, 0.15) !important;
         border-radius: 8px !important;
-        padding: 8px 16px !important;
-        font-weight: 600 !important;
+        padding: 8px 18px !important;
+        font-weight: 700 !important;
+        box-shadow: 0 4px 15px rgba(123, 44, 191, 0.2) !important;
         transition: all 0.2s ease !important;
     }
-    button:hover {
-        background: #9d4edd !important;
-        background-image: none !important;
-        border-color: rgba(255, 255, 255, 0.3) !important;
-        box-shadow: 0 0 12px rgba(157, 78, 221, 0.4) !important;
+    button:hover, div[data-testid="stFormSubmitButton"] button:hover {
+        background: linear-gradient(135deg, #9d4edd 0%, #22d3ee 100%) !important;
+        background-image: linear-gradient(135deg, #9d4edd 0%, #22d3ee 100%) !important;
+        border-color: rgba(255, 255, 255, 0.35) !important;
+        box-shadow: 0 0 18px rgba(0, 240, 255, 0.5) !important;
+        transform: translateY(-1px) !important;
         color: #ffffff !important;
     }
     button * {
@@ -188,23 +192,24 @@ st.markdown("""
     
     /* Sidebar container styling overrides */
     section[data-testid="stSidebar"] {
-        background-color: #0b0c10 !important;
-        background-image: radial-gradient(circle at 50% 0%, #161a24 0%, #0b0c10 100%) !important;
-        border-right: 1px solid rgba(255, 255, 255, 0.1) !important;
+        background-color: #08090d !important;
+        background-image: radial-gradient(circle at 50% 0%, #121622 0%, #08090d 100%) !important;
+        border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
     }
     section[data-testid="stSidebar"] button {
-        background: rgba(255, 255, 255, 0.04) !important;
+        background: rgba(255, 255, 255, 0.03) !important;
         background-image: none !important;
         color: #cbd5e1 !important;
-        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        border: 1px solid rgba(255, 255, 255, 0.06) !important;
         border-radius: 8px !important;
         text-align: left !important;
-        padding: 8px 12px !important;
+        padding: 10px 14px !important;
+        font-weight: 600 !important;
     }
     section[data-testid="stSidebar"] button:hover {
-        background: rgba(6, 182, 212, 0.15) !important;
+        background: rgba(6, 182, 212, 0.12) !important;
         color: #22d3ee !important;
-        border-color: rgba(6, 182, 212, 0.4) !important;
+        border-color: rgba(6, 182, 212, 0.35) !important;
     }
     section[data-testid="stSidebar"] button * {
         color: #cbd5e1 !important;
@@ -213,9 +218,9 @@ st.markdown("""
         color: #22d3ee !important;
     }
     section[data-testid="stSidebar"] div[data-testid="stSelectbox"] > div {
-        background-color: rgba(255, 255, 255, 0.03) !important;
+        background-color: rgba(255, 255, 255, 0.02) !important;
         color: #ffffff !important;
-        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
     }
     
     /* Status Badges */
@@ -227,15 +232,15 @@ st.markdown("""
         text-transform: uppercase;
         display: inline-block;
     }
-    .badge-success { background: rgba(34, 211, 238, 0.15); color: #22d3ee; border: 1px solid rgba(34, 211, 238, 0.3); }
-    .badge-warning { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
-    .badge-danger { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+    .badge-success { background: rgba(34, 211, 238, 0.12); color: #22d3ee; border: 1px solid rgba(34, 211, 238, 0.25); }
+    .badge-warning { background: rgba(245, 158, 11, 0.12); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.25); }
+    .badge-danger { background: rgba(239, 68, 68, 0.12); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.25); }
     
     .avatar-circle {
-        width: 42px;
-        height: 42px;
+        width: 44px;
+        height: 44px;
         border-radius: 50%;
-        border: 2px solid rgba(6, 182, 212, 0.4);
+        border: 2px solid rgba(6, 182, 212, 0.35);
     }
 </style>
 """, unsafe_allow_html=True)
@@ -322,7 +327,7 @@ def open_oauth_dialog(project_id):
 # Manage workspaces (Projects)
 projects = get_projects()
 if not projects:
-    create_project("Workspace 1", "Automated YouTube Shorts Channel Workspace")
+    create_project("Workspace 1", "Automated YouTube Shorts Workspace")
     projects = get_projects()
 
 # Sidebar layout
@@ -414,7 +419,7 @@ if tab_name == "Dashboard":
         st.markdown(f"""
         <div class='glass-card'>
             <div class='metric-label'>Destination Channel</div>
-            <div class='metric-value' style='font-size:1.5rem; color:{'#22d3ee' if channel_connected else '#f87171'};'>
+            <div class='metric-value' style='font-size:1.3rem; color:{'#22d3ee' if channel_connected else '#f87171'};'>
                 {chan_row['name'] if channel_connected else 'Not Linked'}
             </div>
             <div class='metric-label' style='margin-top:5px; font-size:0.65rem;'>
@@ -451,170 +456,162 @@ if tab_name == "Dashboard":
     col_d1, col_d2 = st.columns([7, 5])
     
     with col_d1:
-        st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
-        st.write("### Connected YouTube Channel")
-        if channel_connected:
-            col_av, col_tx = st.columns([1, 8])
-            with col_av:
-                st.markdown(f"<img src='{channel_meta.get('avatar', 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=100&auto=format&fit=crop')}' class='avatar-circle'>", unsafe_allow_html=True)
-            with col_tx:
-                st.markdown(f"**Channel:** {chan_row['name']}")
-                st.caption(f"Channel ID: {channel_meta.get('channel_id', 'Unconnected')} | Subscribers: {channel_meta.get('subscribers', 0):,} | Total Uploads: {channel_meta.get('video_count', 0)}")
-                st.markdown("<span class='status-badge badge-success'>OAuth Token Active</span>", unsafe_allow_html=True)
-        else:
-            st.warning("No destination channel linked to this workspace yet.")
-            if st.button("Link YouTube Channel"):
-                open_oauth_dialog(active_project["id"])
-        st.markdown("</div>", unsafe_allow_html=True)
+        with st.container(border=True):
+            st.write("### Connected YouTube Channel")
+            if channel_connected:
+                col_av, col_tx = st.columns([1, 8])
+                with col_av:
+                    st.markdown(f"<img src='{channel_meta.get('avatar', 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=100&auto=format&fit=crop')}' class='avatar-circle'>", unsafe_allow_html=True)
+                with col_tx:
+                    st.markdown(f"**Channel:** {chan_row['name']}")
+                    st.caption(f"Channel ID: {channel_meta.get('channel_id', 'Unconnected')} | Subscribers: {channel_meta.get('subscribers', 0):,} | Total Uploads: {channel_meta.get('video_count', 0)}")
+                    st.markdown("<span class='status-badge badge-success'>OAuth Token Active</span>", unsafe_allow_html=True)
+            else:
+                st.warning("No destination channel linked to this workspace yet.")
+                if st.button("Link YouTube Channel"):
+                    open_oauth_dialog(active_project["id"])
         
     with col_d2:
-        st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
-        st.write("### Workspace Manager")
-        with st.form("workspace_sw_form"):
-            new_name = st.text_input("New Workspace Name:")
-            new_desc = st.text_area("Target Channel Description:")
-            submitted = st.form_submit_button("Initialize Workspace")
-            if submitted and new_name:
-                create_project(new_name, new_desc)
-                st.success("New workspace initialized!")
-                st.rerun()
-        st.markdown("</div>", unsafe_allow_html=True)
+        with st.container(border=True):
+            st.write("### Workspace Manager")
+            with st.form("workspace_sw_form"):
+                new_name = st.text_input("New Workspace Name:")
+                new_desc = st.text_area("Target Channel Description:")
+                submitted = st.form_submit_button("Initialize Workspace")
+                if submitted and new_name:
+                    create_project(new_name, new_desc)
+                    st.success("New workspace initialized!")
+                    st.rerun()
 
     # Real time Activity Log Feed
-    st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
-    st.write("### Active Processing Logs")
-    if not activity_logs:
-        st.info("No processing logs found. Paste a video link to start pipeline actions.")
-    else:
-        for log in activity_logs[:15]:
-            col_l1, col_l2, col_l3 = st.columns([2, 6, 2])
-            with col_l1:
-                st.write(f"**{log['action_type']}**")
-            with col_l2:
-                st.caption(log["details"])
-            with col_l3:
-                st.caption(log["created_at"])
-            st.markdown("<hr style='border-color:rgba(255,255,255,0.03); margin:6px 0;'>", unsafe_allow_html=True)
-    st.markdown("</div>", unsafe_allow_html=True)
+    with st.container(border=True):
+        st.write("### Active Processing Logs")
+        if not activity_logs:
+            st.info("No processing logs found. Paste a video link to start pipeline actions.")
+        else:
+            for log in activity_logs[:15]:
+                col_l1, col_l2, col_l3 = st.columns([2, 6, 2])
+                with col_l1:
+                    st.write(f"**{log['action_type']}**")
+                with col_l2:
+                    st.caption(log["details"])
+                with col_l3:
+                    st.caption(log["created_at"])
+                st.markdown("<hr style='border-color:rgba(255,255,255,0.03); margin:6px 0;'>", unsafe_allow_html=True)
 
 # 2. VIDEO LIBRARY & IMPORT
 elif tab_name == "Video Library & Import":
-    st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
-    st.write("### Import Content / Monitor Sources")
-    
-    with st.form("source_form"):
-        source_input = st.text_input("Paste YouTube Video Link or Channel Handle:", placeholder="e.g. https://www.youtube.com/watch?v=dQw4w9WgXcQ or @NASA")
-        submit_btn = st.form_submit_button("Add Source")
+    with st.container(border=True):
+        st.write("### Import Content / Monitor Sources")
         
-        if submit_btn and source_input:
-            source_input = source_input.strip()
-            conn = get_db_connection()
+        with st.form("source_form"):
+            source_input = st.text_input("Paste YouTube Video Link or Channel Handle:", placeholder="e.g. https://www.youtube.com/watch?v=dQw4w9WgXcQ or @NASA")
+            submit_btn = st.form_submit_button("Add Source")
             
-            # Check if it is a video link
-            is_youtube_video = (
-                ("youtube.com/watch" in source_input) or 
-                ("youtu.be/" in source_input) or 
-                ("youtube.com/shorts" in source_input) or 
-                ("youtube.com/embed" in source_input)
-            )
-            
-            if is_youtube_video:
-                vid_id = str(uuid.uuid4())
-                filename = f"video_{int(datetime.utcnow().timestamp())}.mp4"
-                conn.execute(
-                    """INSERT INTO videos (id, project_id, filename, file_path, duration, width, height, fps, status, created_at) 
-                       VALUES (?, ?, ?, ?, 360, 1920, 1080, 30, 'pending', ?)""",
-                    (vid_id, active_project["id"], filename, source_input, datetime.utcnow().isoformat())
-                )
-                conn.execute(
-                    "INSERT INTO activity_log (id, project_id, action_type, details, created_at) VALUES (?, ?, ?, ?, ?)",
-                    (str(uuid.uuid4()), active_project["id"], "Imported Video", f"Imported YouTube link: {source_input}", datetime.utcnow().isoformat())
-                )
-                conn.commit()
-                st.success("YouTube video link registered in library!")
-            # Otherwise assume channel handle or page
-            else:
-                # Clean handle from full URL if they pasted it
-                handle = source_input
-                if "youtube.com/" in handle:
-                    parts = handle.split("youtube.com/")
-                    if len(parts) > 1:
-                        handle = parts[1].replace("c/", "").replace("channel/", "").replace("user/", "")
+            if submit_btn and source_input:
+                source_input = source_input.strip()
+                conn = get_db_connection()
                 
-                handle = handle if handle.startswith("@") else f"@{handle}"
-                sid = str(uuid.uuid4())
-                conn.execute(
-                    """INSERT INTO source_channels (id, project_id, handle, name, avatar, subscribers, video_count, latest_upload, status, created_at) 
-                       VALUES (?, ?, ?, ?, '', 0, 0, 'None', 'active', ?)""",
-                    (sid, active_project["id"], handle, handle[1:], datetime.utcnow().isoformat())
+                # Check if it is a video link
+                is_youtube_video = (
+                    ("youtube.com/watch" in source_input) or 
+                    ("youtu.be/" in source_input) or 
+                    ("youtube.com/shorts" in source_input) or 
+                    ("youtube.com/embed" in source_input)
                 )
-                conn.execute(
-                    "INSERT INTO activity_log (id, project_id, action_type, details, created_at) VALUES (?, ?, ?, ?, ?)",
-                    (str(uuid.uuid4()), active_project["id"], "Monitored Handle", f"Started monitoring channel handle: {handle}", datetime.utcnow().isoformat())
-                )
-                conn.commit()
-                st.success(f"Added source handle {handle} to monitor list!")
                 
-            conn.close()
-            st.rerun()
-            
-    st.markdown("</div>", unsafe_allow_html=True)
+                if is_youtube_video:
+                    vid_id = str(uuid.uuid4())
+                    filename = f"video_{int(datetime.utcnow().timestamp())}.mp4"
+                    conn.execute(
+                        """INSERT INTO videos (id, project_id, filename, file_path, duration, width, height, fps, status, created_at) 
+                           VALUES (?, ?, ?, ?, 360, 1920, 1080, 30, 'pending', ?)""",
+                        (vid_id, active_project["id"], filename, source_input, datetime.utcnow().isoformat())
+                    )
+                    conn.execute(
+                        "INSERT INTO activity_log (id, project_id, action_type, details, created_at) VALUES (?, ?, ?, ?, ?)",
+                        (str(uuid.uuid4()), active_project["id"], "Imported Video", f"Imported YouTube link: {source_input}", datetime.utcnow().isoformat())
+                    )
+                    conn.commit()
+                    st.success("YouTube video link registered in library!")
+                # Otherwise assume channel handle or page
+                else:
+                    # Clean handle from full URL if they pasted it
+                    handle = source_input
+                    if "youtube.com/" in handle:
+                        parts = handle.split("youtube.com/")
+                        if len(parts) > 1:
+                            handle = parts[1].replace("c/", "").replace("channel/", "").replace("user/", "")
+                    
+                    handle = handle if handle.startswith("@") else f"@{handle}"
+                    sid = str(uuid.uuid4())
+                    conn.execute(
+                        """INSERT INTO source_channels (id, project_id, handle, name, avatar, subscribers, video_count, latest_upload, status, created_at) 
+                           VALUES (?, ?, ?, ?, '', 0, 0, 'None', 'active', ?)""",
+                        (sid, active_project["id"], handle, handle[1:], datetime.utcnow().isoformat())
+                    )
+                    conn.execute(
+                        "INSERT INTO activity_log (id, project_id, action_type, details, created_at) VALUES (?, ?, ?, ?, ?)",
+                        (str(uuid.uuid4()), active_project["id"], "Monitored Handle", f"Started monitoring channel handle: {handle}", datetime.utcnow().isoformat())
+                    )
+                    conn.commit()
+                    st.success(f"Added source handle {handle} to monitor list!")
+                    
+                conn.close()
+                st.rerun()
     
     col_v1, col_v2 = st.columns(2)
     with col_v1:
-        st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
-        st.write("### Monitored Source Channels")
-        if not source_channels:
-            st.caption("No monitored channel handles yet.")
-        else:
-            for sc in source_channels:
-                col_sc1, col_sc2 = st.columns([8, 2])
-                with col_sc1:
-                    st.write(f"**{sc['handle']}**")
-                    st.caption("Auto sync state: Monitoring uploads")
-                with col_sc2:
-                    if st.button("Delete", key=f"del_sc_{sc['id']}"):
-                        delete_source_channel(sc["id"])
-                        st.rerun()
-                st.markdown("<hr style='border-color:rgba(255,255,255,0.03); margin:8px 0;'>", unsafe_allow_html=True)
-        st.markdown("</div>", unsafe_allow_html=True)
+        with st.container(border=True):
+            st.write("### Monitored Source Channels")
+            if not source_channels:
+                st.caption("No monitored channel handles yet.")
+            else:
+                for sc in source_channels:
+                    col_sc1, col_sc2 = st.columns([8, 2])
+                    with col_sc1:
+                        st.write(f"**{sc['handle']}**")
+                        st.caption("Auto sync state: Monitoring uploads")
+                    with col_sc2:
+                        if st.button("Delete", key=f"del_sc_{sc['id']}"):
+                            delete_source_channel(sc["id"])
+                            st.rerun()
+                    st.markdown("<hr style='border-color:rgba(255,255,255,0.03); margin:8px 0;'>", unsafe_allow_html=True)
         
     with col_v2:
-        st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
-        st.write("### Imported Videos Library")
-        if not videos:
-            st.caption("No videos imported yet.")
-        else:
-            for v in videos:
-                col_vrow1, col_vrow2 = st.columns([7, 3])
-                with col_vrow1:
-                    st.write(f"**Link:** {v['file_path']}")
-                    st.caption(f"Status: **{v['status']}** | Added: {v['created_at']}")
-                with col_vrow2:
-                    if v["status"] == "pending":
-                        if st.button("Process AI clips", key=f"proc_v_{v['id']}"):
-                            from clipforge_engine.pipeline import run_processing_pipeline
-                            import threading
-                            import asyncio
-                            threading.Thread(target=lambda: asyncio.run(run_processing_pipeline(v["id"]))).start()
-                            st.info("AI processing started in background. Monitor via dashboard.")
-                            st.rerun()
-                    else:
-                        st.caption("✓ Clips Generated")
-                st.markdown("<hr style='border-color:rgba(255,255,255,0.03); margin:8px 0;'>", unsafe_allow_html=True)
-        st.markdown("</div>", unsafe_allow_html=True)
+        with st.container(border=True):
+            st.write("### Imported Videos Library")
+            if not videos:
+                st.caption("No videos imported yet.")
+            else:
+                for v in videos:
+                    col_vrow1, col_vrow2 = st.columns([7, 3])
+                    with col_vrow1:
+                        st.write(f"**Link:** {v['file_path']}")
+                        st.caption(f"Status: **{v['status']}** | Added: {v['created_at']}")
+                    with col_vrow2:
+                        if v["status"] in ["pending", "failed"]:
+                            if st.button("Process AI clips", key=f"proc_v_{v['id']}"):
+                                from clipforge_engine.pipeline import run_processing_pipeline
+                                import threading
+                                import asyncio
+                                threading.Thread(target=lambda: asyncio.run(run_processing_pipeline(v["id"]))).start()
+                                st.info("AI processing started in background. Monitor via dashboard.")
+                                st.rerun()
+                        else:
+                            st.caption("✓ Clips Generated")
+                    st.markdown("<hr style='border-color:rgba(255,255,255,0.03); margin:8px 0;'>", unsafe_allow_html=True)
 
 # 3. GENERATED CLIPS
 elif tab_name == "Generated Clips":
     if not videos:
         st.info("No videos in library. Go to 'Video Library & Import' to import content.")
     else:
-        st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
-        st.write("### Select Video File")
-        vid_options = {v["file_path"]: v["id"] for v in videos}
-        selected_vid_path = st.selectbox("Imported Video Target:", list(vid_options.keys()))
-        selected_vid_id = vid_options[selected_vid_path]
-        st.markdown("</div>", unsafe_allow_html=True)
+        with st.container(border=True):
+            st.write("### Select Video File")
+            vid_options = {v["file_path"]: v["id"] for v in videos}
+            selected_vid_path = st.selectbox("Imported Video Target:", list(vid_options.keys()))
+            selected_vid_id = vid_options[selected_vid_path]
         
         conn = get_db_connection()
         video_clips = conn.execute("SELECT * FROM clips WHERE video_id = ? ORDER BY score DESC", (selected_vid_id,)).fetchall()
@@ -622,62 +619,59 @@ elif tab_name == "Generated Clips":
         
         col_ed1, col_ed2 = st.columns([7, 5])
         with col_ed1:
-            st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
-            st.write("### AI Extracted Viral Moments")
-            if not video_clips:
-                st.warning("No clips generated yet for this video. Trigger 'Process AI clips' under the videos library first.")
-            else:
-                for c in video_clips:
-                    st.write(f"#### {c['title']}")
-                    st.caption(f"Score: **{c['score']}%** | Timestamps: {c['start_time']}s - {c['end_time']}s | Duration: {c['duration']}s")
-                    st.write(f"**AI Virality Analysis:** {c['explanation']}")
-                    
-                    col_cb1, col_cb2 = st.columns(2)
-                    with col_cb1:
-                        if st.button("Download Short Clip", key=f"dl_c_{c['id']}"):
-                            st.info("Direct download initialized. Mock video saved successfully.")
-                    with col_cb2:
-                        if st.button("Schedule for Posting", key=f"queue_c_{c['id']}"):
-                            conn = get_db_connection()
-                            conn.execute(
-                                "INSERT INTO schedules (id, project_id, day_of_week, time_of_day, is_active) VALUES (?, ?, 'Monday', '12:00', 1)",
-                                (str(uuid.uuid4()), active_project["id"])
-                            )
-                            conn.execute(
-                                "INSERT INTO activity_log (id, project_id, action_type, details, created_at) VALUES (?, ?, ?, ?, ?)",
-                                (str(uuid.uuid4()), active_project["id"], "Clip Gated & Queued", f"Scheduled clip '{c['title']}' for automatic upload.", datetime.utcnow().isoformat())
-                            )
-                            conn.commit()
-                            conn.close()
-                            st.success("Clip approved and added to smart posting queue!")
-                            st.rerun()
-                    st.markdown("<hr style='border-color:rgba(255,255,255,0.03); margin:12px 0;'>", unsafe_allow_html=True)
-            st.markdown("</div>", unsafe_allow_html=True)
+            with st.container(border=True):
+                st.write("### AI Extracted Viral Moments")
+                if not video_clips:
+                    st.warning("No clips generated yet for this video. Trigger 'Process AI clips' under the videos library first.")
+                else:
+                    for c in video_clips:
+                        st.write(f"#### {c['title']}")
+                        st.caption(f"Score: **{c['score']}%** | Timestamps: {c['start_time']}s - {c['end_time']}s | Duration: {c['duration']}s")
+                        st.write(f"**AI Virality Analysis:** {c['explanation']}")
+                        
+                        col_cb1, col_cb2 = st.columns(2)
+                        with col_cb1:
+                            if st.button("Download Short Clip", key=f"dl_c_{c['id']}"):
+                                st.info("Direct download initialized. Mock video saved successfully.")
+                        with col_cb2:
+                            if st.button("Schedule for Posting", key=f"queue_c_{c['id']}"):
+                                conn = get_db_connection()
+                                conn.execute(
+                                    "INSERT INTO schedules (id, project_id, day_of_week, time_of_day, is_active) VALUES (?, ?, 'Monday', '12:00', 1)",
+                                    (str(uuid.uuid4()), active_project["id"])
+                                )
+                                conn.execute(
+                                    "INSERT INTO activity_log (id, project_id, action_type, details, created_at) VALUES (?, ?, ?, ?, ?)",
+                                    (str(uuid.uuid4()), active_project["id"], "Clip Gated & Queued", f"Scheduled clip '{c['title']}' for automatic upload.", datetime.utcnow().isoformat())
+                                )
+                                conn.commit()
+                                conn.close()
+                                st.success("Clip approved and added to smart posting queue!")
+                                st.rerun()
+                        st.markdown("<hr style='border-color:rgba(255,255,255,0.03); margin:12px 0;'>", unsafe_allow_html=True)
             
         with col_ed2:
-            st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
-            st.write("### Enhancement Profile Presets")
-            preset = st.selectbox("Style Profile Template:", ["MrBeast style", "IShowSpeed style", "Minimal Cinematic"])
-            
-            st.write("#### Rendering Adjustments")
-            st.checkbox("Auto-Face Tracking Vertical Crop (OpenCV)", value=True)
-            st.checkbox("Karaoke Subtitles Burn-in (ASS filter)", value=True)
-            st.checkbox("Progress Bar Timer burning", value=True)
-            st.slider("Font size scaling:", 14, 48, 28)
-            st.color_picker("Highlight font color:", "#00F0FF")
-            st.markdown("</div>", unsafe_allow_html=True)
+            with st.container(border=True):
+                st.write("### Enhancement Profile Presets")
+                preset = st.selectbox("Style Profile Template:", ["MrBeast style", "IShowSpeed style", "Minimal Cinematic"])
+                
+                st.write("#### Rendering Adjustments")
+                st.checkbox("Auto-Face Tracking Vertical Crop (OpenCV)", value=True)
+                st.checkbox("Karaoke Subtitles Burn-in (ASS filter)", value=True)
+                st.checkbox("Progress Bar Timer burning", value=True)
+                st.slider("Font size scaling:", 14, 48, 28)
+                st.color_picker("Highlight font color:", "#00F0FF")
 
 # 4. AI KNOWLEDGE CHAT (RAG & INTEL)
 elif tab_name == "AI Knowledge Chat":
     if not videos:
         st.info("No videos to build a knowledge base. Go to 'Video Library & Import' to import content.")
     else:
-        st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
-        st.write("### Select Video Context")
-        vid_options = {v["file_path"]: v["id"] for v in videos}
-        selected_vid_path = st.selectbox("Video Context:", list(vid_options.keys()))
-        selected_vid_id = vid_options[selected_vid_path]
-        st.markdown("</div>", unsafe_allow_html=True)
+        with st.container(border=True):
+            st.write("### Select Video Context")
+            vid_options = {v["file_path"]: v["id"] for v in videos}
+            selected_vid_path = st.selectbox("Video Context:", list(vid_options.keys()))
+            selected_vid_id = vid_options[selected_vid_path]
         
         # Load summary, keywords, and graph
         summary = get_summary(selected_vid_id)
@@ -687,145 +681,140 @@ elif tab_name == "AI Knowledge Chat":
         col_chat1, col_chat2 = st.columns([7, 5])
         with col_chat1:
             # 1. Grounded RAG Chat
-            st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
-            st.write("### Grounded Chat Interface")
-            
-            # Load session history
-            history = get_chat_history(active_project["id"], st.session_state.chat_session_id)
-            for msg in history:
-                if msg["role"] == "user":
-                    st.markdown(f"**User**: {msg['message']}")
-                else:
-                    st.markdown(f"**Assistant**: {msg['message']}")
-                st.markdown("<hr style='border-color:rgba(255,255,255,0.02); margin:8px 0;'>", unsafe_allow_html=True)
+            with st.container(border=True):
+                st.write("### Grounded Chat Interface")
                 
-            with st.form("chat_form", clear_on_submit=True):
-                user_msg = st.text_input("Ask anything about the transcripts:")
-                submit_chat = st.form_submit_button("Ask local LLM")
-                if submit_chat and user_msg:
-                    add_chat_message(active_project["id"], st.session_state.chat_session_id, "user", user_msg)
+                # Load session history
+                history = get_chat_history(active_project["id"], st.session_state.chat_session_id)
+                for msg in history:
+                    if msg["role"] == "user":
+                        st.markdown(f"**User**: {msg['message']}")
+                    else:
+                        st.markdown(f"**Assistant**: {msg['message']}")
+                    st.markdown("<hr style='border-color:rgba(255,255,255,0.02); margin:8px 0;'>", unsafe_allow_html=True)
                     
-                    # Query ChromaDB collection
-                    retrieved = query_similar_chunks(
+                with st.form("chat_form", clear_on_submit=True):
+                    user_msg = st.text_input("Ask anything about the transcripts:")
+                    submit_chat = st.form_submit_button("Ask local LLM")
+                    if submit_chat and user_msg:
+                        add_chat_message(active_project["id"], st.session_state.chat_session_id, "user", user_msg)
+                        
+                        # Query ChromaDB collection
+                        retrieved = query_similar_chunks(
+                            project_id=active_project["id"],
+                            query_text=user_msg,
+                            k=4,
+                            video_ids=[selected_vid_id],
+                            model=st.session_state.embedding_model,
+                            base_url=st.session_state.ollama_url
+                        )
+                        
+                        # Answer generation
+                        answer = generate_grounded_answer(
+                            project_id=active_project["id"],
+                            query=user_msg,
+                            retrieved_chunks=retrieved,
+                            model=st.session_state.ollama_model,
+                            base_url=st.session_state.ollama_url
+                        )
+                        
+                        add_chat_message(active_project["id"], st.session_state.chat_session_id, "assistant", answer)
+                        log_retrieval(active_project["id"], user_msg, retrieved, answer)
+                        st.rerun()
+                        
+                if st.button("Clear Chat History"):
+                    clear_chat_history(active_project["id"], st.session_state.chat_session_id)
+                    st.success("Chat history cleared.")
+                    st.rerun()
+            
+            # 2. Semantic Scene Search
+            with st.container(border=True):
+                st.write("### Semantic Scene Search")
+                query_in = st.text_input("Search matching scene coordinates:", placeholder="e.g. SpaceX, deep learning")
+                if query_in:
+                    hits = query_similar_chunks(
                         project_id=active_project["id"],
-                        query_text=user_msg,
+                        query_text=query_in,
                         k=4,
-                        video_ids=[selected_vid_id],
                         model=st.session_state.embedding_model,
                         base_url=st.session_state.ollama_url
                     )
-                    
-                    # Answer generation
-                    answer = generate_grounded_answer(
-                        project_id=active_project["id"],
-                        query=user_msg,
-                        retrieved_chunks=retrieved,
-                        model=st.session_state.ollama_model,
-                        base_url=st.session_state.ollama_url
-                    )
-                    
-                    add_chat_message(active_project["id"], st.session_state.chat_session_id, "assistant", answer)
-                    log_retrieval(active_project["id"], user_msg, retrieved, answer)
-                    st.rerun()
-                    
-            if st.button("Clear Chat History"):
-                clear_chat_history(active_project["id"], st.session_state.chat_session_id)
-                st.success("Chat history cleared.")
-                st.rerun()
-            st.markdown("</div>", unsafe_allow_html=True)
-            
-            # 2. Semantic Scene Search
-            st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
-            st.write("### Semantic Scene Search")
-            query_in = st.text_input("Search matching scene coordinates:", placeholder="e.g. SpaceX, deep learning")
-            if query_in:
-                hits = query_similar_chunks(
-                    project_id=active_project["id"],
-                    query_text=query_in,
-                    k=4,
-                    model=st.session_state.embedding_model,
-                    base_url=st.session_state.ollama_url
-                )
-                for hit in hits:
-                    meta = hit["metadata"]
-                    start_t = float(meta["start_time"])
-                    
-                    hours = int(start_t // 3600)
-                    minutes = int((start_t % 3600) // 60)
-                    seconds = int(start_t % 60)
-                    timestamp_str = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
-                    
-                    col_h1, col_h2 = st.columns([8, 2])
-                    with col_h1:
-                        st.write(f"**Found match (Time: {timestamp_str}):**")
-                        st.write(f"*{hit['text']}*")
-                    with col_h2:
-                        if st.button("Preview Scene", key=f"preview_h_{hit['id']}"):
-                            st.info(f"Seeking video to segment timestamp: {timestamp_str}")
-                    st.markdown("<hr style='border-color:rgba(255,255,255,0.03); margin:8px 0;'>", unsafe_allow_html=True)
-            st.markdown("</div>", unsafe_allow_html=True)
+                    for hit in hits:
+                        meta = hit["metadata"]
+                        start_t = float(meta["start_time"])
+                        
+                        hours = int(start_t // 3600)
+                        minutes = int((start_t % 3600) // 60)
+                        seconds = int(start_t % 60)
+                        timestamp_str = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+                        
+                        col_h1, col_h2 = st.columns([8, 2])
+                        with col_h1:
+                            st.write(f"**Found match (Time: {timestamp_str}):**")
+                            st.write(f"*{hit['text']}*")
+                        with col_h2:
+                            if st.button("Preview Scene", key=f"preview_h_{hit['id']}"):
+                                st.info(f"Seeking video to segment timestamp: {timestamp_str}")
+                        st.markdown("<hr style='border-color:rgba(255,255,255,0.03); margin:8px 0;'>", unsafe_allow_html=True)
             
         with col_chat2:
             # 3. Video Executive Summary
-            st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
-            st.write("### Executive Summary")
-            if summary:
-                st.write(summary["executive_summary"])
-                if summary.get("action_items"):
-                    st.write("**Action Items:**")
-                    for act in summary["action_items"]:
-                        st.write(f"- {act}")
-            else:
-                st.caption("No summary generated yet.")
-            st.markdown("</div>", unsafe_allow_html=True)
+            with st.container(border=True):
+                st.write("### Executive Summary")
+                if summary:
+                    st.write(summary["executive_summary"])
+                    if summary.get("action_items"):
+                        st.write("**Action Items:**")
+                        for act in summary["action_items"]:
+                            st.write(f"- {act}")
+                else:
+                    st.caption("No summary generated yet.")
             
             # 4. Local Entity Graph
-            st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
-            st.write("### Local Knowledge Graph")
-            if not graph:
-                st.caption("No relationships resolved yet.")
-            else:
-                # Create offline gravity SVG simulation canvas
-                svg_nodes = []
-                svg_links = []
-                unique_entities = list(set([g["source"] for g in graph] + [g["target"] for g in graph]))
-                
-                # Position coordinates
-                import math
-                coords = {}
-                radius = 120
-                for idx, node in enumerate(unique_entities[:10]):
-                    angle = (idx * 2 * math.pi) / min(len(unique_entities), 10)
-                    coords[node] = (150 + radius * math.cos(angle), 150 + radius * math.sin(angle))
-                    svg_nodes.append(f"<circle cx='{coords[node][0]:.1f}' cy='{coords[node][1]:.1f}' r='10' fill='#00f0ff' stroke='#fff' stroke-width='1.5'/><text x='{coords[node][0]+12:.1f}' y='{coords[node][1]+4:.1f}' fill='#fff' font-size='10' font-family='Inter'>{node}</text>")
+            with st.container(border=True):
+                st.write("### Local Knowledge Graph")
+                if not graph:
+                    st.caption("No relationships resolved yet.")
+                else:
+                    # Create offline gravity SVG simulation canvas
+                    svg_nodes = []
+                    svg_links = []
+                    unique_entities = list(set([g["source"] for g in graph] + [g["target"] for g in graph]))
                     
-                for idx, edge in enumerate(graph[:15]):
-                    src, trg = edge["source"], edge["target"]
-                    if src in coords and trg in coords:
-                        svg_links.append(f"<line x1='{coords[src][0]:.1f}' y1='{coords[src][1]:.1f}' x2='{coords[trg][0]:.1f}' y2='{coords[trg][1]:.1f}' stroke='#7b2cbf' stroke-width='2' stroke-opacity='0.6'/>")
+                    # Position coordinates
+                    import math
+                    coords = {}
+                    radius = 120
+                    for idx, node in enumerate(unique_entities[:10]):
+                        angle = (idx * 2 * math.pi) / min(len(unique_entities), 10)
+                        coords[node] = (150 + radius * math.cos(angle), 150 + radius * math.sin(angle))
+                        svg_nodes.append(f"<circle cx='{coords[node][0]:.1f}' cy='{coords[node][1]:.1f}' r='10' fill='#00f0ff' stroke='#fff' stroke-width='1.5'/><text x='{coords[node][0]+12:.1f}' y='{coords[node][1]+4:.1f}' fill='#fff' font-size='10' font-family='Inter'>{node}</text>")
                         
-                svg_content = f"""
-                <svg width='100%' height='300px' viewBox='0 0 350 300' style='background:#171c26; border-radius:8px;'>
-                    {' '.join(svg_links)}
-                    {' '.join(svg_nodes)}
-                </svg>
-                """
-                st.components.v1.html(svg_content, height=310)
-            st.markdown("</div>", unsafe_allow_html=True)
+                    for idx, edge in enumerate(graph[:15]):
+                        src, trg = edge["source"], edge["target"]
+                        if src in coords and trg in coords:
+                            svg_links.append(f"<line x1='{coords[src][0]:.1f}' y1='{coords[src][1]:.1f}' x2='{coords[trg][0]:.1f}' y2='{coords[trg][1]:.1f}' stroke='#7b2cbf' stroke-width='2' stroke-opacity='0.6'/>")
+                            
+                    svg_content = f"""
+                    <svg width='100%' height='300px' viewBox='0 0 350 300' style='background:#121724; border-radius:8px;'>
+                        {' '.join(svg_links)}
+                        {' '.join(svg_nodes)}
+                    </svg>
+                    """
+                    st.components.v1.html(svg_content, height=310)
 
 # 5. SETTINGS
 elif tab_name == "Settings":
-    st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
-    st.write("### Local RAG configurations")
-    
-    st.session_state.ollama_url = st.text_input("Ollama endpoint URL (use ngrok link if on cloud):", value=st.session_state.ollama_url)
-    st.session_state.ollama_model = st.text_input("Ollama Chat model:", value=st.session_state.ollama_model)
-    st.session_state.embedding_model = st.text_input("Ollama Embedding model:", value=st.session_state.embedding_model)
-    
-    if st.button("Save RAG configurations"):
-        update_setting("ollama_url", st.session_state.ollama_url)
-        update_setting("ollama_model", st.session_state.ollama_model)
-        update_setting("embedding_model", st.session_state.embedding_model)
-        st.success("RAG options successfully configured locally.")
-        st.rerun()
-    st.markdown("</div>", unsafe_allow_html=True)
+    with st.container(border=True):
+        st.write("### Local RAG configurations")
+        
+        st.session_state.ollama_url = st.text_input("Ollama endpoint URL (use ngrok link if on cloud):", value=st.session_state.ollama_url)
+        st.session_state.ollama_model = st.text_input("Ollama Chat model:", value=st.session_state.ollama_model)
+        st.session_state.embedding_model = st.text_input("Ollama Embedding model:", value=st.session_state.embedding_model)
+        
+        if st.button("Save RAG configurations"):
+            update_setting("ollama_url", st.session_state.ollama_url)
+            update_setting("ollama_model", st.session_state.ollama_model)
+            update_setting("embedding_model", st.session_state.embedding_model)
+            st.success("RAG options successfully configured locally.")
+            st.rerun()
