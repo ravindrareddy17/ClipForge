@@ -60,7 +60,16 @@ Install the unified requirements:
 uv pip install -r requirements.txt
 ```
 
-### 3. Run ClipForge AI Dashboard
+### 3. Run Ollama Local Models
+
+Ensure Ollama is running locally and pull the target chat and embedding models:
+```bash
+ollama serve
+ollama pull qwen2.5:3b
+ollama pull nomic-embed-text
+```
+
+### 4. Run ClipForge AI Dashboard
 
 Launch the Streamlit user interface:
 ```bash
@@ -70,23 +79,56 @@ Launch the Streamlit user interface:
 
 ---
 
-## User Features & Guides
+## Local RAG Engine & Pipeline Architecture
 
-- **Dashboard**: Track imported files, processing status, and storage parameters.
-- **Projects**: Switch and manage distinct media workspace folders.
-- **Video Library**: Drag and drop long videos or type an absolute file path on your hard drive for instant scanning.
-- **AI Processing**: Live pipeline progress monitor.
-- **Generated Clips / Editor**: Review viral segments, adjust crop margins, select custom font/color settings, edit words spelling, and render clips using FFmpeg.
-- **Scheduler**: Drag and drop calendar block publisher.
-- **Automation Flowchart**: Visual pipeline switchboard.
+ClipForge AI processes video files using a fully offline Retrieval-Augmented Generation (RAG) pipeline:
+
+```
+Import Video ──► Whisper Transcription ──► Semantic Chunks ──► local nomic-embed-text ──► ChromaDB Persistent Client
+                                                                                                     │
+                                                                                                     ▼
+Grounded QA response ◄── local qwen2.5:3b ◄── Context Compile ◄── Vector Similarity Query ◄── User Chat Question
+```
+
+### Folder Structure
+
+```
+ClipForge/
+├── app.py                      # Streamlit Multi-Page dashboard interface
+├── backend/
+│   ├── data/
+│   │   ├── clipforge.db        # Relational SQLite database
+│   │   └── chromadb/           # ChromaDB vector store directory
+│   └── clipforge_engine/
+│       ├── db.py               # SQLite database schemas and query helpers
+│       ├── pipeline.py         # Background media processing pipeline orchestration
+│       ├── rag.py              # Local RAG client, semantic chunking, Chroma integration
+│       └── agents.py           # NLP extraction agents (Summary, SEO, Graph, Keyword, Scheduler)
+└── README.md                   # Platform documentation
+```
 
 ---
 
-## Technical Concept: Main Channel to User Channels
+## User Features & Guides
 
-ClipForge AI handles content repurposing by connecting your **Main Source Channel** (long-form content inputs) to multiple targeted **User Distribution Channels** (short-form distribution outputs):
+- **Dashboard**: Track connected distribution accounts and recent pipeline operations.
+- **Projects**: Switch or create independent workspaces.
+- **Video Library**: Paste video links or monitored channel handles to fetch media.
+- **AI Processing**: Live pipeline progress monitor (Whisper, semantic chunking, and vectors mapping).
+- **Generated Clips**: Viral moment highlights editor with vertical OpenCV face tracking and dynamic ASS captions.
+- **Knowledge Base**: Executive summaries, timelines, keyword tables, and gravity-simulated visual knowledge graphs.
+- **AI Chat**: Conversational RAG interface with multi-video comparing, single clip filtering, citations, and clickable timestamps.
+- **Video Search**: Natural language semantic query tool with preview link shortcuts.
+- **Topics**: Timeline chapters list.
+- **Analytics**: Subscriber count, CTR, and watch time daily analytics graphs.
+- **Scheduler & Publishing**: Posting slots setup grid and scheduled publication logs.
+- **Settings & Logs**: Configure local Ollama ports and inspect raw workflow logs.
 
-1. **Main Source Channel Input**: Under **Video Library**, you import long-form podcast or landscape video content which you have rights to repurpose.
-2. **AI Analysis & Splitting**: ClipForge AI uses local speech transcription and scene cuts to extract the most engaging standalone segments.
-3. **User Channel Publishing**: Under **Channels**, you link individual short-form target channels (such as YouTube Shorts, TikTok, and Instagram Reels). These destinations are designated as the **User Channels** that receive the scheduled clips automatically.
+---
+
+## Troubleshooting
+
+- **Ollama Offline Error**: Make sure your local server is active on `http://localhost:11434` and the configured model choice exists (`ollama list`).
+- **ChromaDB SQLite version errors**: ChromaDB requires SQLite 3.35+. ClipForge automatically uses your local Python virtual environment's built-in libraries.
+
 

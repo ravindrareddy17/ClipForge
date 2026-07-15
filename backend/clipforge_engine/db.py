@@ -189,6 +189,112 @@ def init_db():
         })
     ))
 
+    # 1. transcript_chunks table
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS transcript_chunks (
+        id TEXT PRIMARY KEY,
+        video_id TEXT NOT NULL,
+        project_id TEXT NOT NULL,
+        start_time REAL NOT NULL,
+        end_time REAL NOT NULL,
+        text TEXT NOT NULL,
+        speaker TEXT,
+        keywords TEXT,
+        metadata_json TEXT,
+        FOREIGN KEY (video_id) REFERENCES videos(id),
+        FOREIGN KEY (project_id) REFERENCES projects(id)
+    )
+    """)
+
+    # 2. embeddings table
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS embeddings (
+        id TEXT PRIMARY KEY,
+        chunk_id TEXT NOT NULL,
+        embedding_json TEXT NOT NULL,
+        FOREIGN KEY (chunk_id) REFERENCES transcript_chunks(id)
+    )
+    """)
+
+    # 3. topics table
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS topics (
+        id TEXT PRIMARY KEY,
+        video_id TEXT NOT NULL,
+        name TEXT NOT NULL,
+        start_time REAL NOT NULL,
+        end_time REAL NOT NULL,
+        summary TEXT,
+        FOREIGN KEY (video_id) REFERENCES videos(id)
+    )
+    """)
+
+    # 4. keywords table
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS keywords (
+        id TEXT PRIMARY KEY,
+        video_id TEXT NOT NULL,
+        word TEXT NOT NULL,
+        category TEXT NOT NULL,
+        count INTEGER DEFAULT 1,
+        FOREIGN KEY (video_id) REFERENCES videos(id)
+    )
+    """)
+
+    # 5. knowledge_graph table
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS knowledge_graph (
+        id TEXT PRIMARY KEY,
+        project_id TEXT NOT NULL,
+        source TEXT NOT NULL,
+        target TEXT NOT NULL,
+        relationship TEXT NOT NULL,
+        weight REAL DEFAULT 1.0,
+        FOREIGN KEY (project_id) REFERENCES projects(id)
+    )
+    """)
+
+    # 6. chat_history table
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS chat_history (
+        id TEXT PRIMARY KEY,
+        project_id TEXT NOT NULL,
+        session_id TEXT NOT NULL,
+        role TEXT NOT NULL,
+        message TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        FOREIGN KEY (project_id) REFERENCES projects(id)
+    )
+    """)
+
+    # 7. summaries table
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS summaries (
+        id TEXT PRIMARY KEY,
+        video_id TEXT NOT NULL,
+        executive_summary TEXT,
+        key_topics TEXT,
+        important_quotes TEXT,
+        timeline TEXT,
+        action_items TEXT,
+        main_ideas TEXT,
+        FOREIGN KEY (video_id) REFERENCES videos(id)
+    )
+    """)
+
+    # 8. retrieval_logs table
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS retrieval_logs (
+        id TEXT PRIMARY KEY,
+        project_id TEXT NOT NULL,
+        query TEXT NOT NULL,
+        retrieved_chunks_json TEXT NOT NULL,
+        generated_response TEXT,
+        created_at TEXT NOT NULL,
+        FOREIGN KEY (project_id) REFERENCES projects(id)
+    )
+    """)
+
     conn.commit()
     conn.close()
 
@@ -457,6 +563,217 @@ def update_editing_profile(project_id, profile_name, enhancements):
     )
     conn.commit()
     conn.close()
+
+# RAG Knowledge Engine helpers
+def create_transcript_chunk(video_id, project_id, start_time, end_time, text, speaker=None, keywords=None, metadata_json=None):
+    cid = str(uuid.uuid4())
+    conn = get_db_connection()
+    meta_str = json.dumps(metadata_json) if metadata_json else None
+    conn.execute(
+        """INSERT INTO transcript_chunks (id, video_id, project_id, start_time, end_time, text, speaker, keywords, metadata_json)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+        (cid, video_id, project_id, start_time, end_time, text, speaker, keywords, meta_str)
+    )
+    conn.commit()
+    conn.close()
+    return cid
+
+def get_transcript_chunks(video_id):
+    conn = get_db_connection()
+    rows = conn.execute("SELECT * FROM transcript_chunks WHERE video_id = ? ORDER BY start_time ASC", (video_id,)).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+def get_all_chunks_for_project(project_id):
+    conn = get_db_connection()
+    rows = conn.execute("SELECT * FROM transcript_chunks WHERE project_id = ? ORDER BY start_time ASC", (project_id,)).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+def save_embedding(chunk_id, embedding):
+    eid = str(uuid.uuid4())
+    conn = get_db_connection()
+    conn.execute(
+        "INSERT OR REPLACE INTO embeddings (id, chunk_id, embedding_json) VALUES (?, ?, ?)",
+        (eid, chunk_id, json.dumps(embedding))
+    )
+    conn.commit()
+    conn.close()
+    return eid
+
+def get_embedding(chunk_id):
+    conn = get_db_connection()
+    row = conn.execute("SELECT * FROM embeddings WHERE chunk_id = ?", (chunk_id,)).fetchone()
+    conn.close()
+    return json.loads(row["embedding_json"]) if row else None
+
+def create_topic(video_id, name, start_time, end_time, summary=""):
+    tid = str(uuid.uuid4())
+    conn = get_db_connection()
+    conn.execute(
+        "INSERT INTO topics (id, video_id, name, start_time, end_time, summary) VALUES (?, ?, ?, ?, ?, ?)",
+        (tid, video_id, name, start_time, end_time, summary)
+    )
+    conn.commit()
+    conn.close()
+    return tid
+
+def get_topics(video_id):
+    conn = get_db_connection()
+    rows = conn.execute("SELECT * FROM topics WHERE video_id = ? ORDER BY start_time ASC", (video_id,)).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+def get_all_topics_for_project(project_id):
+    conn = get_db_connection()
+    rows = conn.execute(
+        """SELECT topics.* FROM topics 
+           JOIN videos ON topics.video_id = videos.id 
+           WHERE videos.project_id = ? ORDER BY topics.start_time ASC""",
+        (project_id,)
+    ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+def create_keyword(video_id, word, category, count=1):
+    kid = str(uuid.uuid4())
+    conn = get_db_connection()
+    row = conn.execute("SELECT * FROM keywords WHERE video_id = ? AND word = ? AND category = ?", (video_id, word, category)).fetchone()
+    if row:
+        conn.execute("UPDATE keywords SET count = count + ? WHERE id = ?", (count, row["id"]))
+    else:
+        conn.execute(
+            "INSERT INTO keywords (id, video_id, word, category, count) VALUES (?, ?, ?, ?, ?)",
+            (kid, video_id, word, category, count)
+        )
+    conn.commit()
+    conn.close()
+    return kid
+
+def get_keywords(video_id):
+    conn = get_db_connection()
+    rows = conn.execute("SELECT * FROM keywords WHERE video_id = ? ORDER BY count DESC", (video_id,)).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+def get_all_keywords_for_project(project_id):
+    conn = get_db_connection()
+    rows = conn.execute(
+        """SELECT keywords.* FROM keywords 
+           JOIN videos ON keywords.video_id = videos.id 
+           WHERE videos.project_id = ? ORDER BY keywords.count DESC""",
+        (project_id,)
+    ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+def add_graph_edge(project_id, source, target, relationship, weight=1.0):
+    gid = str(uuid.uuid4())
+    conn = get_db_connection()
+    # Check if exists
+    row = conn.execute(
+        "SELECT * FROM knowledge_graph WHERE project_id = ? AND source = ? AND target = ? AND relationship = ?",
+        (project_id, source, target, relationship)
+    ).fetchone()
+    if row:
+        conn.execute("UPDATE knowledge_graph SET weight = weight + ? WHERE id = ?", (weight, row["id"]))
+    else:
+        conn.execute(
+            "INSERT INTO knowledge_graph (id, project_id, source, target, relationship, weight) VALUES (?, ?, ?, ?, ?, ?)",
+            (gid, project_id, source, target, relationship, weight)
+        )
+    conn.commit()
+    conn.close()
+    return gid
+
+def get_knowledge_graph(project_id):
+    conn = get_db_connection()
+    rows = conn.execute("SELECT * FROM knowledge_graph WHERE project_id = ?", (project_id,)).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+def add_chat_message(project_id, session_id, role, message):
+    cid = str(uuid.uuid4())
+    conn = get_db_connection()
+    conn.execute(
+        "INSERT INTO chat_history (id, project_id, session_id, role, message, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+        (cid, project_id, session_id, role, message, datetime.utcnow().isoformat())
+    )
+    conn.commit()
+    conn.close()
+    return cid
+
+def get_chat_history(project_id, session_id):
+    conn = get_db_connection()
+    rows = conn.execute(
+        "SELECT * FROM chat_history WHERE project_id = ? AND session_id = ? ORDER BY created_at ASC",
+        (project_id, session_id)
+    ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+def clear_chat_history(project_id, session_id):
+    conn = get_db_connection()
+    conn.execute("DELETE FROM chat_history WHERE project_id = ? AND session_id = ?", (project_id, session_id))
+    conn.commit()
+    conn.close()
+
+def save_summary(video_id, executive_summary, key_topics=None, important_quotes=None, timeline=None, action_items=None, main_ideas=None):
+    sid = str(uuid.uuid4())
+    conn = get_db_connection()
+    
+    # Check if exists
+    row = conn.execute("SELECT * FROM summaries WHERE video_id = ?", (video_id,)).fetchone()
+    if row:
+        conn.execute(
+            """UPDATE summaries SET 
+               executive_summary = ?, key_topics = ?, important_quotes = ?, timeline = ?, action_items = ?, main_ideas = ?
+               WHERE video_id = ?""",
+            (executive_summary, json.dumps(key_topics) if key_topics else None, json.dumps(important_quotes) if important_quotes else None,
+             json.dumps(timeline) if timeline else None, json.dumps(action_items) if action_items else None, json.dumps(main_ideas) if main_ideas else None, video_id)
+        )
+    else:
+        conn.execute(
+            """INSERT INTO summaries (id, video_id, executive_summary, key_topics, important_quotes, timeline, action_items, main_ideas)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+            (sid, video_id, executive_summary, json.dumps(key_topics) if key_topics else None, json.dumps(important_quotes) if important_quotes else None,
+             json.dumps(timeline) if timeline else None, json.dumps(action_items) if action_items else None, json.dumps(main_ideas) if main_ideas else None)
+        )
+    conn.commit()
+    conn.close()
+    return sid
+
+def get_summary(video_id):
+    conn = get_db_connection()
+    row = conn.execute("SELECT * FROM summaries WHERE video_id = ?", (video_id,)).fetchone()
+    conn.close()
+    if row:
+        res = dict(row)
+        res["key_topics"] = json.loads(res["key_topics"]) if res["key_topics"] else None
+        res["important_quotes"] = json.loads(res["important_quotes"]) if res["important_quotes"] else None
+        res["timeline"] = json.loads(res["timeline"]) if res["timeline"] else None
+        res["action_items"] = json.loads(res["action_items"]) if res["action_items"] else None
+        res["main_ideas"] = json.loads(res["main_ideas"]) if res["main_ideas"] else None
+        return res
+    return None
+
+def log_retrieval(project_id, query, retrieved_chunks, response=None):
+    rid = str(uuid.uuid4())
+    conn = get_db_connection()
+    conn.execute(
+        """INSERT INTO retrieval_logs (id, project_id, query, retrieved_chunks_json, generated_response, created_at)
+           VALUES (?, ?, ?, ?, ?, ?)""",
+        (rid, project_id, query, json.dumps(retrieved_chunks), response, datetime.utcnow().isoformat())
+    )
+    conn.commit()
+    conn.close()
+    return rid
+
+def get_retrieval_logs(project_id, limit=50):
+    conn = get_db_connection()
+    rows = conn.execute("SELECT * FROM retrieval_logs WHERE project_id = ? ORDER BY created_at DESC LIMIT ?", (project_id, limit)).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
 
 # Initialize DB on import
 init_db()

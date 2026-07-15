@@ -2,10 +2,18 @@ import os
 import asyncio
 import traceback
 import json
-from clipforge_engine.db import get_video, update_video_status, create_clip, get_db_connection
+from clipforge_engine.db import (
+    get_video, update_video_status, create_clip, get_db_connection,
+    create_transcript_chunk, save_embedding, create_topic, create_keyword,
+    add_graph_edge, save_summary
+)
 from clipforge_engine.services.video import get_video_metadata, detect_scenes, get_crop_coordinates
 from clipforge_engine.services.transcribe import extract_audio, transcribe_audio
 from clipforge_engine.services.ai import detect_viral_moments, generate_metadata, generate_hooks
+from clipforge_engine.rag import chunk_transcript, index_transcript_chunks
+from clipforge_engine.agents import (
+    run_summary_agent, run_topic_detector, run_entity_extractor, run_knowledge_graph_agent
+)
 
 async def run_processing_pipeline(video_id: str):
     """
@@ -110,6 +118,80 @@ async def run_processing_pipeline(video_id: str):
             
             # We can also generate metadata (description, hooks) async in background
             # but we can do it on-demand to speed up video processing!
+            
+        # RAG pipeline integration
+        try:
+            print("Running RAG Chunking and Indexing...")
+            # Convert transcript object to text
+            transcript_text = " ".join([seg.get("text", "") for seg in transcript])
+            
+            # 1. Generate semantic chunks
+            chunks = chunk_transcript(video_id, video["project_id"], transcript)
+            print(f"Generated {len(chunks)} semantic chunks.")
+            
+            # 2. Save chunks to SQLite and index in ChromaDB
+            for idx, chk in enumerate(chunks):
+                cid = create_transcript_chunk(
+                    video_id=video_id,
+                    project_id=video["project_id"],
+                    start_time=chk["start_time"],
+                    end_time=chk["end_time"],
+                    text=chk["text"],
+                    speaker=chk["speaker"],
+                    keywords=chk["keywords"]
+                )
+                chk["id"] = cid # Save the database ID
+            
+            # Index in ChromaDB
+            index_transcript_chunks(video_id, video["project_id"], chunks)
+            print("ChromaDB indexing complete.")
+            
+            # 3. Run AI Agents for intelligence processing
+            print("Running Summary Agent...")
+            summary_data = run_summary_agent(transcript_text)
+            save_summary(
+                video_id=video_id,
+                executive_summary=summary_data.get("executive_summary", ""),
+                key_topics=summary_data.get("key_topics"),
+                important_quotes=summary_data.get("important_quotes"),
+                timeline=summary_data.get("timeline"),
+                action_items=summary_data.get("action_items"),
+                main_ideas=summary_data.get("main_ideas")
+            )
+            
+            print("Running Topic Detector Agent...")
+            detected_topics = run_topic_detector(transcript)
+            for tp in detected_topics:
+                create_topic(
+                    video_id=video_id,
+                    name=tp.get("name", "Topic"),
+                    start_time=float(tp.get("start_time", 0.0)),
+                    end_time=float(tp.get("end_time", 1.0)),
+                    summary=tp.get("summary", "")
+                )
+                
+            print("Running Keyword Entity Extractor Agent...")
+            entities = run_entity_extractor(transcript_text)
+            if entities:
+                for cat, list_words in entities.items():
+                    if isinstance(list_words, list):
+                        for word in list_words:
+                            create_keyword(video_id, word, cat)
+                            
+            print("Running Knowledge Graph Builder Agent...")
+            relations = run_knowledge_graph_agent(transcript_text)
+            for rel in relations:
+                add_graph_edge(
+                    project_id=video["project_id"],
+                    source=rel.get("source", ""),
+                    target=rel.get("target", ""),
+                    relationship=rel.get("relationship", ""),
+                    weight=float(rel.get("weight", 1.0))
+                )
+                
+        except Exception as rag_err:
+            print(f"RAG processing pipeline encountered an issue (Ollama might be offline): {rag_err}")
+            traceback.print_exc()
             
         update_video_status(video_id, "completed")
         print(f"Pipeline completed successfully for video {video_id}.")
