@@ -53,8 +53,8 @@ init_db()
 
 # Streamlit Page Config
 st.set_page_config(
-    page_title="ClipForge AI – AI-Powered Content Repurposing Platform",
-    page_icon="⚡",
+    page_title="ClipForge AI – Google Gemini Inspired repurposed platform",
+    page_icon="✨",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -72,155 +72,156 @@ def test_ollama_connection(url):
         return False, str(e)
     return False, "Failed to connect"
 
-# Custom Clean SaaS Theme (Single Font family, clear contrast, dark glass aesthetics)
+# Custom Google Gemini Theme (Light Theme, high contrast, clean spacing)
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
     
-    /* Main App overrides */
+    /* Main App Background & Text */
     .stApp {
-        background-color: #0d0f14;
-        background-image: radial-gradient(circle at 50% 0%, #171d2b 0%, #0d0f14 100%);
-        color: #e2e8f0;
+        background-color: #f9fafc;
+        background-image: radial-gradient(circle at 50% 30%, #eef4ff 0%, #f9fafc 100%);
+        color: #1f1f1f;
         font-family: 'Inter', sans-serif !important;
     }
     
     /* Headings font overrides */
     h1, h2, h3, h4, h5, h6, .header-glow, .sidebar-title {
         font-family: 'Inter', sans-serif !important;
-        font-weight: 700 !important;
-        letter-spacing: -0.02em !important;
-        color: #ffffff !important;
+        font-weight: 600 !important;
+        letter-spacing: -0.015em !important;
+        color: #1f1f1f !important;
     }
     
-    /* Top Header transparency */
-    header[data-testid="stHeader"] {
-        background-color: transparent !important;
-        background-image: none !important;
-    }
-    div[data-testid="stDecoration"] {
-        background-image: linear-gradient(90deg, #7b2cbf, #00f0ff) !important;
-        height: 4px !important;
-    }
-    
-    /* Input Labels */
+    /* Input Labels color */
     .stApp label,
     .stApp label[data-testid="stWidgetLabel"] p,
     .stApp div[data-testid="stWidgetLabel"] p {
-        color: #f1f5f9 !important;
-        font-weight: 600 !important;
+        color: #3c4043 !important;
+        font-weight: 500 !important;
         font-family: 'Inter', sans-serif !important;
     }
     
-    /* Global Cards styling (Applies to static HTML cards & native container borders) */
+    /* Global Cards styling (White cards with drop shadow) */
     .glass-card,
     div[data-testid="stVerticalBlockBorderDiv"] {
-        background: rgba(20, 26, 38, 0.75) !important;
-        backdrop-filter: blur(20px) !important;
-        border: 1px solid rgba(255, 255, 255, 0.08) !important;
-        border-radius: 14px !important;
+        background: #ffffff !important;
+        border: 1px solid #e3e8f0 !important;
+        border-radius: 16px !important;
         padding: 1.5rem !important;
-        box-shadow: 0 12px 36px rgba(0, 0, 0, 0.45) !important;
+        box-shadow: 0 4px 18px rgba(0, 0, 0, 0.04) !important;
         margin-bottom: 1.25rem !important;
-        transition: all 0.25s ease !important;
+        transition: all 0.2s ease !important;
+        color: #1f1f1f !important;
     }
     .glass-card:hover,
     div[data-testid="stVerticalBlockBorderDiv"]:hover {
-        border-color: rgba(6, 182, 212, 0.3) !important;
-        transform: translateY(-2px) !important;
+        border-color: #b5d1ff !important;
+        box-shadow: 0 6px 24px rgba(0, 0, 0, 0.07) !important;
     }
     
     /* Metrics numbers */
     .metric-value {
         font-size: 2.2rem;
-        font-weight: 800 !important;
-        color: #ffffff;
-        letter-spacing: -0.03em;
+        font-weight: 700 !important;
+        color: #1f1f1f;
+        letter-spacing: -0.02em;
         font-family: 'Inter', sans-serif !important;
     }
     .metric-label {
         font-size: 0.75rem;
         text-transform: uppercase;
-        letter-spacing: 0.15em;
-        color: #94a3b8;
-        font-weight: 700;
+        letter-spacing: 0.08em;
+        color: #5f6368;
+        font-weight: 600;
         margin-bottom: 0.25rem;
         font-family: 'Inter', sans-serif !important;
     }
     
-    /* Dark inputs styling */
+    /* Text Inputs matching Gemini floating box */
     div[data-testid="stTextInput"] input, 
     div[data-testid="stTextArea"] textarea,
     div[data-testid="stNumberInput"] input,
     div[data-testid="stSelectbox"] > div {
-        background-color: #121824 !important;
-        color: #ffffff !important;
-        border: 1px solid rgba(255, 255, 255, 0.12) !important;
-        border-radius: 8px !important;
+        background-color: #ffffff !important;
+        color: #1f1f1f !important;
+        border: 1px solid #dadce0 !important;
+        border-radius: 20px !important;
+        padding-left: 14px !important;
     }
     div[data-testid="stTextInput"] input:focus, 
     div[data-testid="stTextArea"] textarea:focus,
     div[data-testid="stNumberInput"] input:focus,
     div[data-testid="stSelectbox"] > div:focus-within {
-        border-color: #00f0ff !important;
-        box-shadow: 0 0 12px rgba(0, 240, 255, 0.3) !important;
+        border-color: #1a73e8 !important;
+        box-shadow: 0 0 8px rgba(26, 115, 232, 0.2) !important;
     }
     
-    /* Action buttons overrides */
+    /* Pill buttons overrides */
     button, div[data-testid="stFormSubmitButton"] button {
-        background: linear-gradient(135deg, #7b2cbf 0%, #00f0ff 100%) !important;
-        background-image: linear-gradient(135deg, #7b2cbf 0%, #00f0ff 100%) !important;
-        color: #ffffff !important;
-        border: 1px solid rgba(255, 255, 255, 0.15) !important;
-        border-radius: 8px !important;
-        padding: 8px 18px !important;
-        font-weight: 700 !important;
-        box-shadow: 0 4px 15px rgba(123, 44, 191, 0.2) !important;
+        background: #ffffff !important;
+        background-image: none !important;
+        color: #1f1f1f !important;
+        border: 1px solid #dadce0 !important;
+        border-radius: 24px !important;
+        padding: 8px 20px !important;
+        font-weight: 600 !important;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
         transition: all 0.2s ease !important;
     }
     button:hover, div[data-testid="stFormSubmitButton"] button:hover {
-        background: linear-gradient(135deg, #9d4edd 0%, #22d3ee 100%) !important;
-        background-image: linear-gradient(135deg, #9d4edd 0%, #22d3ee 100%) !important;
-        border-color: rgba(255, 255, 255, 0.35) !important;
-        box-shadow: 0 0 18px rgba(0, 240, 255, 0.5) !important;
-        transform: translateY(-1px) !important;
-        color: #ffffff !important;
+        background: #f8f9fa !important;
+        border-color: #1a73e8 !important;
+        color: #1a73e8 !important;
+        box-shadow: 0 4px 12px rgba(26, 115, 232, 0.1) !important;
     }
     button * {
-        color: #ffffff !important;
+        color: #1f1f1f !important;
+    }
+    button:hover * {
+        color: #1a73e8 !important;
     }
     
-    /* Sidebar container styling overrides */
+    /* Sidebar matching Gemini sidebar styling */
     section[data-testid="stSidebar"] {
-        background-color: #08090d !important;
-        background-image: radial-gradient(circle at 50% 0%, #121622 0%, #08090d 100%) !important;
-        border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
+        background-color: #f0f4f9 !important;
+        background-image: none !important;
+        border-right: 1px solid #e3e8f0 !important;
     }
     section[data-testid="stSidebar"] button {
-        background: rgba(255, 255, 255, 0.03) !important;
-        background-image: none !important;
-        color: #cbd5e1 !important;
-        border: 1px solid rgba(255, 255, 255, 0.06) !important;
-        border-radius: 8px !important;
-        text-align: left !important;
-        padding: 10px 14px !important;
-        font-weight: 600 !important;
+        background: transparent !important;
+        border: none !important;
+        color: #1f1f1f !important;
+        padding: 12px 16px !important;
+        font-weight: 500 !important;
+        border-radius: 24px !important;
     }
     section[data-testid="stSidebar"] button:hover {
-        background: rgba(6, 182, 212, 0.12) !important;
-        color: #22d3ee !important;
-        border-color: rgba(6, 182, 212, 0.35) !important;
+        background: #e2e7ec !important;
+        color: #1f1f1f !important;
     }
     section[data-testid="stSidebar"] button * {
-        color: #cbd5e1 !important;
+        color: #1f1f1f !important;
     }
-    section[data-testid="stSidebar"] button:hover * {
-        color: #22d3ee !important;
+    
+    /* Chat bubbles text color fixes */
+    div[data-testid="stChatMessage"] {
+        background-color: #ffffff !important;
+        border: 1px solid #e3e8f0 !important;
+        border-radius: 12px !important;
+        color: #1f1f1f !important;
+        margin-bottom: 10px !important;
     }
-    section[data-testid="stSidebar"] div[data-testid="stSelectbox"] > div {
-        background-color: rgba(255, 255, 255, 0.02) !important;
-        color: #ffffff !important;
-        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    div[data-testid="stChatMessage"] p,
+    div[data-testid="stChatMessage"] span,
+    div[data-testid="stChatMessage"] li,
+    div[data-testid="stChatMessage"] strong {
+        color: #1f1f1f !important;
+    }
+    
+    /* Chat message user bubble tint */
+    div[data-testid="stChatMessage"][data-testid*="user"] {
+        background-color: #f0f4f9 !important;
     }
     
     /* Status Badges */
@@ -232,15 +233,15 @@ st.markdown("""
         text-transform: uppercase;
         display: inline-block;
     }
-    .badge-success { background: rgba(34, 211, 238, 0.12); color: #22d3ee; border: 1px solid rgba(34, 211, 238, 0.25); }
-    .badge-warning { background: rgba(245, 158, 11, 0.12); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.25); }
-    .badge-danger { background: rgba(239, 68, 68, 0.12); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.25); }
+    .badge-success { background: #e6f4ea; color: #137333; border: 1px solid #ceead6; }
+    .badge-warning { background: #fef7e0; color: #b06000; border: 1px solid #feebc8; }
+    .badge-danger { background: #fce8e6; color: #c5221f; border: 1px solid #fad2cf; }
     
     .avatar-circle {
         width: 44px;
         height: 44px;
         border-radius: 50%;
-        border: 2px solid rgba(6, 182, 212, 0.35);
+        border: 2px solid #1a73e8;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -334,10 +335,10 @@ if not projects:
 with st.sidebar:
     st.markdown("""
     <div style='display: flex; align-items: center; gap: 10px; margin-bottom: 25px;'>
-        <div style='width: 38px; height: 38px; border-radius: 12px; background: linear-gradient(135deg, #7b2cbf 0%, #00f0ff 100%); display: flex; align-items: center; justify-content: center; font-weight: 900; color: white; box-shadow: 0 0 15px rgba(0,240,255,0.3);'>⚡</div>
+        <div style='width: 38px; height: 38px; border-radius: 12px; background: linear-gradient(135deg, #1a73e8 0%, #d93025 100%); display: flex; align-items: center; justify-content: center; font-weight: 900; color: white; box-shadow: 0 2px 10px rgba(0,0,0,0.15);'>✨</div>
         <div>
-            <h2 style='margin: 0; font-size: 1.2rem; font-weight: 900; color: white;'>ClipForge AI</h2>
-            <span style='font-size: 0.58rem; color: #00f0ff; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em;'>Content Repurposing Platform</span>
+            <h2 style='margin: 0; font-size: 1.25rem; font-weight: 700; color: #1f1f1f;'>ClipForge AI</h2>
+            <span style='font-size: 0.58rem; color: #1a73e8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;'>Gemini Intelligence Platform</span>
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -346,7 +347,7 @@ with st.sidebar:
     selected_project_name = st.selectbox("Active Workspace", project_names)
     active_project = next(p for p in projects if p["name"] == selected_project_name)
     
-    st.markdown("<hr style='border-color: rgba(255, 255, 255, 0.05); margin: 15px 0;'>", unsafe_allow_html=True)
+    st.markdown("<hr style='border-color: #dee2e6; margin: 15px 0;'>", unsafe_allow_html=True)
 
     # 5 simplified tabs
     tabs = [
@@ -364,7 +365,7 @@ with st.sidebar:
             st.session_state.active_tab = tab
             st.rerun()
             
-    st.markdown("<hr style='border-color: rgba(255, 255, 255, 0.05); margin: 15px 0;'>", unsafe_allow_html=True)
+    st.markdown("<hr style='border-color: #dee2e6; margin: 15px 0;'>", unsafe_allow_html=True)
 
 # Fetch database metrics for active Workspace
 conn = get_db_connection()
@@ -390,21 +391,21 @@ tab_name = st.session_state.active_tab
 
 # Header branding banner
 st.markdown("<h1 class='header-glow' style='margin: 0;'>ClipForge AI</h1>", unsafe_allow_html=True)
-st.markdown("<div class='header-subtitle' style='margin-bottom: 20px;'>Local RAG Content Intelligence Platform</div>", unsafe_allow_html=True)
+st.markdown("<div class='header-subtitle' style='margin-bottom: 20px;'>Google Gemini Inspired repurposing platform</div>", unsafe_allow_html=True)
 
 # Real-time Connection status checker banner at the top of the app
 is_ollama_online, connected_models = test_ollama_connection(st.session_state.ollama_url)
 if is_ollama_online:
     st.markdown(
         f"<div class='status-badge badge-success' style='margin-bottom:20px; font-size:0.75rem; width:100%; text-align:center;'>"
-        f"✓ Ollama Server Online & Connected | Target: {st.session_state.ollama_url} | Available Models: {', '.join(connected_models)}"
+        f"✓ Ollama Server Connected | Endpoint: {st.session_state.ollama_url} | Models: {', '.join(connected_models)}"
         f"</div>",
         unsafe_allow_html=True
     )
 else:
     st.markdown(
         f"<div class='status-badge badge-danger' style='margin-bottom:20px; font-size:0.75rem; width:100%; text-align:center;'>"
-        f"⚠ Cannot connect to local Ollama at {st.session_state.ollama_url} | Expose port 11434 via ngrok or check your Settings tab."
+        f"⚠ Connection offline to {st.session_state.ollama_url} | Run ngrok http 11434 --host-header='localhost:11434'"
         f"</div>",
         unsafe_allow_html=True
     )
@@ -419,7 +420,7 @@ if tab_name == "Dashboard":
         st.markdown(f"""
         <div class='glass-card'>
             <div class='metric-label'>Destination Channel</div>
-            <div class='metric-value' style='font-size:1.3rem; color:{'#22d3ee' if channel_connected else '#f87171'};'>
+            <div class='metric-value' style='font-size:1.3rem; color:{'#137333' if channel_connected else '#c5221f'};'>
                 {chan_row['name'] if channel_connected else 'Not Linked'}
             </div>
             <div class='metric-label' style='margin-top:5px; font-size:0.65rem;'>
@@ -497,7 +498,7 @@ if tab_name == "Dashboard":
                     st.caption(log["details"])
                 with col_l3:
                     st.caption(log["created_at"])
-                st.markdown("<hr style='border-color:rgba(255,255,255,0.03); margin:6px 0;'>", unsafe_allow_html=True)
+                st.markdown("<hr style='border-color:#dee2e6; margin:6px 0;'>", unsafe_allow_html=True)
 
 # 2. VIDEO LIBRARY & IMPORT
 elif tab_name == "Video Library & Import":
@@ -576,7 +577,7 @@ elif tab_name == "Video Library & Import":
                         if st.button("Delete", key=f"del_sc_{sc['id']}"):
                             delete_source_channel(sc["id"])
                             st.rerun()
-                    st.markdown("<hr style='border-color:rgba(255,255,255,0.03); margin:8px 0;'>", unsafe_allow_html=True)
+                    st.markdown("<hr style='border-color:#dee2e6; margin:8px 0;'>", unsafe_allow_html=True)
         
     with col_v2:
         with st.container(border=True):
@@ -600,7 +601,7 @@ elif tab_name == "Video Library & Import":
                                 st.rerun()
                         else:
                             st.caption("✓ Clips Generated")
-                    st.markdown("<hr style='border-color:rgba(255,255,255,0.03); margin:8px 0;'>", unsafe_allow_html=True)
+                    st.markdown("<hr style='border-color:#dee2e6; margin:8px 0;'>", unsafe_allow_html=True)
 
 # 3. GENERATED CLIPS
 elif tab_name == "Generated Clips":
@@ -648,7 +649,7 @@ elif tab_name == "Generated Clips":
                                 conn.close()
                                 st.success("Clip approved and added to smart posting queue!")
                                 st.rerun()
-                        st.markdown("<hr style='border-color:rgba(255,255,255,0.03); margin:12px 0;'>", unsafe_allow_html=True)
+                        st.markdown("<hr style='border-color:#dee2e6; margin:12px 0;'>", unsafe_allow_html=True)
             
         with col_ed2:
             with st.container(border=True):
@@ -770,7 +771,7 @@ elif tab_name == "AI Knowledge Chat":
                         with col_h2:
                             if st.button("Preview Scene", key=f"preview_h_{hit['id']}"):
                                 st.info(f"Seeking video to segment timestamp: {timestamp_str}")
-                        st.markdown("<hr style='border-color:rgba(255,255,255,0.03); margin:8px 0;'>", unsafe_allow_html=True)
+                        st.markdown("<hr style='border-color:#dee2e6; margin:8px 0;'>", unsafe_allow_html=True)
             
         with col_chat2:
             # 3. Video Executive Summary
@@ -803,15 +804,15 @@ elif tab_name == "AI Knowledge Chat":
                     for idx, node in enumerate(unique_entities[:10]):
                         angle = (idx * 2 * math.pi) / min(len(unique_entities), 10)
                         coords[node] = (150 + radius * math.cos(angle), 150 + radius * math.sin(angle))
-                        svg_nodes.append(f"<circle cx='{coords[node][0]:.1f}' cy='{coords[node][1]:.1f}' r='10' fill='#00f0ff' stroke='#fff' stroke-width='1.5'/><text x='{coords[node][0]+12:.1f}' y='{coords[node][1]+4:.1f}' fill='#fff' font-size='10' font-family='Inter'>{node}</text>")
+                        svg_nodes.append(f"<circle cx='{coords[node][0]:.1f}' cy='{coords[node][1]:.1f}' r='10' fill='#1a73e8' stroke='#fff' stroke-width='1.5'/><text x='{coords[node][0]+12:.1f}' y='{coords[node][1]+4:.1f}' fill='#1f1f1f' font-size='10' font-family='Inter'>{node}</text>")
                         
                     for idx, edge in enumerate(graph[:15]):
                         src, trg = edge["source"], edge["target"]
                         if src in coords and trg in coords:
-                            svg_links.append(f"<line x1='{coords[src][0]:.1f}' y1='{coords[src][1]:.1f}' x2='{coords[trg][0]:.1f}' y2='{coords[trg][1]:.1f}' stroke='#7b2cbf' stroke-width='2' stroke-opacity='0.6'/>")
+                            svg_links.append(f"<line x1='{coords[src][0]:.1f}' y1='{coords[src][1]:.1f}' x2='{coords[trg][0]:.1f}' y2='{coords[trg][1]:.1f}' stroke='#b5d1ff' stroke-width='2' stroke-opacity='0.6'/>")
                             
                     svg_content = f"""
-                    <svg width='100%' height='300px' viewBox='0 0 350 300' style='background:#121724; border-radius:8px;'>
+                    <svg width='100%' height='300px' viewBox='0 0 350 300' style='background:#ffffff; border:1px solid #e3e8f0; border-radius:8px;'>
                         {' '.join(svg_links)}
                         {' '.join(svg_nodes)}
                     </svg>
