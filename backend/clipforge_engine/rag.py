@@ -31,9 +31,11 @@ def get_ollama_embedding(text, model="nomic-embed-text", base_url="http://localh
     if not text:
         return [0.0] * 768
 
+    headers = {"ngrok-skip-browser-warning": "1"}
+
     # Try legacy embeddings first
     try:
-        resp = requests.post(f"{base_url}/api/embeddings", json={"model": model, "prompt": text}, timeout=15)
+        resp = requests.post(f"{base_url}/api/embeddings", json={"model": model, "prompt": text}, headers=headers, timeout=15)
         if resp.status_code == 200:
             data = resp.json()
             if "embedding" in data:
@@ -43,7 +45,7 @@ def get_ollama_embedding(text, model="nomic-embed-text", base_url="http://localh
 
     # Try standard embed endpoint
     try:
-        resp = requests.post(f"{base_url}/api/embed", json={"model": model, "input": [text]}, timeout=15)
+        resp = requests.post(f"{base_url}/api/embed", json={"model": model, "input": [text]}, headers=headers, timeout=15)
         if resp.status_code == 200:
             data = resp.json()
             if "embeddings" in data and data["embeddings"]:
@@ -230,7 +232,8 @@ def generate_grounded_answer(project_id, query, retrieved_chunks, model="llama3.
     }
 
     try:
-        resp = requests.post(f"{base_url}/api/chat", json=payload, timeout=45)
+        headers = {"ngrok-skip-browser-warning": "1"}
+        resp = requests.post(f"{base_url}/api/chat", json=payload, headers=headers, timeout=45)
         if resp.status_code == 200:
             return resp.json()["message"]["content"]
     except Exception as e:

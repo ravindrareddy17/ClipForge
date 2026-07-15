@@ -4,7 +4,13 @@ import re
 import requests
 from datetime import datetime
 
-OLLAMA_BASE_URL = "http://localhost:11434"
+def get_ollama_base_url():
+    try:
+        from clipforge_engine.db import get_settings
+        settings = get_settings()
+        return settings.get("ollama_url", "http://localhost:11434")
+    except Exception:
+        return "http://localhost:11434"
 
 def call_ollama_completion(prompt, system_instruction=None, model="qwen2.5:3b"):
     """
@@ -19,7 +25,9 @@ def call_ollama_completion(prompt, system_instruction=None, model="qwen2.5:3b"):
         payload["system"] = system_instruction
         
     try:
-        resp = requests.post(f"{OLLAMA_BASE_URL}/api/generate", json=payload, timeout=40)
+        base_url = get_ollama_base_url()
+        headers = {"ngrok-skip-browser-warning": "1"}
+        resp = requests.post(f"{base_url}/api/generate", json=payload, headers=headers, timeout=40)
         if resp.status_code == 200:
             return resp.json().get("response", "").strip()
     except Exception as e:
@@ -40,7 +48,9 @@ def call_ollama_json(prompt, system_instruction=None, model="qwen2.5:3b"):
         payload["system"] = system_instruction
         
     try:
-        resp = requests.post(f"{OLLAMA_BASE_URL}/api/generate", json=payload, timeout=40)
+        base_url = get_ollama_base_url()
+        headers = {"ngrok-skip-browser-warning": "1"}
+        resp = requests.post(f"{base_url}/api/generate", json=payload, headers=headers, timeout=40)
         if resp.status_code == 200:
             raw = resp.json().get("response", "").strip()
             # Clean markdown JSON wrapping if present

@@ -235,11 +235,18 @@ if 'show_oauth_modal' not in st.session_state:
     st.session_state.show_oauth_modal = False
 if 'chat_session_id' not in st.session_state:
     st.session_state.chat_session_id = str(uuid.uuid4())
-# Try loading Ollama settings from Streamlit Secrets
-default_ollama_url = "http://localhost:11434"
-default_ollama_model = "qwen2.5:3b"
-default_embedding_model = "nomic-embed-text"
+# Try loading Ollama settings from DB first
+db_settings = {}
+try:
+    db_settings = get_settings()
+except Exception:
+    pass
 
+default_ollama_url = db_settings.get("ollama_url", "http://localhost:11434")
+default_ollama_model = db_settings.get("ollama_model", "qwen2.5:3b")
+default_embedding_model = db_settings.get("embedding_model", "nomic-embed-text")
+
+# Override with Streamlit Secrets if available
 try:
     if "OLLAMA_URL" in st.secrets:
         default_ollama_url = st.secrets["OLLAMA_URL"]
@@ -1088,6 +1095,9 @@ elif tab_name == "Settings":
     st.session_state.embedding_model = st.text_input("Ollama Embedding model:", value=st.session_state.embedding_model)
     
     if st.button("Save RAG configurations"):
+        update_setting("ollama_url", st.session_state.ollama_url)
+        update_setting("ollama_model", st.session_state.ollama_model)
+        update_setting("embedding_model", st.session_state.embedding_model)
         st.success("RAG options successfully configured locally.")
     st.markdown("</div>", unsafe_allow_html=True)
 
