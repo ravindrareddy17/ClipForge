@@ -28,7 +28,7 @@ init_db()
 
 # Streamlit Page Config
 st.set_page_config(
-    page_title="ClipForge AI - Automated Shorts Platform",
+    page_title="ClipForge AI – AI-Powered Content Repurposing Platform",
     page_icon="⚡",
     layout="wide",
     initial_sidebar_state="expanded"
