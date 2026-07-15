@@ -295,6 +295,70 @@ def init_db():
     )
     """)
 
+    # 9. channel_monitors table
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS channel_monitors (
+        id TEXT PRIMARY KEY,
+        project_id TEXT NOT NULL,
+        channel_id TEXT NOT NULL,
+        sync_interval TEXT NOT NULL,
+        auto_sync INTEGER DEFAULT 1,
+        last_check TEXT,
+        created_at TEXT NOT NULL,
+        FOREIGN KEY (project_id) REFERENCES projects(id)
+    )
+    """)
+
+    # 10. destination_channels table
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS destination_channels (
+        id TEXT PRIMARY KEY,
+        project_id TEXT NOT NULL,
+        platform TEXT NOT NULL,
+        name TEXT NOT NULL,
+        caption_template TEXT,
+        hashtags TEXT,
+        schedule_time TEXT,
+        created_at TEXT NOT NULL,
+        FOREIGN KEY (project_id) REFERENCES projects(id)
+    )
+    """)
+
+    # 11. clip_edits table
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS clip_edits (
+        id TEXT PRIMARY KEY,
+        clip_id TEXT NOT NULL,
+        trim_start REAL,
+        trim_end REAL,
+        crop_x INTEGER,
+        crop_y INTEGER,
+        crop_w INTEGER,
+        crop_h INTEGER,
+        face_tracking INTEGER DEFAULT 1,
+        font_family TEXT,
+        font_color TEXT,
+        font_size INTEGER,
+        bg_music_volume REAL DEFAULT 0.5,
+        created_at TEXT NOT NULL,
+        FOREIGN KEY (clip_id) REFERENCES clips(id)
+    )
+    """)
+
+    # 12. pipeline_stages table
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS pipeline_stages (
+        id TEXT PRIMARY KEY,
+        video_id TEXT NOT NULL,
+        stage_name TEXT NOT NULL,
+        status TEXT NOT NULL,
+        elapsed_time REAL DEFAULT 0.0,
+        log_text TEXT,
+        updated_at TEXT NOT NULL,
+        FOREIGN KEY (video_id) REFERENCES videos(id)
+    )
+    """)
+
     conn.commit()
     conn.close()
 
@@ -774,6 +838,90 @@ def get_retrieval_logs(project_id, limit=50):
     rows = conn.execute("SELECT * FROM retrieval_logs WHERE project_id = ? ORDER BY created_at DESC LIMIT ?", (project_id, limit)).fetchall()
     conn.close()
     return [dict(r) for r in rows]
+
+def get_channel_monitors(project_id):
+    conn = get_db_connection()
+    rows = conn.execute("SELECT * FROM channel_monitors WHERE project_id = ?", (project_id,)).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+def create_channel_monitor(project_id, channel_id, sync_interval, auto_sync=1):
+    mid = str(uuid.uuid4())
+    conn = get_db_connection()
+    conn.execute(
+        "INSERT INTO channel_monitors (id, project_id, channel_id, sync_interval, auto_sync, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+        (mid, project_id, channel_id, sync_interval, auto_sync, datetime.utcnow().isoformat())
+    )
+    conn.commit()
+    conn.close()
+    return mid
+
+def get_destination_channels(project_id):
+    conn = get_db_connection()
+    rows = conn.execute("SELECT * FROM destination_channels WHERE project_id = ?", (project_id,)).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+def create_destination_channel(project_id, platform, name, caption_template=None, hashtags=None, schedule_time=None):
+    did = str(uuid.uuid4())
+    conn = get_db_connection()
+    conn.execute(
+        "INSERT INTO destination_channels (id, project_id, platform, name, caption_template, hashtags, schedule_time, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        (did, project_id, platform, name, caption_template, hashtags, schedule_time, datetime.utcnow().isoformat())
+    )
+    conn.commit()
+    conn.close()
+    return did
+
+def get_clip_edit(clip_id):
+    conn = get_db_connection()
+    row = conn.execute("SELECT * FROM clip_edits WHERE clip_id = ?", (clip_id,)).fetchone()
+    conn.close()
+    return dict(row) if row else None
+
+def save_clip_edit(clip_id, trim_start, trim_end, crop_x, crop_y, crop_w, crop_h, face_tracking=1, font_family="Montserrat", font_color="#FFFFFF", font_size=24, bg_music_volume=0.5):
+    eid = str(uuid.uuid4())
+    conn = get_db_connection()
+    row = conn.execute("SELECT * FROM clip_edits WHERE clip_id = ?", (clip_id,)).fetchone()
+    if row:
+        conn.execute(
+            """UPDATE clip_edits SET trim_start = ?, trim_end = ?, crop_x = ?, crop_y = ?, crop_w = ?, crop_h = ?,
+               face_tracking = ?, font_family = ?, font_color = ?, font_size = ?, bg_music_volume = ?
+               WHERE clip_id = ?""",
+            (trim_start, trim_end, crop_x, crop_y, crop_w, crop_h, face_tracking, font_family, font_color, font_size, bg_music_volume, clip_id)
+        )
+    else:
+        conn.execute(
+            """INSERT INTO clip_edits (id, clip_id, trim_start, trim_end, crop_x, crop_y, crop_w, crop_h, face_tracking, font_family, font_color, font_size, bg_music_volume, created_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (eid, clip_id, trim_start, trim_end, crop_x, crop_y, crop_w, crop_h, face_tracking, font_family, font_color, font_size, bg_music_volume, datetime.utcnow().isoformat())
+        )
+    conn.commit()
+    conn.close()
+    return eid
+
+def get_pipeline_stages(video_id):
+    conn = get_db_connection()
+    rows = conn.execute("SELECT * FROM pipeline_stages WHERE video_id = ?", (video_id,)).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+def update_pipeline_stage(video_id, stage_name, status, elapsed_time=0.0, log_text=None):
+    sid = str(uuid.uuid4())
+    conn = get_db_connection()
+    row = conn.execute("SELECT * FROM pipeline_stages WHERE video_id = ? AND stage_name = ?", (video_id, stage_name)).fetchone()
+    if row:
+        conn.execute(
+            "UPDATE pipeline_stages SET status = ?, elapsed_time = ?, log_text = ?, updated_at = ? WHERE id = ?",
+            (status, elapsed_time, log_text, datetime.utcnow().isoformat(), row["id"])
+        )
+    else:
+        conn.execute(
+            "INSERT INTO pipeline_stages (id, video_id, stage_name, status, elapsed_time, log_text, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (sid, video_id, stage_name, status, elapsed_time, log_text, datetime.utcnow().isoformat())
+        )
+    conn.commit()
+    conn.close()
 
 # Initialize DB on import
 init_db()
