@@ -1,0 +1,25 @@
+# Virtual environment
+.venv/
+env/
+venv/
+ENV/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Streamlit config & logs
+.streamlit/
+*.log
+
+# Database files
+backend/data/clipforge.db
+backend/data/*.db
+backend/data/*.sqlite
+
+# Editor files
+.vscode/
+.idea/
+.DS_Store

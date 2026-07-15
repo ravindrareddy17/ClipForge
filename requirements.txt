@@ -1,0 +1,12 @@
+streamlit
+fastapi
+uvicorn[standard]
+python-multipart
+pydantic
+opencv-python-headless
+numpy
+requests
+httpx
+numba>=0.60.0
+llvmlite>=0.48.0
+openai-whisper
