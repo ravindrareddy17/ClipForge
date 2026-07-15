@@ -652,6 +652,17 @@ elif tab_name == "Generated Clips":
             
         with col_ed2:
             with st.container(border=True):
+                st.write("### Clip Video Preview")
+                if video_clips:
+                    clip_titles = [c["title"] for c in video_clips]
+                    selected_clip_title = st.selectbox("Select Clip to Preview:", clip_titles)
+                    selected_clip = next(c for c in video_clips if c["title"] == selected_clip_title)
+                    st.caption(f"Previewing segment: {selected_clip['start_time']}s to {selected_clip['end_time']}s")
+                    st.video(selected_vid_path, start_time=int(selected_clip["start_time"]))
+                else:
+                    st.info("No clips available to preview.")
+                    
+            with st.container(border=True):
                 st.write("### Enhancement Profile Presets")
                 preset = st.selectbox("Style Profile Template:", ["MrBeast style", "IShowSpeed style", "Minimal Cinematic"])
                 
@@ -684,14 +695,11 @@ elif tab_name == "AI Knowledge Chat":
             with st.container(border=True):
                 st.write("### Grounded Chat Interface")
                 
-                # Load session history
+                # Load session history using Streamlit's premium chat UI/UX bubbles
                 history = get_chat_history(active_project["id"], st.session_state.chat_session_id)
                 for msg in history:
-                    if msg["role"] == "user":
-                        st.markdown(f"**User**: {msg['message']}")
-                    else:
-                        st.markdown(f"**Assistant**: {msg['message']}")
-                    st.markdown("<hr style='border-color:rgba(255,255,255,0.02); margin:8px 0;'>", unsafe_allow_html=True)
+                    with st.chat_message(msg["role"]):
+                        st.write(msg["message"])
                     
                 with st.form("chat_form", clear_on_submit=True):
                     user_msg = st.text_input("Ask anything about the transcripts:")
@@ -699,27 +707,34 @@ elif tab_name == "AI Knowledge Chat":
                     if submit_chat and user_msg:
                         add_chat_message(active_project["id"], st.session_state.chat_session_id, "user", user_msg)
                         
-                        # Query ChromaDB collection
-                        retrieved = query_similar_chunks(
-                            project_id=active_project["id"],
-                            query_text=user_msg,
-                            k=4,
-                            video_ids=[selected_vid_id],
-                            model=st.session_state.embedding_model,
-                            base_url=st.session_state.ollama_url
-                        )
-                        
-                        # Answer generation
-                        answer = generate_grounded_answer(
-                            project_id=active_project["id"],
-                            query=user_msg,
-                            retrieved_chunks=retrieved,
-                            model=st.session_state.ollama_model,
-                            base_url=st.session_state.ollama_url
-                        )
+                        try:
+                            # Query ChromaDB collection
+                            retrieved = query_similar_chunks(
+                                project_id=active_project["id"],
+                                query_text=user_msg,
+                                k=4,
+                                video_ids=[selected_vid_id],
+                                model=st.session_state.embedding_model,
+                                base_url=st.session_state.ollama_url
+                            )
+                            
+                            # Answer generation
+                            answer = generate_grounded_answer(
+                                project_id=active_project["id"],
+                                query=user_msg,
+                                retrieved_chunks=retrieved,
+                                model=st.session_state.ollama_model,
+                                base_url=st.session_state.ollama_url
+                            )
+                        except Exception as err:
+                            answer = f"Error processing query: {str(err)}. Please verify your Ollama endpoint URL."
+                            retrieved = []
                         
                         add_chat_message(active_project["id"], st.session_state.chat_session_id, "assistant", answer)
-                        log_retrieval(active_project["id"], user_msg, retrieved, answer)
+                        try:
+                            log_retrieval(active_project["id"], user_msg, retrieved, answer)
+                        except Exception:
+                            pass
                         st.rerun()
                         
                 if st.button("Clear Chat History"):
