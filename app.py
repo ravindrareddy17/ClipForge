@@ -79,8 +79,8 @@ st.markdown("""
     
     /* Main App Background & Text */
     .stApp {
-        background-color: #f9fafc;
-        background-image: radial-gradient(circle at 50% 30%, #eef4ff 0%, #f9fafc 100%);
+        background-color: #ffffff;
+        background-image: radial-gradient(circle at 50% 30%, #f3f7fd 0%, #ffffff 100%);
         color: #1f1f1f;
         font-family: 'Inter', sans-serif !important;
     }
@@ -285,6 +285,23 @@ if 'active_video_preview' not in st.session_state:
 if 'preview_start_time' not in st.session_state:
     st.session_state.preview_start_time = 0.0
 
+def get_chat_sessions(project_id):
+    try:
+        conn = get_db_connection()
+        rows = conn.execute(
+            """
+            SELECT session_id, message, MIN(created_at) as created_at
+            FROM chat_history
+            WHERE project_id = ? AND role = 'user'
+            GROUP BY session_id
+            ORDER BY created_at DESC
+            """, (project_id,)
+        ).fetchall()
+        conn.close()
+        return [dict(r) for r in rows]
+    except Exception:
+        return []
+
 # Google OAuth Connection Dialog
 @st.dialog("Google Account Chooser (OAuth 2.0)")
 def open_oauth_dialog(project_id):
@@ -365,6 +382,28 @@ with st.sidebar:
             st.session_state.active_tab = tab
             st.rerun()
             
+    # Recent Chats list in sidebar (Gemini style)
+    if st.session_state.active_tab == "AI Knowledge Chat":
+        st.markdown("<hr style='border-color: #dee2e6; margin: 15px 0;'>", unsafe_allow_html=True)
+        st.markdown("<h4 style='font-size:0.82rem; color:#5f6368; font-weight:600; margin-bottom:10px;'>Recent Chats</h4>", unsafe_allow_html=True)
+        
+        # New Chat button
+        if st.button("+ New Chat", key="btn_new_chat", use_container_width=True):
+            st.session_state.chat_session_id = str(uuid.uuid4())
+            st.rerun()
+            
+        sessions = get_chat_sessions(active_project["id"])
+        if not sessions:
+            st.caption("No recent chats.")
+        else:
+            for s in sessions[:8]:
+                title = s["message"][:22] + "..." if len(s["message"]) > 22 else s["message"]
+                is_curr = st.session_state.chat_session_id == s["session_id"]
+                btn_label = f"💬 {title}" if not is_curr else f"👉 💬 {title}"
+                if st.button(btn_label, key=f"sess_{s['session_id']}", use_container_width=True):
+                    st.session_state.chat_session_id = s["session_id"]
+                    st.rerun()
+                    
     st.markdown("<hr style='border-color: #dee2e6; margin: 15px 0;'>", unsafe_allow_html=True)
 
 # Fetch database metrics for active Workspace

@@ -216,7 +216,6 @@ def generate_grounded_answer(project_id, query, retrieved_chunks, model="llama3.
 
     system_prompt = (
         "You are an expert Content Intelligence Assistant. Answer the user's question based strictly on the provided transcript sources.\n"
-        "If the answer cannot be found in the sources, say 'I cannot find the answer in the provided video transcript.'\n"
         "Always cite the source number (e.g. [Source 1], [Source 2]) when stating facts.\n"
         "Reference specific timestamps to ground your reply.\n\n"
         f"--- TRANSCRIPT SOURCES ---\n{context_str}\n"
