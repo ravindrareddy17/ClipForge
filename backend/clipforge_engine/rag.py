@@ -2,13 +2,24 @@ import os
 import json
 import uuid
 import requests
-import chromadb
 from datetime import datetime
 
-# Setup local Chroma client
+# Setup local Chroma client (lazy initialization)
 CHROMA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data", "chromadb")
 os.makedirs(CHROMA_DIR, exist_ok=True)
-chroma_client = chromadb.PersistentClient(path=CHROMA_DIR)
+
+_chroma_client = None
+
+def get_chroma_client():
+    global _chroma_client
+    if _chroma_client is None:
+        try:
+            import chromadb
+            _chroma_client = chromadb.PersistentClient(path=CHROMA_DIR)
+        except Exception as e:
+            print(f"ChromaDB initialization failed: {e}")
+            _chroma_client = None
+    return _chroma_client
 
 def get_ollama_embedding(text, model="nomic-embed-text", base_url="http://localhost:11434"):
     """
@@ -111,7 +122,11 @@ def index_transcript_chunks(video_id, project_id, chunks, model="nomic-embed-tex
     """
     Indexes semantic chunks in local ChromaDB collection and saves references.
     """
-    collection = chroma_client.get_or_create_collection(name=f"cf_project_{project_id}")
+    client = get_chroma_client()
+    if client is None:
+        print("ChromaDB not available. Skipping vector indexing.")
+        return
+    collection = client.get_or_create_collection(name=f"cf_project_{project_id}")
     
     ids = []
     embeddings = []
@@ -147,7 +162,11 @@ def query_similar_chunks(project_id, query_text, k=5, video_ids=None, model="nom
     """
     Semantic search querying the project ChromaDB collection.
     """
-    collection = chroma_client.get_or_create_collection(name=f"cf_project_{project_id}")
+    client = get_chroma_client()
+    if client is None:
+        print("ChromaDB not available. Returning empty results.")
+        return []
+    collection = client.get_or_create_collection(name=f"cf_project_{project_id}")
     query_emb = get_ollama_embedding(query_text, model=model, base_url=base_url)
 
     where_clause = {}

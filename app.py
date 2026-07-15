@@ -2,6 +2,15 @@ import os
 import sys
 import json
 import uuid
+
+# ChromaDB requires SQLite >= 3.35. Streamlit Cloud ships an older version.
+# pysqlite3-binary provides a newer SQLite; swap it in before anything imports sqlite3.
+try:
+    import pysqlite3
+    sys.modules["sqlite3"] = pysqlite3
+except ImportError:
+    pass
+
 import sqlite3
 import requests
 from datetime import datetime

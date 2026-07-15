@@ -10,3 +10,5 @@ httpx
 numba>=0.60.0
 llvmlite>=0.48.0
 openai-whisper
+chromadb
+pysqlite3-binary
