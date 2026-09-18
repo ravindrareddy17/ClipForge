@@ -22,9 +22,10 @@ def fetch_youtube_metadata_and_audio(url, output_wav_path):
     video_path = base_path + ".mp4"
     audio_m4a = base_path + ".m4a"
     
-    # Try multiple download strategies for maximum resilience on cloud hosts
+    # Try multiple download strategies, prioritizing universal format 18 (guaranteed 640x360 MP4 with audio)
     download_strategies = [
-        {'format': 'bestvideo[height<=720][ext=mp4]+bestaudio[ext=m4a]/best[height<=720][ext=mp4]/best[height<=720]/best', 'client': ['android', 'web']},
+        {'format': '18/best[height<=480][ext=mp4]/best[ext=mp4]/best', 'client': ['android', 'web']},
+        {'format': 'bestvideo[height<=720][ext=mp4]+bestaudio[ext=m4a]/best[height<=720]/best', 'client': ['android', 'web']},
         {'format': 'best', 'client': ['android']},
         {'format': 'bestaudio/best', 'client': ['android']}
     ]
@@ -154,13 +155,14 @@ async def run_processing_pipeline(video_id: str):
             has_audio = True
             update_pipeline_stage(video_id, "Import", "completed", 0.5, "Import complete. Read local video metadata.")
             
-        # Update video record with metadata, video file path, and clean title
+        # Update video record with metadata, preserving original URL if applicable
         conn = get_db_connection()
         clean_title = meta.get("title") or video["filename"]
         video_source_path = meta.get("video_path") or video["file_path"]
+        db_file_path = video["file_path"] if is_url else video_source_path
         conn.execute(
             "UPDATE videos SET filename = ?, file_path = ?, duration = ?, width = ?, height = ?, fps = ? WHERE id = ?",
-            (clean_title, video_source_path, meta["duration"], meta["width"], meta["height"], meta["fps"], video_id)
+            (clean_title, db_file_path, meta["duration"], meta["width"], meta["height"], meta["fps"], video_id)
         )
         conn.commit()
         conn.close()
@@ -257,20 +259,43 @@ async def run_processing_pipeline(video_id: str):
                 except Exception as cut_err:
                     print(f"Clip cut error: {cut_err}")
             else:
-                # Generate clean 9:16 vertical short MP4 so download is always functional
+                # If video wasn't downloaded, fetch YouTube thumbnail to use as visual background instead of black screen
                 try:
                     dur = max(5, int(clip["end_time"] - clip["start_time"]))
-                    subprocess.run([
-                        "ffmpeg", "-y",
-                        "-f", "lavfi", "-i", f"color=c=0x0a0f1d:s=720x1280:d={dur}",
-                        "-f", "lavfi", "-i", "anullsrc=r=44100:cl=stereo",
-                        "-t", str(dur),
-                        "-c:v", "libx264",
-                        "-pix_fmt", "yuv420p",
-                        "-preset", "ultrafast",
-                        "-c:a", "aac",
-                        clip_path
-                    ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                    thumb_path = os.path.join(temp_dir, f"{video_id}_thumb.jpg")
+                    if is_url and not os.path.exists(thumb_path):
+                        clean_yt = video["file_path"].split("v=")[-1].split("&")[0].split("/")[-1]
+                        import urllib.request
+                        try:
+                            urllib.request.urlretrieve(f"https://img.youtube.com/vi/{clean_yt}/hqdefault.jpg", thumb_path)
+                        except Exception:
+                            pass
+                            
+                    if os.path.exists(thumb_path):
+                        subprocess.run([
+                            "ffmpeg", "-y",
+                            "-loop", "1", "-i", thumb_path,
+                            "-f", "lavfi", "-i", "anullsrc=r=44100:cl=stereo",
+                            "-t", str(dur),
+                            "-vf", "scale=720:1280:force_original_aspect_ratio=increase,crop=720:1280",
+                            "-c:v", "libx264",
+                            "-pix_fmt", "yuv420p",
+                            "-preset", "ultrafast",
+                            "-c:a", "aac",
+                            clip_path
+                        ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                    else:
+                        subprocess.run([
+                            "ffmpeg", "-y",
+                            "-f", "lavfi", "-i", f"color=c=0x1e1b4b:s=720x1280:d={dur}",
+                            "-f", "lavfi", "-i", "anullsrc=r=44100:cl=stereo",
+                            "-t", str(dur),
+                            "-c:v", "libx264",
+                            "-pix_fmt", "yuv420p",
+                            "-preset", "ultrafast",
+                            "-c:a", "aac",
+                            clip_path
+                        ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                 except Exception as gen_err:
                     print(f"Clip gen error: {gen_err}")
                     

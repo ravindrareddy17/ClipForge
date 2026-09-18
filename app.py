@@ -371,6 +371,13 @@ if tab == "Create Clips":
                 from clipforge_engine.pipeline import run_processing_pipeline
                 import threading
                 import asyncio
+                import glob
+                temp_dir = os.path.join(os.path.dirname(__file__), "backend", "data", "temp")
+                for f in glob.glob(os.path.join(temp_dir, f"*{selected_vid_id[:8]}*")):
+                    try:
+                        os.remove(f)
+                    except Exception:
+                        pass
                 conn = get_db_connection()
                 conn.execute("DELETE FROM clips WHERE video_id = ?", (selected_vid_id,))
                 conn.execute("UPDATE videos SET status = 'pending' WHERE id = ?", (selected_vid_id,))
@@ -427,43 +434,55 @@ if tab == "Create Clips":
                         col_bt1, col_bt2 = st.columns(2)
                         with col_bt1:
                             clip_file = c.get("file_path")
-                            if clip_file and os.path.exists(clip_file):
-                                with open(clip_file, "rb") as f:
-                                    st.download_button(
-                                        label="⬇ Download MP4",
-                                        data=f.read(),
-                                        file_name=f"clip_{int(c['start_time'])}_{int(c['end_time'])}.mp4",
-                                        mime="video/mp4",
-                                        key=f"dl_{c['id']}",
-                                        use_container_width=True
-                                    )
+                            has_clip = clip_file and os.path.exists(clip_file) and os.path.getsize(clip_file) > 1000
+                            if has_clip:
+                                col_d1, col_d2 = st.columns([7, 3])
+                                with col_d1:
+                                    with open(clip_file, "rb") as f:
+                                        st.download_button(
+                                            label="⬇ Download MP4",
+                                            data=f.read(),
+                                            file_name=f"clip_{int(c['start_time'])}_{int(c['end_time'])}.mp4",
+                                            mime="video/mp4",
+                                            key=f"dl_{c['id']}",
+                                            use_container_width=True
+                                        )
+                                with col_d2:
+                                    if st.button("🔄 Re-Cut", key=f"recut_{c['id']}", use_container_width=True, help="Re-slice this moment directly from source video"):
+                                        try:
+                                            os.remove(clip_file)
+                                        except Exception:
+                                            pass
+                                        conn = get_db_connection()
+                                        conn.execute("UPDATE clips SET file_path = NULL WHERE id = ?", (c["id"],))
+                                        conn.commit()
+                                        conn.close()
+                                        st.rerun()
                             else:
-                                if st.button("✂ Render & Download", key=f"dl_{c['id']}", use_container_width=True):
-                                    with st.spinner("Preparing 9:16 vertical clip MP4..."):
+                                if st.button("✂ Cut Video Clip", key=f"dl_{c['id']}", use_container_width=True):
+                                    with st.spinner("Downloading source video and slicing 9:16 vertical clip..."):
                                         temp_dir = os.path.join(os.path.dirname(__file__), "backend", "data", "temp")
                                         os.makedirs(temp_dir, exist_ok=True)
                                         clip_filename = f"clip_{current_video['id'][:8]}_{int(c['start_time'])}_{int(c['end_time'])}.mp4"
                                         out_path = os.path.join(temp_dir, clip_filename)
-                                        v_source = current_video.get("file_path")
                                         
-                                        # If source is a URL, attempt downloading it to disk
-                                        if v_source and (v_source.startswith("http://") or v_source.startswith("https://")):
+                                        local_vid = os.path.join(temp_dir, f"{current_video['id']}.mp4")
+                                        v_source = local_vid if os.path.exists(local_vid) else current_video.get("file_path")
+                                        
+                                        # If source is a URL or local file missing, download format 18
+                                        if not os.path.exists(local_vid) and v_source and (v_source.startswith("http://") or v_source.startswith("https://")):
                                             try:
                                                 from clipforge_engine.pipeline import fetch_youtube_metadata_and_audio
                                                 audio_temp = os.path.join(temp_dir, f"{current_video['id']}.wav")
                                                 meta = fetch_youtube_metadata_and_audio(v_source, audio_temp)
                                                 if meta.get("video_path") and os.path.exists(meta["video_path"]):
                                                     v_source = meta["video_path"]
-                                                    conn = get_db_connection()
-                                                    conn.execute("UPDATE videos SET file_path = ? WHERE id = ?", (v_source, current_video["id"]))
-                                                    conn.commit()
-                                                    conn.close()
-                                            except Exception:
-                                                pass
+                                            except Exception as dl_err:
+                                                st.error(f"Download failed: {dl_err}")
 
-                                        try:
-                                            import subprocess
-                                            if v_source and os.path.exists(v_source):
+                                        if v_source and os.path.exists(v_source):
+                                            try:
+                                                import subprocess
                                                 subprocess.run([
                                                     "ffmpeg", "-y",
                                                     "-ss", str(c["start_time"]),
@@ -477,41 +496,30 @@ if tab == "Create Clips":
                                                     "-avoid_negative_ts", "make_zero",
                                                     out_path
                                                 ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                                            else:
-                                                dur = max(5, int(c["end_time"] - c["start_time"]))
-                                                subprocess.run([
-                                                    "ffmpeg", "-y",
-                                                    "-f", "lavfi", "-i", f"color=c=0x0a0f1d:s=720x1280:d={dur}",
-                                                    "-f", "lavfi", "-i", "anullsrc=r=44100:cl=stereo",
-                                                    "-t", str(dur),
-                                                    "-c:v", "libx264",
-                                                    "-pix_fmt", "yuv420p",
-                                                    "-preset", "ultrafast",
-                                                    "-c:a", "aac",
-                                                    out_path
-                                                ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                                            if os.path.exists(out_path):
-                                                conn = get_db_connection()
-                                                conn.execute("UPDATE clips SET file_path = ? WHERE id = ?", (out_path, c["id"]))
-                                                conn.commit()
-                                                conn.close()
-                                                st.rerun()
-                                        except Exception as r_err:
-                                            st.error(f"Render failed: {r_err}")
+                                                if os.path.exists(out_path):
+                                                    conn = get_db_connection()
+                                                    conn.execute("UPDATE clips SET file_path = ? WHERE id = ?", (out_path, c["id"]))
+                                                    conn.commit()
+                                                    conn.close()
+                                                    st.rerun()
+                                            except Exception as r_err:
+                                                st.error(f"Render failed: {r_err}")
+                                        else:
+                                            st.error("Could not access source video file. Please click '⚡ Re-Process Video' above to download.")
                         with col_bt2:
                             if st.button("📅 Schedule Post", key=f"sch_{c['id']}", use_container_width=True):
                                 create_schedule(active_project["id"], "Monday", "18:00")
                                 st.success("Added to publishing queue!")
                     with col_c2:
                         clip_file = c.get("file_path")
-                        if clip_file and os.path.exists(clip_file):
+                        if clip_file and os.path.exists(clip_file) and os.path.getsize(clip_file) > 1000:
                             st.video(clip_file)
                         elif current_video.get("file_path") and (current_video["file_path"].startswith("http://") or current_video["file_path"].startswith("https://")):
                             st.video(current_video["file_path"], start_time=int(c["start_time"]))
                         elif current_video.get("file_path") and os.path.exists(current_video["file_path"]):
                             st.video(current_video["file_path"], start_time=int(c["start_time"]))
                         else:
-                            st.info("Preview available once rendered.")
+                            st.info("Preview available once sliced.")
 
 # ============================================================
 # TAB 2: AI VIDEO CHAT (Grounded RAG Intelligence)
