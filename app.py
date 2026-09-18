@@ -61,11 +61,20 @@ st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
     
-    /* Base theme */
+    /* Base theme & background */
     .stApp {
-        background-color: #090d16;
-        color: #f1f5f9;
+        background-color: #090d16 !important;
+        color: #f1f5f9 !important;
         font-family: 'Inter', sans-serif !important;
+    }
+    
+    /* Top Header Navbar */
+    header[data-testid="stHeader"] {
+        background-color: #090d16 !important;
+        border-bottom: 1px solid #1f2937 !important;
+    }
+    header[data-testid="stHeader"] * {
+        color: #94a3b8 !important;
     }
     
     /* Headings */
@@ -76,13 +85,24 @@ st.markdown("""
         letter-spacing: -0.02em;
     }
     
+    /* Labels */
+    label, p, span {
+        font-family: 'Inter', sans-serif !important;
+        color: #cbd5e1 !important;
+    }
+    .stApp label, .stSelectbox label, .stTextInput label {
+        color: #cbd5e1 !important;
+        font-weight: 600 !important;
+        font-size: 0.88rem !important;
+    }
+    
     /* Clean Dark Cards */
     div[data-testid="stVerticalBlockBorderDiv"] {
         background: #111827 !important;
         border: 1px solid #1f2937 !important;
         border-radius: 16px !important;
         padding: 1.5rem !important;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25) !important;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3) !important;
         margin-bottom: 1.25rem !important;
     }
     div[data-testid="stVerticalBlockBorderDiv"]:hover {
@@ -113,7 +133,51 @@ st.markdown("""
         color: #60a5fa !important;
     }
     
-    /* Input styling */
+    /* All Standard Buttons */
+    div.stButton > button {
+        background-color: #1e293b !important;
+        color: #ffffff !important;
+        border: 1px solid #334155 !important;
+        border-radius: 10px !important;
+        font-weight: 600 !important;
+        font-size: 0.9rem !important;
+        padding: 8px 16px !important;
+        transition: all 0.15s ease !important;
+    }
+    div.stButton > button:hover {
+        background-color: #2d3748 !important;
+        border-color: #60a5fa !important;
+        color: #ffffff !important;
+    }
+    
+    /* Primary Submit Buttons */
+    div[data-testid="stFormSubmitButton"] > button {
+        background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%) !important;
+        color: #ffffff !important;
+        border: none !important;
+        border-radius: 12px !important;
+        padding: 10px 24px !important;
+        font-weight: 700 !important;
+        font-size: 0.95rem !important;
+        box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35) !important;
+    }
+    div[data-testid="stFormSubmitButton"] > button:hover {
+        transform: translateY(-1px) !important;
+        box-shadow: 0 6px 20px rgba(37, 99, 235, 0.5) !important;
+    }
+    
+    /* Alert Boxes (st.info, st.success, etc.) */
+    div[data-testid="stAlert"] {
+        background-color: #131d31 !important;
+        border: 1px solid #2563eb !important;
+        border-radius: 12px !important;
+        color: #ffffff !important;
+    }
+    div[data-testid="stAlert"] * {
+        color: #ffffff !important;
+    }
+    
+    /* Input & Selectbox styling */
     div[data-testid="stTextInput"] input, 
     div[data-testid="stTextArea"] textarea,
     div[data-testid="stSelectbox"] > div {
@@ -121,6 +185,9 @@ st.markdown("""
         color: #ffffff !important;
         border: 1px solid #334155 !important;
         border-radius: 12px !important;
+    }
+    div[data-testid="stSelectbox"] * {
+        color: #ffffff !important;
     }
     
     /* Chat bubbles */
@@ -143,7 +210,7 @@ st.markdown("""
     
     /* Status Badges */
     .status-pill {
-        padding: 4px 12px;
+        padding: 5px 14px;
         border-radius: 9999px;
         font-size: 0.75rem;
         font-weight: 700;
@@ -154,25 +221,6 @@ st.markdown("""
     .pill-green { background: #064e3b; color: #34d399; border: 1px solid #059669; }
     .pill-blue { background: #1e3a5f; color: #60a5fa; border: 1px solid #2563eb; }
     .pill-yellow { background: #451a03; color: #f59e0b; border: 1px solid #b45309; }
-    
-    /* Primary Action Buttons */
-    div.stButton > button[kind="primary"],
-    div[data-testid="stFormSubmitButton"] > button {
-        background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%) !important;
-        color: #ffffff !important;
-        border: none !important;
-        border-radius: 12px !important;
-        padding: 10px 24px !important;
-        font-weight: 700 !important;
-        font-size: 0.95rem !important;
-        box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35) !important;
-        transition: transform 0.1s ease !important;
-    }
-    div.stButton > button[kind="primary"]:hover,
-    div[data-testid="stFormSubmitButton"] > button:hover {
-        transform: translateY(-1px) !important;
-        box-shadow: 0 6px 20px rgba(37, 99, 235, 0.45) !important;
-    }
 </style>
 """, unsafe_allow_html=True)
 
