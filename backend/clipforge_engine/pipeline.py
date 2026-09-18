@@ -34,6 +34,7 @@ def fetch_youtube_metadata_and_audio(url, output_wav_path):
         info = ydl.extract_info(url, download=True)
         duration = float(info.get("duration", 0.0) or 300.0)
         width = int(info.get("width", 1920) or 1920)
+        height = int(info.get("height", 1080) or 1080)
         title = info.get("title") or "YouTube Video"
         fps = float(info.get("fps", 30.0) or 30.0)
         
