@@ -403,15 +403,29 @@ if tab == "Create Clips":
                         
                         col_bt1, col_bt2 = st.columns(2)
                         with col_bt1:
-                            if st.button("⬇ Download Clip", key=f"dl_{c['id']}", use_container_width=True):
-                                st.info("Clip ready for download.")
+                            clip_file = c.get("file_path")
+                            if clip_file and os.path.exists(clip_file):
+                                with open(clip_file, "rb") as f:
+                                    st.download_button(
+                                        label="⬇ Download MP4",
+                                        data=f.read(),
+                                        file_name=f"clip_{int(c['start_time'])}_{int(c['end_time'])}.mp4",
+                                        mime="video/mp4",
+                                        key=f"dl_{c['id']}",
+                                        use_container_width=True
+                                    )
+                            else:
+                                st.button("⬇ Download Clip", key=f"dl_{c['id']}", use_container_width=True)
                         with col_bt2:
                             if st.button("📅 Schedule Post", key=f"sch_{c['id']}", use_container_width=True):
                                 create_schedule(active_project["id"], "Monday", "18:00")
                                 st.success("Added to publishing queue!")
                     with col_c2:
-                        # Video preview seeking directly to start_time
-                        st.video(current_video["file_path"], start_time=int(c["start_time"]))
+                        clip_file = c.get("file_path")
+                        if clip_file and os.path.exists(clip_file):
+                            st.video(clip_file)
+                        else:
+                            st.video(current_video["file_path"], start_time=int(c["start_time"]))
 
 # ============================================================
 # TAB 2: AI VIDEO CHAT (Grounded RAG Intelligence)
@@ -428,13 +442,14 @@ elif tab == "AI Video Chat":
         selected_vid_id = vid_options[selected_vid_title]
 
         with st.container(border=True):
-            # Render conversation
+            # Render conversation with clean avatars
             history = get_chat_history(active_project["id"], st.session_state.chat_session_id)
             if not history:
                 st.caption("No messages yet. Ask anything about what was said in this video!")
             else:
                 for msg in history:
-                    with st.chat_message(msg["role"]):
+                    avatar_icon = "⚡" if msg["role"] == "assistant" else "👤"
+                    with st.chat_message(msg["role"], avatar=avatar_icon):
                         st.write(msg["message"])
 
             # Input form

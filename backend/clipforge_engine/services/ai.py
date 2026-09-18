@@ -151,97 +151,121 @@ Return ONLY a valid JSON list of objects, with no explanation or conversational 
         except Exception as e:
             print(f"Failed to parse Ollama output: {e}. Output was:\n{response_text}")
             
-    # Heuristic fallback if Ollama failed or returned no clips
+    # Intelligent heuristic fallback if Ollama failed or returned no clips
     if not clips:
-        print("Using speech-boundary and text-hook heuristics for viral moment detection.")
-        current_clip_segments = []
-        current_duration = 0.0
-        clip_index = 1
-        hook_words = ["how", "why", "secret", "amazing", "today", "welcome", "look", "learn", "this", "never", "always", "stop", "start"]
+        print("Using intelligent anchor-based hook detection across video.")
+        hook_triggers = [
+            "how", "why", "what", "secret", "imagine", "universe", "billion",
+            "incredible", "never", "always", "remember", "truth", "insane",
+            "look", "discover", "first", "million", "massive", "danger"
+        ]
         
-        i = 0
-        while i < len(transcript_segments):
-            seg = transcript_segments[i]
-            seg_dur = seg["end"] - seg["start"]
+        # 1. Score each segment as a potential hook starting point
+        candidate_indices = []
+        for idx, seg in enumerate(transcript_segments):
+            text = seg.get("text", "").strip()
+            text_lower = text.lower()
+            score = 50
             
-            if not current_clip_segments:
-                current_clip_segments.append(seg)
-                current_duration = seg_dur
-            else:
-                if current_duration + seg_dur <= 45.0:
-                    current_clip_segments.append(seg)
-                    current_duration += seg_dur
-                else:
-                    start_time = current_clip_segments[0]["start"]
-                    end_time = current_clip_segments[-1]["end"]
-                    
-                    # Compile words
-                    words_in_clip = []
-                    for s in current_clip_segments:
-                        if "words" in s:
-                            words_in_clip.extend(s["words"])
-                        else:
-                            words = s["text"].split()
-                            s_dur = s["end"] - s["start"]
-                            w_dur = s_dur / max(1, len(words))
-                            for idx, w in enumerate(words):
-                                words_in_clip.append({
-                                    "word": w,
-                                    "start": s["start"] + idx * w_dur,
-                                    "end": s["start"] + (idx + 1) * w_dur
-                                })
-                                
-                    first_few = " ".join([w["word"] for w in words_in_clip[:4]]).strip()
-                    title = f"Hook: \"{first_few}...\"" if first_few else f"Viral Spotlight #{clip_index}"
-                    
-                    # Score calculation based on hook words presence
-                    score = 90 if any(hw in title.lower() for hw in hook_words) else (85 - clip_index)
-                    score = max(50, score)
-                    
-                    clips.append({
-                        "title": title,
-                        "start_time": start_time,
-                        "end_time": end_time,
-                        "duration": end_time - start_time,
-                        "score": score,
-                        "explanation": f"Speech-aligned segment beginning exactly at '{first_few}' ({start_time:.1f}s) and ending cleanly at {end_time:.1f}s.",
-                        "hook": f"Watch: {first_few}!" if first_few else "Unmissable insight!",
-                        "words": words_in_clip
-                    })
-                    
-                    clip_index += 1
-                    current_clip_segments = [seg]
-                    current_duration = seg_dur
-            i += 1
+            # Boost for question or exclamation
+            if "?" in text or "!" in text:
+                score += 20
+            # Boost for hook trigger words
+            for ht in hook_triggers:
+                if ht in text_lower:
+                    score += 15
+            # Boost for good sentence length
+            if 6 <= len(text.split()) <= 25:
+                score += 10
+                
+            candidate_indices.append((score, idx))
             
-        if current_clip_segments:
-            start_time = current_clip_segments[0]["start"]
-            end_time = current_clip_segments[-1]["end"]
-            words_in_clip = []
-            for s in current_clip_segments:
-                if "words" in s:
-                    words_in_clip.extend(s["words"])
+        # Sort candidates by hook score descending
+        candidate_indices.sort(key=lambda x: x[0], reverse=True)
+        
+        # 2. Pick top diverse hook anchors (enforce minimum 25s separation)
+        selected_starts = []
+        for cand_score, cand_idx in candidate_indices:
+            cand_start = transcript_segments[cand_idx]["start"]
+            # Ensure not too close to the end of the video
+            if cand_start + 20.0 > duration_seconds and duration_seconds > 30.0:
+                continue
+            # Ensure no overlapping start with existing clips
+            if not any(abs(cand_start - s) < 25.0 for s in selected_starts):
+                selected_starts.append(cand_start)
+                
+                # Expand from cand_idx forward until duration is between 25s and 45s
+                clip_segs = []
+                cur_dur = 0.0
+                j = cand_idx
+                while j < len(transcript_segments) and cur_dur < 45.0:
+                    s_item = transcript_segments[j]
+                    s_len = s_item["end"] - s_item["start"]
+                    clip_segs.append(s_item)
+                    cur_dur += s_len
+                    if cur_dur >= 25.0: # Good short-form clip length
+                        break
+                    j += 1
+                    
+                if not clip_segs:
+                    continue
+                    
+                start_t = clip_segs[0]["start"]
+                end_t = clip_segs[-1]["end"]
+                
+                # Compile word timestamps
+                words_in_clip = []
+                for s in clip_segs:
+                    if "words" in s and s["words"]:
+                        words_in_clip.extend(s["words"])
+                    else:
+                        w_list = s["text"].split()
+                        w_dur = (s["end"] - s["start"]) / max(1, len(w_list))
+                        for w_idx, w in enumerate(w_list):
+                            words_in_clip.append({
+                                "word": w,
+                                "start": s["start"] + w_idx * w_dur,
+                                "end": s["start"] + (w_idx + 1) * w_dur
+                            })
+                            
+                # Generate a clean, descriptive title from the hook sentence
+                hook_sentence = clip_segs[0]["text"].strip()
+                # Clean punctuation for title
+                clean_words = hook_sentence.replace('"', '').replace("'", '').split()[:6]
+                title = " ".join(clean_words)
+                if len(title) > 3:
+                    title = title[0].upper() + title[1:]
                 else:
-                    words = s["text"].split()
-                    s_dur = s["end"] - s["start"]
-                    w_dur = s_dur / max(1, len(words))
-                    for idx, w in enumerate(words):
-                        words_in_clip.append({
-                            "word": w,
-                            "start": s["start"] + idx * w_dur,
-                            "end": s["start"] + (idx + 1) * w_dur
-                        })
-            first_few = " ".join([w["word"] for w in words_in_clip[:4]]).strip()
-            title = f"Hook: \"{first_few}...\"" if first_few else f"Viral Spotlight #{clip_index}"
+                    title = f"Viral Moment at {int(start_t)}s"
+                    
+                virality = min(98, max(75, cand_score + 10))
+                
+                clips.append({
+                    "title": f"Hook: \"{title}...\"",
+                    "start_time": start_t,
+                    "end_time": end_t,
+                    "duration": end_t - start_t,
+                    "score": virality,
+                    "explanation": f"High-retention moment anchored by: \"{hook_sentence[:60]}...\" at {int(start_t)}s.",
+                    "hook": hook_sentence[:45],
+                    "words": words_in_clip
+                })
+                
+                if len(clips) >= 5:
+                    break
+                    
+        # Fallback if no candidate anchors matched
+        if not clips and transcript_segments:
+            seg = transcript_segments[0]
             clips.append({
-                "title": title,
-                "start_time": start_time,
-                "end_time": end_time,
-                "duration": end_time - start_time,
-                "score": 80,
-                "explanation": f"Speech-aligned final segment starting at {start_time:.1f}s and finishing on sentence completion.",
-                "hook": f"Watch: {first_few}!" if first_few else "Final viral segment!",
-                "words": words_in_clip
+                "title": f"Hook: \"{seg['text'][:30]}...\"",
+                "start_time": seg["start"],
+                "end_time": min(duration_seconds, seg["start"] + 35.0),
+                "duration": min(duration_seconds - seg["start"], 35.0),
+                "score": 85,
+                "explanation": "Opening hook segment extracted from video introduction.",
+                "hook": seg["text"][:40],
+                "words": []
             })
             
     # Sort clips by score descending

@@ -17,15 +17,14 @@ from clipforge_engine.agents import (
 
 def fetch_youtube_metadata_and_audio(url, output_wav_path):
     import yt_dlp
+    import subprocess
     base_path, _ = os.path.splitext(output_wav_path)
+    video_path = base_path + ".mp4"
+    
+    # Download fast 480p/360p MP4 with combined video and audio
     ydl_opts = {
-        'format': 'bestaudio/best',
-        'outtmpl': base_path + '.%(ext)s',
-        'postprocessors': [{
-            'key': 'FFmpegExtractAudio',
-            'preferredcodec': 'wav',
-            'preferredquality': '192',
-        }],
+        'format': 'best[height<=480][ext=mp4]/best[ext=mp4]/best',
+        'outtmpl': video_path,
         'extractor_args': {'youtube': {'player_client': ['android', 'web']}},
         'quiet': True,
         'no_warnings': True,
@@ -38,17 +37,21 @@ def fetch_youtube_metadata_and_audio(url, output_wav_path):
         title = info.get("title") or "YouTube Video"
         fps = float(info.get("fps", 30.0) or 30.0)
         
-    if not os.path.exists(output_wav_path):
-        actual_wav = base_path + '.wav'
-        if os.path.exists(actual_wav):
-            os.rename(actual_wav, output_wav_path)
-            
+    # Extract 16kHz mono WAV for Whisper transcription
+    if os.path.exists(video_path):
+        subprocess.run([
+            "ffmpeg", "-y", "-i", video_path,
+            "-vn", "-ar", "16000", "-ac", "1",
+            output_wav_path
+        ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        
     return {
         "title": title,
         "duration": duration,
         "width": width,
         "height": height,
-        "fps": fps
+        "fps": fps,
+        "video_path": video_path if os.path.exists(video_path) else None
     }
 
 async def run_processing_pipeline(video_id: str):
@@ -102,12 +105,13 @@ async def run_processing_pipeline(video_id: str):
             has_audio = True
             update_pipeline_stage(video_id, "Import", "completed", 0.5, "Import complete. Read local video metadata.")
             
-        # Update video record with metadata and clean title
+        # Update video record with metadata, video file path, and clean title
         conn = get_db_connection()
         clean_title = meta.get("title") or video["filename"]
+        video_source_path = meta.get("video_path") or video["file_path"]
         conn.execute(
-            "UPDATE videos SET filename = ?, duration = ?, width = ?, height = ?, fps = ? WHERE id = ?",
-            (clean_title, meta["duration"], meta["width"], meta["height"], meta["fps"], video_id)
+            "UPDATE videos SET filename = ?, file_path = ?, duration = ?, width = ?, height = ?, fps = ? WHERE id = ?",
+            (clean_title, video_source_path, meta["duration"], meta["width"], meta["height"], meta["fps"], video_id)
         )
         conn.commit()
         conn.close()
@@ -168,17 +172,43 @@ async def run_processing_pipeline(video_id: str):
         clips = await detect_viral_moments(transcript, duration)
         print(f"Generated {len(clips)} clip proposals.")
         
-        # 5. Populate and save clips to DB
+        # 5. Populate, cut and save real physical clips to DB
+        import subprocess
         for clip in clips:
-            crop_x = get_crop_coordinates(video["file_path"], clip["start_time"], clip["end_time"])
+            crop_x = get_crop_coordinates(video_source_path, clip["start_time"], clip["end_time"])
             sub_style = {
                 "font_family": "Montserrat",
                 "font_size": 28,
                 "primary_color": "#FFFFFF",
                 "accent_color": "#FF0055",
                 "outline_color": "#000000",
-                "margin_v": 140
+                "margin_v": 140,
+                "crop_x": crop_x
             }
+            
+            # Cut actual physical 9:16 vertical MP4 video segment using FFmpeg
+            clip_filename = f"clip_{video_id[:8]}_{int(clip['start_time'])}_{int(clip['end_time'])}.mp4"
+            clip_path = os.path.join(temp_dir, clip_filename)
+            
+            if os.path.exists(video_source_path):
+                try:
+                    subprocess.run([
+                        "ffmpeg", "-y",
+                        "-ss", str(clip["start_time"]),
+                        "-to", str(clip["end_time"]),
+                        "-i", video_source_path,
+                        "-vf", "crop=ih*(9/16):ih", # 9:16 vertical crop
+                        "-c:v", "libx264",
+                        "-preset", "ultrafast",
+                        "-c:a", "aac",
+                        "-avoid_negative_ts", "make_zero",
+                        clip_path
+                    ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                except Exception as cut_err:
+                    print(f"Clip cut error: {cut_err}")
+                    
+            final_clip_path = clip_path if os.path.exists(clip_path) else None
+            
             cid = create_clip(
                 video_id=video_id,
                 title=clip["title"],
@@ -190,9 +220,9 @@ async def run_processing_pipeline(video_id: str):
                 subtitles=clip["words"],
                 subtitle_style=sub_style
             )
-            sub_style["crop_x"] = crop_x
+            
             conn = get_db_connection()
-            conn.execute("UPDATE clips SET subtitle_style = ? WHERE id = ?", (json.dumps(sub_style), cid))
+            conn.execute("UPDATE clips SET file_path = ?, subtitle_style = ? WHERE id = ?", (final_clip_path, json.dumps(sub_style), cid))
             conn.commit()
             conn.close()
             
