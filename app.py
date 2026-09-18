@@ -373,9 +373,7 @@ if tab == "Create Clips":
                     st.rerun()
 
         # Load clips for this video
-        conn = get_db_connection()
-        clips = conn.execute("SELECT * FROM clips WHERE video_id = ? ORDER BY score DESC", (selected_vid_id,)).fetchall()
-        conn.close()
+        clips = get_clips(selected_vid_id)
 
         if not clips and current_video["status"] == "completed":
             st.warning("No clips were extracted. The video audio may have been too short or silent.")
@@ -390,6 +388,7 @@ if tab == "Create Clips":
             
             # Display clips cleanly
             for c in clips:
+                c = dict(c)
                 with st.container(border=True):
                     col_c1, col_c2 = st.columns([7, 5])
                     with col_c1:
@@ -415,7 +414,38 @@ if tab == "Create Clips":
                                         use_container_width=True
                                     )
                             else:
-                                st.button("⬇ Download Clip", key=f"dl_{c['id']}", use_container_width=True)
+                                if st.button("✂ Render & Download", key=f"dl_{c['id']}", use_container_width=True):
+                                    v_source = current_video.get("file_path")
+                                    if v_source and os.path.exists(v_source):
+                                        temp_dir = os.path.join(os.path.dirname(__file__), "backend", "data", "temp")
+                                        os.makedirs(temp_dir, exist_ok=True)
+                                        clip_filename = f"clip_{current_video['id'][:8]}_{int(c['start_time'])}_{int(c['end_time'])}.mp4"
+                                        out_path = os.path.join(temp_dir, clip_filename)
+                                        try:
+                                            import subprocess
+                                            subprocess.run([
+                                                "ffmpeg", "-y",
+                                                "-ss", str(c["start_time"]),
+                                                "-to", str(c["end_time"]),
+                                                "-i", v_source,
+                                                "-vf", "crop=trunc(ih*9/16/2)*2:trunc(ih/2)*2",
+                                                "-c:v", "libx264",
+                                                "-pix_fmt", "yuv420p",
+                                                "-preset", "ultrafast",
+                                                "-c:a", "aac",
+                                                "-avoid_negative_ts", "make_zero",
+                                                out_path
+                                            ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                                            if os.path.exists(out_path):
+                                                conn = get_db_connection()
+                                                conn.execute("UPDATE clips SET file_path = ? WHERE id = ?", (out_path, c["id"]))
+                                                conn.commit()
+                                                conn.close()
+                                                st.rerun()
+                                        except Exception as r_err:
+                                            st.error(f"Render failed: {r_err}")
+                                    else:
+                                        st.warning("Source video file not available on server to cut. Please re-run pipeline.")
                         with col_bt2:
                             if st.button("📅 Schedule Post", key=f"sch_{c['id']}", use_container_width=True):
                                 create_schedule(active_project["id"], "Monday", "18:00")
@@ -424,8 +454,12 @@ if tab == "Create Clips":
                         clip_file = c.get("file_path")
                         if clip_file and os.path.exists(clip_file):
                             st.video(clip_file)
-                        else:
+                        elif current_video.get("file_path") and (current_video["file_path"].startswith("http://") or current_video["file_path"].startswith("https://")):
                             st.video(current_video["file_path"], start_time=int(c["start_time"]))
+                        elif current_video.get("file_path") and os.path.exists(current_video["file_path"]):
+                            st.video(current_video["file_path"], start_time=int(c["start_time"]))
+                        else:
+                            st.info("Preview available once rendered.")
 
 # ============================================================
 # TAB 2: AI VIDEO CHAT (Grounded RAG Intelligence)

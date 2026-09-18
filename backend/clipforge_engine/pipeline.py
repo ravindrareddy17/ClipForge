@@ -197,8 +197,9 @@ async def run_processing_pipeline(video_id: str):
                         "-ss", str(clip["start_time"]),
                         "-to", str(clip["end_time"]),
                         "-i", video_source_path,
-                        "-vf", "crop=ih*(9/16):ih", # 9:16 vertical crop
+                        "-vf", "crop=trunc(ih*9/16/2)*2:trunc(ih/2)*2", # 9:16 vertical crop with guaranteed even dimensions
                         "-c:v", "libx264",
+                        "-pix_fmt", "yuv420p",
                         "-preset", "ultrafast",
                         "-c:a", "aac",
                         "-avoid_negative_ts", "make_zero",
