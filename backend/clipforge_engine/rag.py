@@ -232,11 +232,29 @@ def generate_grounded_answer(project_id, query, retrieved_chunks, model="llama3.
 
     try:
         headers = {"ngrok-skip-browser-warning": "1"}
-        resp = requests.post(f"{base_url}/api/chat", json=payload, headers=headers, timeout=45)
+        resp = requests.post(f"{base_url}/api/chat", json=payload, headers=headers, timeout=30)
         if resp.status_code == 200:
             return resp.json()["message"]["content"]
-        else:
-            return f"Ollama returned status code {resp.status_code} for endpoint {base_url}/api/chat (Model: {model}). Details: {resp.text}"
     except Exception as e:
-        print(f"Error calling local Ollama chat: {e}")
-        return f"Failed to connect to Ollama server at {base_url} (Model: {model}). Connection error: {str(e)}"
+        print(f"Ollama chat error/offline: {e}")
+
+    # Smart fallback: if Ollama is unreachable or errored, synthesize directly from retrieved chunks
+    if retrieved_chunks:
+        findings = []
+        for idx, rc in enumerate(retrieved_chunks[:3]):
+            meta = rc.get("metadata", {})
+            start_t = float(meta.get("start_time", 0.0))
+            hours = int(start_t // 3600)
+            minutes = int((start_t % 3600) // 60)
+            seconds = int(start_t % 60)
+            timestamp_str = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+            findings.append(f"• **[{timestamp_str}]**: {rc['text'].strip()}")
+        
+        response = (
+            f"**Transcript Highlights matching your query:**\n\n"
+            + "\n\n".join(findings)
+            + f"\n\n*(💡 Tip: Local Ollama LLM is currently unreachable at `{base_url}`. The exact transcript moments above were retrieved directly from your video vector index.)*"
+        )
+        return response
+
+    return f"No transcript segments found matching '{query}'. Please verify your video index or try another query."

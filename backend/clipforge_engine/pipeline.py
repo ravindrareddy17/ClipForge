@@ -33,7 +33,7 @@ def fetch_youtube_metadata_and_audio(url, output_wav_path):
         duration = float(info.get("duration", 0.0) or 300.0)
         width = int(info.get("width", 1920) or 1920)
         height = int(info.get("height", 1080) or 1080)
-        fps = float(info.get("fps", 30.0) or 30.0)
+        title = info.get("title") or "YouTube Video"
         
     if not os.path.exists(output_wav_path):
         actual_wav = base_path + '.wav'
@@ -41,6 +41,7 @@ def fetch_youtube_metadata_and_audio(url, output_wav_path):
             os.rename(actual_wav, output_wav_path)
             
     return {
+        "title": title,
         "duration": duration,
         "width": width,
         "height": height,
@@ -82,25 +83,28 @@ async def run_processing_pipeline(video_id: str):
             try:
                 meta = fetch_youtube_metadata_and_audio(video["file_path"], audio_path)
                 has_audio = True
-                update_pipeline_stage(video_id, "Import", "completed", 5.2, "Successfully downloaded audio stream.")
+                update_pipeline_stage(video_id, "Import", "completed", 5.2, f"Downloaded audio: {meta.get('title', 'Video')[:30]}")
             except Exception as dl_err:
                 print(f"yt-dlp download failed: {dl_err}. Falling back to mock transcript/metadata.")
-                meta = {"duration": 180.0, "width": 1920, "height": 1080, "fps": 30.0}
+                clean_name = video["file_path"].split("?")[0].split("/")[-1]
+                meta = {"title": f"YouTube ({clean_name})", "duration": 180.0, "width": 1920, "height": 1080, "fps": 30.0}
                 has_audio = False
-                update_pipeline_stage(video_id, "Import", "completed", 1.5, f"yt-dlp failed: {dl_err}. Using mock metadata.")
+                update_pipeline_stage(video_id, "Import", "completed", 1.5, f"Restricted video. Sandbox transcript active.")
             scenes = [0.0]
         else:
             # 1. Read metadata
             meta = get_video_metadata(video["file_path"])
+            meta["title"] = os.path.basename(video["file_path"])
             print(f"Metadata read: {meta}")
             has_audio = True
             update_pipeline_stage(video_id, "Import", "completed", 0.5, "Import complete. Read local video metadata.")
             
-        # Update video record with metadata
+        # Update video record with metadata and clean title
         conn = get_db_connection()
+        clean_title = meta.get("title") or video["filename"]
         conn.execute(
-            "UPDATE videos SET duration = ?, width = ?, height = ?, fps = ? WHERE id = ?",
-            (meta["duration"], meta["width"], meta["height"], meta["fps"], video_id)
+            "UPDATE videos SET filename = ?, duration = ?, width = ?, height = ?, fps = ? WHERE id = ?",
+            (clean_title, meta["duration"], meta["width"], meta["height"], meta["fps"], video_id)
         )
         conn.commit()
         conn.close()

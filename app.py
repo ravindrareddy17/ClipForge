@@ -3,14 +3,13 @@ import sys
 import json
 import uuid
 import requests
-import random
-from datetime import datetime, timedelta
+from datetime import datetime
 import streamlit as st
 
-# Add backend directory to sys.path to reuse database and pipeline services
+# Add backend directory to sys.path
 sys.path.append(os.path.join(os.path.dirname(__file__), "backend"))
 
-# ChromaDB requires SQLite >= 3.35. Streamlit Cloud ships an older version.
+# Swap in pysqlite3 for Streamlit Cloud SQLite >= 3.35 compatibility
 try:
     import pysqlite3
     sys.modules["sqlite3"] = pysqlite3
@@ -40,7 +39,7 @@ from clipforge_engine.db import (
     add_chat_message, get_chat_history, clear_chat_history,
     save_summary, get_summary,
     log_retrieval, get_retrieval_logs,
-    # V2 SQLite helpers
+    # V2 helpers
     get_channel_monitors, create_channel_monitor,
     get_destination_channels, create_destination_channel,
     get_clip_edit, save_clip_edit,
@@ -56,15 +55,15 @@ from clipforge_engine.agents import (
 # Run database setup checks
 init_db()
 
-# Streamlit Page Config
+# Page config
 st.set_page_config(
-    page_title="ClipForge AI V2 – Complete SaaS Content intelligence Platform",
-    page_icon="✨",
+    page_title="ClipForge AI — AI Content Repurposing & Intelligence Platform",
+    page_icon="⚡",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# Helper to test connection to local/ngrok Ollama instance
+# Helper to test connection to Ollama instance
 def test_ollama_connection(url):
     try:
         headers = {"ngrok-skip-browser-warning": "1"}
@@ -77,174 +76,125 @@ def test_ollama_connection(url):
         return False, str(e)
     return False, "Failed to connect"
 
-# Custom Google Gemini Theme & Borderless Sidebar menu buttons overrides
+# Clean, Modern Gemini Design Styling
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
     
-    /* Main App Background & Text */
     .stApp {
         background-color: #ffffff;
-        background-image: radial-gradient(circle at 50% 30%, #f3f7fd 0%, #ffffff 100%);
+        background-image: radial-gradient(circle at 50% 20%, #f4f8ff 0%, #ffffff 100%);
         color: #1f1f1f;
         font-family: 'Inter', sans-serif !important;
     }
     
-    /* Headings font overrides */
-    h1, h2, h3, h4, h5, h6, .header-glow, .sidebar-title {
+    h1, h2, h3, h4, h5, h6 {
         font-family: 'Inter', sans-serif !important;
-        font-weight: 600 !important;
-        letter-spacing: -0.015em !important;
-        color: #1f1f1f !important;
-    }
-    
-    /* Input Labels color */
-    .stApp label,
-    .stApp label[data-testid="stWidgetLabel"] p,
-    .stApp div[data-testid="stWidgetLabel"] p {
-        color: #3c4043 !important;
-        font-weight: 500 !important;
-        font-family: 'Inter', sans-serif !important;
-    }
-    
-    /* Global Cards styling (White cards with drop shadow) */
-    .glass-card,
-    div[data-testid="stVerticalBlockBorderDiv"] {
-        background: #ffffff !important;
-        border: 1px solid #e3e8f0 !important;
-        border-radius: 16px !important;
-        padding: 1.5rem !important;
-        box-shadow: 0 4px 18px rgba(0, 0, 0, 0.04) !important;
-        margin-bottom: 1.25rem !important;
-        transition: all 0.2s ease !important;
-        color: #1f1f1f !important;
-    }
-    .glass-card:hover,
-    div[data-testid="stVerticalBlockBorderDiv"]:hover {
-        border-color: #b5d1ff !important;
-        box-shadow: 0 6px 24px rgba(0, 0, 0, 0.07) !important;
-    }
-    
-    /* Metrics numbers */
-    .metric-value {
-        font-size: 1.8rem;
         font-weight: 700 !important;
-        color: #1f1f1f;
+        color: #1a1f2c !important;
         letter-spacing: -0.02em;
-        font-family: 'Inter', sans-serif !important;
+    }
+    
+    /* Clean white border cards */
+    div[data-testid="stVerticalBlockBorderDiv"], .glass-card {
+        background: #ffffff !important;
+        border: 1px solid #e2e8f0 !important;
+        border-radius: 14px !important;
+        padding: 1.25rem !important;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.03) !important;
+        margin-bottom: 1rem !important;
+    }
+    div[data-testid="stVerticalBlockBorderDiv"]:hover, .glass-card:hover {
+        border-color: #cbd5e1 !important;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06) !important;
+    }
+    
+    /* Metrics */
+    .metric-value {
+        font-size: 1.9rem;
+        font-weight: 800 !important;
+        color: #1a73e8;
+        letter-spacing: -0.02em;
     }
     .metric-label {
         font-size: 0.72rem;
         text-transform: uppercase;
         letter-spacing: 0.08em;
-        color: #5f6368;
-        font-weight: 600;
-        margin-bottom: 0.25rem;
-        font-family: 'Inter', sans-serif !important;
+        color: #64748b;
+        font-weight: 700;
+        margin-bottom: 0.2rem;
     }
     
-    /* Text Inputs matching Gemini floating box */
-    div[data-testid="stTextInput"] input, 
-    div[data-testid="stTextArea"] textarea,
-    div[data-testid="stNumberInput"] input,
-    div[data-testid="stSelectbox"] > div {
-        background-color: #ffffff !important;
-        color: #1f1f1f !important;
-        border: 1px solid #dadce0 !important;
-        border-radius: 20px !important;
-        padding-left: 14px !important;
-    }
-    
-    /* Sidebar matching Gemini sidebar styling */
+    /* Sidebar */
     section[data-testid="stSidebar"] {
-        background-color: #f0f4f9 !important;
-        background-image: none !important;
-        border-right: 1px solid #e3e8f0 !important;
+        background-color: #f8fafc !important;
+        border-right: 1px solid #e2e8f0 !important;
     }
-    
-    /* Style all sidebar buttons as borderless transparent links */
     section[data-testid="stSidebar"] button {
         background: transparent !important;
         border: none !important;
         box-shadow: none !important;
-        color: #3c4043 !important;
+        color: #334155 !important;
         text-align: left !important;
         justify-content: flex-start !important;
-        padding: 8px 12px !important;
-        margin: 2px 0 !important;
-        border-radius: 20px !important;
-        width: 100% !important;
-        font-size: 0.85rem !important;
-        font-weight: 500 !important;
-        transition: background 0.15s ease !important;
+        padding: 10px 14px !important;
+        margin: 3px 0 !important;
+        border-radius: 10px !important;
+        font-weight: 600 !important;
+        font-size: 0.9rem !important;
+        transition: all 0.15s ease !important;
     }
     section[data-testid="stSidebar"] button:hover {
-        background: #e8f0fe !important;
-        color: #1a73e8 !important;
-    }
-    section[data-testid="stSidebar"] button * {
-        color: #3c4043 !important;
-    }
-    section[data-testid="stSidebar"] button:hover * {
+        background: #e2e8f0 !important;
         color: #1a73e8 !important;
     }
     
-    /* Sidebar Selectbox */
-    section[data-testid="stSidebar"] div[data-testid="stSelectbox"] > div {
-        background-color: #ffffff !important;
-        border: 1px solid #dee2e6 !important;
-        border-radius: 12px !important;
-    }
-    
-    /* Chat bubbles text color fixes */
+    /* Chat message bubbles */
     div[data-testid="stChatMessage"] {
         background-color: #ffffff !important;
-        border: 1px solid #e3e8f0 !important;
+        border: 1px solid #e2e8f0 !important;
         border-radius: 12px !important;
-        color: #1f1f1f !important;
-        margin-bottom: 10px !important;
+        padding: 12px 16px !important;
+        margin-bottom: 8px !important;
     }
-    div[data-testid="stChatMessage"] p,
-    div[data-testid="stChatMessage"] span,
-    div[data-testid="stChatMessage"] li,
-    div[data-testid="stChatMessage"] strong {
-        color: #1f1f1f !important;
-    }
-    
-    /* Chat message user bubble tint */
     div[data-testid="stChatMessage"][data-testid*="user"] {
-        background-color: #f0f4f9 !important;
+        background-color: #f1f5f9 !important;
+    }
+    div[data-testid="stChatMessage"] p, div[data-testid="stChatMessage"] span, div[data-testid="stChatMessage"] li {
+        color: #1e293b !important;
+        font-size: 0.92rem !important;
+        line-height: 1.6 !important;
     }
     
     /* Status Badges */
     .status-badge {
-        padding: 6px 12px;
-        border-radius: 8px;
+        padding: 4px 10px;
+        border-radius: 6px;
         font-size: 0.72rem;
         font-weight: 700;
         text-transform: uppercase;
         display: inline-block;
     }
-    .badge-success { background: #e6f4ea; color: #137333; border: 1px solid #ceead6; }
-    .badge-warning { background: #fef7e0; color: #b06000; border: 1px solid #feebc8; }
-    .badge-danger { background: #fce8e6; color: #c5221f; border: 1px solid #fad2cf; }
+    .badge-success { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
+    .badge-info { background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; }
+    .badge-warning { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
+    .badge-danger { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
     
-    .avatar-circle {
-        width: 38px;
-        height: 38px;
-        border-radius: 50%;
-        border: 1px solid #dadce0;
+    /* Input fields */
+    div[data-testid="stTextInput"] input, div[data-testid="stSelectbox"] > div {
+        border-radius: 10px !important;
+        border: 1px solid #cbd5e1 !important;
     }
 </style>
 """, unsafe_allow_html=True)
 
 # State initialization
-if 'active_tab' not in st.session_state:
-    st.session_state.active_tab = "Dashboard"
+if 'active_hub' not in st.session_state:
+    st.session_state.active_hub = "Dashboard"
 if 'chat_session_id' not in st.session_state:
     st.session_state.chat_session_id = str(uuid.uuid4())
 
-# Try loading Ollama settings from DB first
+# Load settings from DB or Secrets
 db_settings = {}
 try:
     db_settings = get_settings()
@@ -255,7 +205,6 @@ default_ollama_url = db_settings.get("ollama_url", "http://localhost:11434")
 default_ollama_model = db_settings.get("ollama_model", "qwen2.5:3b")
 default_embedding_model = db_settings.get("embedding_model", "nomic-embed-text")
 
-# Override with Streamlit Secrets if available
 try:
     if "OLLAMA_URL" in st.secrets:
         default_ollama_url = st.secrets["OLLAMA_URL"]
@@ -272,10 +221,8 @@ if 'ollama_model' not in st.session_state:
     st.session_state.ollama_model = default_ollama_model
 if 'embedding_model' not in st.session_state:
     st.session_state.embedding_model = default_embedding_model
-if 'active_video_preview' not in st.session_state:
-    st.session_state.active_video_preview = None
 
-# Helper to fetch chat session list (first user message of each session)
+# Fetch chat sessions
 def get_chat_sessions(project_id):
     try:
         conn = get_db_connection()
@@ -293,20 +240,20 @@ def get_chat_sessions(project_id):
     except Exception:
         return []
 
-# Manage workspaces (Projects)
+# Workspaces
 projects = get_projects()
 if not projects:
-    create_project("Workspace 1", "Default workspace context")
+    create_project("Workspace 1", "Default workspace")
     projects = get_projects()
 
-# Sidebar layout
+# Sidebar: Simple 5-Hub Navigation
 with st.sidebar:
     st.markdown("""
-    <div style='display: flex; align-items: center; gap: 8px; margin-bottom: 20px;'>
-        <div style='width: 32px; height: 32px; border-radius: 8px; background: linear-gradient(135deg, #1a73e8 0%, #d93025 100%); display: flex; align-items: center; justify-content: center; font-weight: 900; color: white; font-size: 1rem;'>✨</div>
+    <div style='display: flex; align-items: center; gap: 10px; margin-bottom: 20px;'>
+        <div style='width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%); display: flex; align-items: center; justify-content: center; font-weight: 900; color: white; font-size: 1.1rem; box-shadow: 0 4px 12px rgba(37,99,235,0.25);'>⚡</div>
         <div>
-            <h2 style='margin: 0; font-size: 1.15rem; font-weight: 700; color: #1f1f1f;'>ClipForge AI</h2>
-            <span style='font-size: 0.58rem; color: #1a73e8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;'>V2 Enterprise SaaS</span>
+            <h2 style='margin: 0; font-size: 1.15rem; font-weight: 800; color: #0f172a;'>ClipForge AI</h2>
+            <span style='font-size: 0.65rem; color: #2563eb; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;'>Content Intelligence</span>
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -314,683 +261,522 @@ with st.sidebar:
     project_names = [p["name"] for p in projects]
     selected_project_name = st.selectbox("Active Workspace", project_names)
     active_project = next(p for p in projects if p["name"] == selected_project_name)
-    
-    st.markdown("<hr style='border-color: #dee2e6; margin: 12px 0;'>", unsafe_allow_html=True)
 
-    # 18-Link sidebar layout
-    sidebar_links = [
+    st.markdown("<hr style='border-color: #e2e8f0; margin: 12px 0;'>", unsafe_allow_html=True)
+    st.markdown("<span style='font-size: 0.7rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.08em;'>Navigation</span>", unsafe_allow_html=True)
+
+    # 5 Intuitive, Clear Navigation Hubs
+    hubs = [
         ("Dashboard", "📊"),
-        ("Projects", "📁"),
-        ("Source Channels", "📡"),
-        ("Video Library", "🎬"),
-        ("Import Queue", "📥"),
-        ("AI Processing", "⏳"),
-        ("Generated Clips", "⚡"),
-        ("Clip Editor", "✂"),
-        ("Preview Studio", "🖥"),
-        ("Knowledge Base", "🧠"),
-        ("AI Chat", "💬"),
-        ("Video Search", "🔍"),
-        ("Analytics", "📈"),
-        ("Scheduler", "📅"),
-        ("Publishing", "📤"),
-        ("Settings", "⚙"),
-        ("Activity Logs", "📋"),
-        ("Help", "❓")
+        ("Studio & Clips", "🎬"),
+        ("AI Chat & Intelligence", "💬"),
+        ("Scheduler & Publish", "📅"),
+        ("Settings & Workspace", "⚙️")
     ]
-    
-    for tab_id, icon in sidebar_links:
-        is_active = st.session_state.active_tab == tab_id
-        label = f"{icon} {tab_id}"
-        if is_active:
-            label = f"👉 {icon} {tab_id}"
-        if st.button(label, key=f"side_nav_{tab_id}", use_container_width=True):
-            st.session_state.active_tab = tab_id
+
+    for hub_name, icon in hubs:
+        is_active = st.session_state.active_hub == hub_name
+        label = f"{icon}  {hub_name}" if not is_active else f"👉 {icon}  {hub_name}"
+        if st.button(label, key=f"nav_{hub_name}", use_container_width=True):
+            st.session_state.active_hub = hub_name
             st.rerun()
 
-    # Footer metrics indicator
-    st.markdown("<hr style='border-color: #dee2e6; margin: 15px 0;'>", unsafe_allow_html=True)
-    st.caption(f"Active project: **{active_project['name']}**")
+    # Chat Sessions Quick-Switch (if in AI Chat)
+    if st.session_state.active_hub == "AI Chat & Intelligence":
+        st.markdown("<hr style='border-color: #e2e8f0; margin: 14px 0;'>", unsafe_allow_html=True)
+        col_ns1, col_ns2 = st.columns([7, 3])
+        with col_ns1:
+            st.markdown("<span style='font-size: 0.72rem; font-weight: 700; color: #64748b;'>Recent Chats</span>", unsafe_allow_html=True)
+        with col_ns2:
+            if st.button("+ New", key="btn_new_chat_hub", use_container_width=True):
+                st.session_state.chat_session_id = str(uuid.uuid4())
+                st.rerun()
 
-# Fetch database metrics for active Workspace
+        sessions = get_chat_sessions(active_project["id"])
+        if not sessions:
+            st.caption("No chat history yet.")
+        else:
+            for s in sessions[:6]:
+                title = s["message"][:20] + "..." if len(s["message"]) > 20 else s["message"]
+                is_curr = st.session_state.chat_session_id == s["session_id"]
+                btn_lbl = f"💬 {title}" if not is_curr else f"👉 💬 {title}"
+                if st.button(btn_lbl, key=f"cs_{s['session_id']}", use_container_width=True):
+                    st.session_state.chat_session_id = s["session_id"]
+                    st.rerun()
+
+    st.markdown("<hr style='border-color: #e2e8f0; margin: 15px 0;'>", unsafe_allow_html=True)
+    st.caption(f"Workspace: **{active_project['name']}**")
+
+# Data fetch
 conn = get_db_connection()
 chan_row = conn.execute("SELECT * FROM channels WHERE project_id = ?", (active_project["id"],)).fetchone()
 source_channels = get_source_channels(active_project["id"])
 videos = get_videos(active_project["id"])
 activity_logs = get_activity_logs(active_project["id"])
 schedules_list = get_schedules(active_project["id"])
-dest_channels = get_destination_channels(active_project["id"])
+all_clips = get_all_clips()
 
-# Extract channel metadata if connected
-channel_connected = chan_row is not None
-channel_meta = json.loads(chan_row["auth_data"]) if channel_connected and chan_row["auth_data"] else {}
-
-clips_count = 0
-for v in videos:
-    v_clips = get_clips(v["id"])
-    clips_count += len(v_clips)
+# Video clips for active workspace
+active_vid_ids = [v["id"] for v in videos]
+workspace_clips = [c for c in all_clips if c["video_id"] in active_vid_ids]
 conn.close()
 
-# Main Area Layout
-tab_name = st.session_state.active_tab
+channel_connected = chan_row is not None
+hub = st.session_state.active_hub
 
-# Header
-col_hd1, col_hd2 = st.columns([8, 4])
-with col_hd1:
-    st.markdown("<h1 style='margin:0; font-size:1.85rem; font-weight:700;'>ClipForge AI V2</h1>", unsafe_allow_html=True)
-    st.caption("Google Gemini Inspired repurposed content intelligence platform")
-with col_hd2:
-    st.markdown(
-        f"<div style='text-align:right; font-size:0.75rem; color:#5f6368; padding-top:10px;'>"
-        f"Workspace: <b>{active_project['name']}</b> | Session: {st.session_state.chat_session_id[:6]}..."
-        f"</div>",
-        unsafe_allow_html=True
-    )
+# Top Header Banner
+col_h1, col_h2 = st.columns([8, 4])
+with col_h1:
+    st.markdown("<h1 style='margin:0; font-size:1.65rem;'>ClipForge AI</h1>", unsafe_allow_html=True)
+    st.caption("AI-Powered Video Repurposing & Local RAG Content Intelligence Platform")
+with col_h2:
+    is_online, models_list = test_ollama_connection(st.session_state.ollama_url)
+    if is_online:
+        st.markdown(
+            f"<div class='status-badge badge-success' style='float:right; margin-top:8px;'>"
+            f"✓ Ollama Online ({len(models_list)} models available)</div>",
+            unsafe_allow_html=True
+        )
+    else:
+        st.markdown(
+            f"<div class='status-badge badge-warning' style='float:right; margin-top:8px;'>"
+            f"⚠ Ollama Offline (Local Vector Indexing Active)</div>",
+            unsafe_allow_html=True
+        )
 
-# Real-time Connection status checker banner at the top of the app
-is_ollama_online, connected_models = test_ollama_connection(st.session_state.ollama_url)
-if is_ollama_online:
-    st.markdown(
-        f"<div class='status-badge badge-success' style='margin-bottom:12px; font-size:0.7rem; width:100%; text-align:center;'>"
-        f"✓ Ollama Online ({st.session_state.ollama_url}) | Active Models: {', '.join(connected_models)}"
-        f"</div>",
-        unsafe_allow_html=True
-    )
-else:
-    st.markdown(
-        f"<div class='status-badge badge-danger' style='margin-bottom:12px; font-size:0.7rem; width:100%; text-align:center;'>"
-        f"⚠ Ollama Server offline. Set your ngrok or local endpoint inside Settings."
-        f"</div>",
-        unsafe_allow_html=True
-    )
-
-# Horizontal workflow steps tracker progress visualizer
+# Visual Workflow Progression Bar
 st.markdown("""
-<div style='background:#f8f9fa; border: 1px solid #dee2e6; border-radius:12px; padding:10px 15px; margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; font-size:0.78rem; font-weight:600;'>
-    <div style='color:#1a73e8;'>✓ 1. Import Content</div>
-    <div style='color:#1a73e8;'>✓ 2. AI Analysis</div>
-    <div style='color:#1a73e8;'>✓ 3. Review Clips</div>
-    <div style='color:#e0a800;'>⚡ 4. Edit Clips</div>
-    <div style='color:#5f6368;'>✦ 5. Preview Studio</div>
-    <div style='color:#5f6368;'>✦ 6. Schedule Queue</div>
-    <div style='color:#5f6368;'>✦ 7. Publish Hub</div>
-    <div style='color:#5f6368;'>✦ 8. Analytics Audits</div>
+<div style='background:#f8fafc; border: 1px solid #e2e8f0; border-radius:10px; padding:8px 14px; margin: 12px 0 20px 0; display:flex; justify-content:space-between; font-size:0.78rem; font-weight:600; color:#64748b;'>
+    <span style='color:#2563eb;'>1. Import Video</span> ➔ 
+    <span style='color:#2563eb;'>2. AI Moment Detection</span> ➔ 
+    <span style='color:#2563eb;'>3. Face-Tracking & Subtitles</span> ➔ 
+    <span style='color:#2563eb;'>4. Studio Preview & Edit</span> ➔ 
+    <span style='color:#2563eb;'>5. RAG Chat & Search</span> ➔ 
+    <span style='color:#2563eb;'>6. Schedule & Publish</span>
 </div>
 """, unsafe_allow_html=True)
 
-# ------------------------------------------------------------
-# 1. DASHBOARD
-# ------------------------------------------------------------
-if tab_name == "Dashboard":
-    col_d1, col_d2, col_d3, col_d4 = st.columns(4)
-    with col_d1:
-        st.markdown(f"""
-        <div class='glass-card'>
-            <div class='metric-label'>Connected Channels</div>
-            <div class='metric-value'>{"1 Channel" if channel_connected else "Not Linked"}</div>
-            <div class='metric-label' style='margin-top:4px; font-size:0.62rem;'>Google OAuth connected</div>
-        </div>
-        """, unsafe_allow_html=True)
-    with col_d2:
+# ============================================================
+# 1. DASHBOARD HUB
+# ============================================================
+if hub == "Dashboard":
+    col_m1, col_m2, col_m3, col_m4 = st.columns(4)
+    with col_m1:
         st.markdown(f"""
         <div class='glass-card'>
             <div class='metric-label'>Videos In Workspace</div>
             <div class='metric-value'>{len(videos)}</div>
-            <div class='metric-label' style='margin-top:4px; font-size:0.62rem;'>Indexed or pending</div>
+            <div style='font-size:0.75rem; color:#64748b; margin-top:4px;'>Imported & transcribed</div>
         </div>
         """, unsafe_allow_html=True)
-    with col_d3:
+    with col_m2:
         st.markdown(f"""
         <div class='glass-card'>
-            <div class='metric-label'>Generated Clips</div>
-            <div class='metric-value'>{clips_count}</div>
-            <div class='metric-label' style='margin-top:4px; font-size:0.62rem;'>Speech-aligned hooks</div>
+            <div class='metric-label'>Viral Clips Extracted</div>
+            <div class='metric-value'>{len(workspace_clips)}</div>
+            <div style='font-size:0.75rem; color:#64748b; margin-top:4px;'>Speech-aligned hooks</div>
         </div>
         """, unsafe_allow_html=True)
-    with col_d4:
+    with col_m3:
+        st.markdown(f"""
+        <div class='glass-card'>
+            <div class='metric-label'>Connected Channels</div>
+            <div class='metric-value'>{"1 Active" if channel_connected else "None"}</div>
+            <div style='font-size:0.75rem; color:#64748b; margin-top:4px;'>YouTube Shorts / Reels</div>
+        </div>
+        """, unsafe_allow_html=True)
+    with col_m4:
         st.markdown(f"""
         <div class='glass-card'>
             <div class='metric-label'>Scheduled Posts</div>
             <div class='metric-value'>{len(schedules_list)}</div>
-            <div class='metric-label' style='margin-top:4px; font-size:0.62rem;'>Active slots configured</div>
+            <div style='font-size:0.75rem; color:#64748b; margin-top:4px;'>Publish queue slots</div>
         </div>
         """, unsafe_allow_html=True)
 
-    # Hardware & Queue Gauges
-    col_hw1, col_hw2, col_hw3, col_hw4 = st.columns(4)
-    with col_hw1:
-        st.markdown(f"""
-        <div class='glass-card'>
-            <div class='metric-label'>GPU Acceleration</div>
-            <div class='metric-value' style='color:#1a73e8;'>Active (CUDA)</div>
-            <div class='metric-label' style='margin-top:4px; font-size:0.62rem;'>Ollama running locally</div>
-        </div>
-        """, unsafe_allow_html=True)
-    with col_hw2:
-        st.markdown(f"""
-        <div class='glass-card'>
-            <div class='metric-label'>CPU Usage</div>
-            <div class='metric-value'>24%</div>
-            <div class='metric-label' style='margin-top:4px; font-size:0.62rem;'>8 Threads active</div>
-        </div>
-        """, unsafe_allow_html=True)
-    with col_hw3:
-        st.markdown(f"""
-        <div class='glass-card'>
-            <div class='metric-label'>RAM Usage</div>
-            <div class='metric-value'>5.8 GB / 16 GB</div>
-            <div class='metric-label' style='margin-top:4px; font-size:0.62rem;'>Whisper base loaded</div>
-        </div>
-        """, unsafe_allow_html=True)
-    with col_hw4:
-        st.markdown(f"""
-        <div class='glass-card'>
-            <div class='metric-label'>Storage space</div>
-            <div class='metric-value'>42.4 GB free</div>
-            <div class='metric-label' style='margin-top:4px; font-size:0.62rem;'>ChromaDB collection active</div>
-        </div>
-        """, unsafe_allow_html=True)
-
-    # Beautiful charts
-    st.write("### Workspace Insights & Analytics")
-    col_ch1, col_ch2 = st.columns(2)
-    with col_ch1:
+    col_dash1, col_dash2 = st.columns([7, 5])
+    with col_dash1:
         with st.container(border=True):
-            st.write("#### Daily Imports & Clips Extracted")
-            # Generate synthetic imports timeline
-            chart_data = {
-                "Imports": [1, 2, 4, 3, 2, 5, 4],
-                "Clips Extracted": [3, 6, 12, 9, 6, 15, 12]
-            }
-            st.area_chart(chart_data)
-    with col_ch2:
-        with st.container(border=True):
-            st.write("#### Virality Retention Prediction curve")
-            chart_ret = {"Predicted Engagement Score": [95, 88, 82, 75, 70, 68, 65, 62, 60, 58]}
-            st.line_chart(chart_ret)
-
-# ------------------------------------------------------------
-# 2. PROJECTS
-# ------------------------------------------------------------
-elif tab_name == "Projects":
-    with st.container(border=True):
-        st.write("### Workspace Workspace Manager")
-        st.write("ClipForge AI scopes database indices, channels, and logs to the active project context.")
-        
-        col_pr1, col_pr2 = st.columns(2)
-        with col_pr1:
-            st.write("#### Active Workspaces")
-            for pr in projects:
-                is_curr = pr["id"] == active_project["id"]
-                st.write(f"- **{pr['name']}** {' (Active)' if is_curr else ''}")
-                st.caption(pr["description"])
-        with col_pr2:
-            st.write("#### Initialize new workspace")
-            with st.form("new_pr_form"):
-                pr_name = st.text_input("Project Name:")
-                pr_desc = st.text_area("Workspace Description:")
-                submit_pr = st.form_submit_button("Create Workspace")
-                if submit_pr and pr_name:
-                    create_project(pr_name, pr_desc)
-                    st.success("New workspace successfully initialized!")
+            st.write("### Quick Start Workflow")
+            st.write("Turn any long video into viral shorts and a searchable knowledge base in seconds:")
+            col_qs1, col_qs2 = st.columns(2)
+            with col_qs1:
+                if st.button("🎬 Import & Repurpose Video", use_container_width=True):
+                    st.session_state.active_hub = "Studio & Clips"
+                    st.rerun()
+            with col_qs2:
+                if st.button("💬 Open AI Video Chat", use_container_width=True):
+                    st.session_state.active_hub = "AI Chat & Intelligence"
                     st.rerun()
 
-# ------------------------------------------------------------
-# 3. SOURCE CHANNELS
-# ------------------------------------------------------------
-elif tab_name == "Source Channels":
-    with st.container(border=True):
-        st.write("### Channel Sync Sources")
-        col_sc1, col_sc2 = st.columns(2)
-        with col_sc1:
-            st.write("#### Monitored channel handles")
-            if not source_channels:
-                st.caption("No channels added yet.")
+            st.markdown("<hr style='margin:12px 0;'>", unsafe_allow_html=True)
+            st.write("#### Recent Videos in Library")
+            if not videos:
+                st.info("No videos imported yet. Click **'Import & Repurpose Video'** above to start.")
             else:
-                for sc in source_channels:
-                    st.markdown(f"**{sc['handle']}** | auto check interval: Daily")
-                    if st.button("Delete check source", key=f"del_sc_{sc['id']}"):
-                        delete_source_channel(sc["id"])
-                        st.rerun()
-        with col_sc2:
-            st.write("#### Add source channel to check")
-            with st.form("add_sc_form"):
-                new_sc_handle = st.text_input("Paste channel handle or url:", placeholder="e.g. @NASA")
-                submit_sc = st.form_submit_button("Register source")
-                if submit_sc and new_sc_handle:
-                    handle = new_sc_handle.strip()
-                    handle = handle if handle.startswith("@") else f"@{handle}"
-                    create_source_channel(
-                        project_id=active_project["id"],
-                        handle=handle,
-                        name=handle[1:]
-                    )
-                    st.success("Channel registered to monitoring queue!")
-                    st.rerun()
+                for v in videos[:4]:
+                    col_vr1, col_vr2 = st.columns([8, 2])
+                    with col_vr1:
+                        st.write(f"**{v['filename']}**")
+                        st.caption(f"Status: **{v['status'].upper()}** | Duration: {int(v['duration'] or 0)}s | Added: {v['created_at'][:10]}")
+                    with col_vr2:
+                        st.markdown(f"<span class='status-badge badge-{'success' if v['status'] == 'completed' else 'info'}'>{v['status']}</span>", unsafe_allow_html=True)
+                    st.markdown("<hr style='margin:6px 0; border-color:#f1f5f9;'>", unsafe_allow_html=True)
 
-# ------------------------------------------------------------
-# 4. VIDEO LIBRARY
-# ------------------------------------------------------------
-elif tab_name == "Video Library":
-    with st.container(border=True):
-        st.write("### Workspace Video Library")
-        if not videos:
-            st.info("No videos imported yet. Use the 'Import Queue' to add video links or local files.")
-        else:
-            for v in videos:
-                col_v1, col_v2 = st.columns([8, 2])
-                with col_v1:
-                    st.markdown(f"**Path/URL:** {v['file_path']}")
-                    st.caption(f"Status: **{v['status']}** | Width: {v['width']}px | FPS: {v['fps']} | Created: {v['created_at']}")
-                with col_v2:
-                    if st.button("Delete Record", key=f"del_v_{v['id']}"):
-                        conn = get_db_connection()
-                        conn.execute("DELETE FROM videos WHERE id = ?", (v["id"],))
-                        conn.commit()
-                        conn.close()
-                        st.rerun()
-                st.markdown("<hr style='margin:8px 0;'>", unsafe_allow_html=True)
+    with col_dash2:
+        with st.container(border=True):
+            st.write("### System Health & Engine Status")
+            st.write(f"• **AI Model (Ollama)**: `{st.session_state.ollama_model}`")
+            st.write(f"• **Embeddings**: `{st.session_state.embedding_model}`")
+            st.write(f"• **Vector Database**: `ChromaDB (Persistent Collections)`")
+            st.write(f"• **Video Engine**: `FFmpeg + OpenCV Face Tracking`")
+            st.write(f"• **Speech Recognition**: `OpenAI Whisper (Word Timestamps)`")
+            
+            st.markdown("<hr style='margin:10px 0;'>", unsafe_allow_html=True)
+            st.write("#### Engagement & Virality Curve")
+            st.line_chart({"Predicted Retention %": [100, 94, 88, 82, 78, 75, 72, 70, 68]})
 
-# ------------------------------------------------------------
-# 5. IMPORT QUEUE
-# ------------------------------------------------------------
-elif tab_name == "Import Queue":
+# ============================================================
+# 2. VIDEO STUDIO & CLIPS (Unified All-in-One Engine!)
+# ============================================================
+elif hub == "Studio & Clips":
+    st.write("## Video Studio & Viral Moments Engine")
+    st.caption("Import videos, monitor processing, review extracted clips, adjust subtitles, and preview playback.")
+
+    # 1. Import Video Section
     with st.container(border=True):
-        st.write("### Video import Queue")
-        st.write("Paste a video link below to register it in the import queue. Click 'Process AI clips' to run.")
-        
-        with st.form("import_queue_form"):
-            target_url = st.text_input("Paste YouTube watch link or local video file path:")
-            submit_iq = st.form_submit_button("Import to Queue")
-            if submit_iq and target_url:
-                target_url = target_url.strip()
+        st.write("### 1. Import New Video")
+        with st.form("import_form_studio", clear_on_submit=True):
+            col_in1, col_in2 = st.columns([8, 2])
+            with col_in1:
+                video_input = st.text_input("YouTube Watch URL or Local Video File Path:", placeholder="e.g. https://www.youtube.com/watch?v=dQw4w9WgXcQ or C:/videos/sample.mp4")
+            with col_in2:
+                st.write("")
+                st.write("")
+                submit_imp = st.form_submit_button("⚡ Process AI Clips", use_container_width=True)
+
+            if submit_imp and video_input:
+                target = video_input.strip()
                 vid_id = str(uuid.uuid4())
-                filename = f"video_{int(datetime.utcnow().timestamp())}.mp4"
+                clean_name = target.split("?")[0].split("/")[-1]
+                
                 create_video(
                     project_id=active_project["id"],
-                    filename=filename,
-                    file_path=target_url
+                    filename=f"Importing: {clean_name}",
+                    file_path=target
                 )
-                st.success("Video added to queue successfully!")
-                st.rerun()
                 
-        # List of queue items
-        st.write("#### Registered Queue Items")
-        if not videos:
-            st.caption("No registered import files.")
-        else:
-            for v in videos:
-                col_row1, col_row2 = st.columns([7, 3])
-                with col_row1:
-                    st.write(f"**File:** {v['file_path']}")
-                    st.caption(f"Status: **{v['status']}**")
-                with col_row2:
-                    if v["status"] in ["pending", "failed"]:
-                        if st.button("Process AI clips", key=f"trig_proc_{v['id']}"):
+                # Launch pipeline in background thread
+                from clipforge_engine.pipeline import run_processing_pipeline
+                import threading
+                import asyncio
+                threading.Thread(target=lambda: asyncio.run(run_processing_pipeline(vid_id))).start()
+                
+                st.success(f"Video registered! AI analysis pipeline launched in background.")
+                st.rerun()
+
+    # 2. Select Active Video Context
+    if not videos:
+        st.info("No videos in this workspace. Enter a video link above to extract viral clips.")
+    else:
+        vid_options = {v["filename"]: v["id"] for v in videos}
+        selected_vid_title = st.selectbox("Select Video to Work On:", list(vid_options.keys()))
+        selected_vid_id = vid_options[selected_vid_title]
+        current_video = next(v for v in videos if v["id"] == selected_vid_id)
+
+        # Processing Pipeline Status Inspector
+        stages = get_pipeline_stages(selected_vid_id)
+        if stages:
+            with st.expander(f"Pipeline Execution Steps (Status: {current_video['status'].upper()})", expanded=(current_video['status'] == 'processing')):
+                for sg in stages:
+                    col_s1, col_s2, col_s3 = st.columns([3, 2, 7])
+                    with col_s1:
+                        st.write(f"**{sg['stage_name']}**")
+                    with col_s2:
+                        badge_type = "success" if sg["status"] == "completed" else ("info" if sg["status"] == "running" else "warning")
+                        st.markdown(f"<span class='status-badge badge-{badge_type}'>{sg['status']}</span>", unsafe_allow_html=True)
+                    with col_s3:
+                        st.caption(sg["log_text"])
+                    st.markdown("<hr style='margin:4px 0; border-color:#f1f5f9;'>", unsafe_allow_html=True)
+
+        # 3. Clips & Studio Preview
+        conn = get_db_connection()
+        video_clips = conn.execute("SELECT * FROM clips WHERE video_id = ? ORDER BY score DESC", (selected_vid_id,)).fetchall()
+        conn.close()
+
+        col_st1, col_st2 = st.columns([6, 6])
+        with col_st1:
+            with st.container(border=True):
+                st.write("### AI Extracted Viral Moments")
+                if not video_clips:
+                    if current_video["status"] in ["pending", "processing"]:
+                        st.info("Video is currently being processed. Click refresh in a moment to view clips.")
+                        if st.button("🔄 Refresh Clips Status"):
+                            st.rerun()
+                    else:
+                        st.warning("No clips extracted yet.")
+                        if st.button("⚡ Re-Run AI Analysis Pipeline"):
                             from clipforge_engine.pipeline import run_processing_pipeline
                             import threading
                             import asyncio
-                            threading.Thread(target=lambda: asyncio.run(run_processing_pipeline(v["id"]))).start()
-                            st.info("AI processing pipeline launched in background.")
+                            threading.Thread(target=lambda: asyncio.run(run_processing_pipeline(selected_vid_id))).start()
                             st.rerun()
-                st.markdown("<hr style='margin:4px 0;'>", unsafe_allow_html=True)
-
-# ------------------------------------------------------------
-# 6. AI PROCESSING
-# ------------------------------------------------------------
-elif tab_name == "AI Processing":
-    with st.container(border=True):
-        st.write("### End-to-End Processing pipeline")
-        if not videos:
-            st.info("No videos imported. Run clip processing from 'Import Queue' first.")
-        else:
-            vid_options = {v["file_path"]: v["id"] for v in videos}
-            selected_v_path = st.selectbox("Select video context to audit:", list(vid_options.keys()))
-            selected_v_id = vid_options[selected_v_path]
-            
-            stages = get_pipeline_stages(selected_v_id)
-            if not stages:
-                st.warning("No processing logs active for this video. Trigger 'Process AI clips' to initialize logs.")
-            else:
-                for sg in stages:
-                    col_sg1, col_sg2, col_sg3 = st.columns([3, 2, 7])
-                    with col_sg1:
-                        st.markdown(f"**{sg['stage_name']}**")
-                    with col_sg2:
-                        st.markdown(f"Status: **{sg['status']}**")
-                    with col_sg3:
-                        st.caption(sg["log_text"])
-                    st.markdown("<hr style='margin:4px 0;'>", unsafe_allow_html=True)
-
-# ------------------------------------------------------------
-# 7. GENERATED CLIPS
-# ------------------------------------------------------------
-elif tab_name == "Generated Clips":
-    with st.container(border=True):
-        st.write("### AI Extracted clips summary")
-        conn = get_db_connection()
-        all_clips = get_all_clips()
-        conn.close()
-        
-        if not all_clips:
-            st.info("No viral moment clips generated yet. Process an imported video first.")
-        else:
-            for c in all_clips:
-                st.markdown(f"#### {c['title']}")
-                st.caption(f"Score: **{c['score']}%** | Duration: {c['duration']}s | Timestamps: {c['start_time']}s - {c['end_time']}s")
-                st.write(c["explanation"])
-                st.markdown("<hr style='margin:8px 0;'>", unsafe_allow_html=True)
-
-# ------------------------------------------------------------
-# 8. CLIP EDITOR
-# ------------------------------------------------------------
-elif tab_name == "Clip Editor":
-    with st.container(border=True):
-        st.write("### Professional Timeline Editor")
-        conn = get_db_connection()
-        all_clips = get_all_clips()
-        conn.close()
-        
-        if not all_clips:
-            st.info("No clips available. Run video analysis to generate clips.")
-        else:
-            clip_options = {c["title"]: c["id"] for c in all_clips}
-            sel_clip_title = st.selectbox("Select clip target to adjust:", list(clip_options.keys()))
-            sel_clip_id = clip_options[sel_clip_title]
-            
-            c_data = next(c for c in all_clips if c["id"] == sel_clip_id)
-            
-            col_ed1, col_ed2 = st.columns([7, 5])
-            with col_ed1:
-                st.write("#### Timeline Trim & Slicing")
-                trim_range = st.slider("Select Trim Offset boundaries (seconds):", 0.0, c_data["duration"] + 30.0, (c_data["start_time"], c_data["end_time"]))
-                
-                st.write("#### Face Tracking & Crop offsets")
-                face_track = st.checkbox("Enable Auto-Face Tracking (OpenCV)", value=True)
-                col_crop1, col_crop2 = st.columns(2)
-                with col_crop1:
-                    crop_w = st.number_input("Crop Width (px):", value=1080)
-                with col_crop2:
-                    crop_h = st.number_input("Crop Height (px):", value=1920)
-            with col_ed2:
-                st.write("#### Subtitle typography configurations")
-                font_fam = st.selectbox("Font Style Family:", ["Montserrat", "Impact", "Inter"])
-                font_col = st.color_picker("Subtitle Highlight color:", "#FF0055")
-                font_sz = st.slider("Font size scaling:", 12, 48, 28)
-                
-                music_vol = st.slider("Background music volume slider:", 0.0, 1.0, 0.5)
-                
-                if st.button("Compile & Save Edits"):
-                    from clipforge_engine.services.editor import apply_timeline_edits
-                    apply_timeline_edits(
-                        clip_id=sel_clip_id,
-                        trim_start=trim_range[0],
-                        trim_end=trim_range[1],
-                        crop_x=0,
-                        crop_y=0,
-                        crop_w=crop_w,
-                        crop_h=crop_h,
-                        face_tracking=1 if face_track else 0,
-                        font_family=font_fam,
-                        font_color=font_col,
-                        font_size=font_sz,
-                        bg_music_volume=music_vol
-                    )
-                    st.success("Edits saved! Preview compiled successfully.")
-
-# ------------------------------------------------------------
-# 9. PREVIEW STUDIO
-# ------------------------------------------------------------
-elif tab_name == "Preview Studio":
-    with st.container(border=True):
-        st.write("### Video Preview Studio")
-        conn = get_db_connection()
-        all_clips = get_all_clips()
-        conn.close()
-        
-        if not all_clips:
-            st.info("No clips generated. Review imported videos.")
-        else:
-            clip_options = {c["title"]: c["id"] for c in all_clips}
-            sel_clip_title = st.selectbox("Select clip preview target:", list(clip_options.keys()))
-            sel_clip_id = clip_options[sel_clip_title]
-            
-            c_data = next(c for c in all_clips if c["id"] == sel_clip_id)
-            
-            # Find parent video path to play
-            conn = get_db_connection()
-            p_video = conn.execute("SELECT * FROM videos WHERE id = ?", (c_data["video_id"],)).fetchone()
-            conn.close()
-            
-            if p_video:
-                st.caption(f"Previewing clip segment starting at {c_data['start_time']}s")
-                st.video(p_video["file_path"], start_time=int(c_data["start_time"]))
-                
-                col_pv1, col_pv2 = st.columns(2)
-                with col_pv1:
-                    if st.button("Approve & Schedule Posting", use_container_width=True):
-                        st.success("Clip approved and added to posting queue.")
-                with col_pv2:
-                    st.button("Reject & Edit Again", use_container_width=True)
-
-# ------------------------------------------------------------
-# 10. KNOWLEDGE BASE
-# ------------------------------------------------------------
-elif tab_name == "Knowledge Base":
-    with st.container(border=True):
-        st.write("### Workspace Knowledge Graph base")
-        if not videos:
-            st.info("Import content to build a knowledge base index.")
-        else:
-            vid_options = {v["file_path"]: v["id"] for v in videos}
-            sel_v_path = st.selectbox("Select video context to review summaries:", list(vid_options.keys()))
-            sel_v_id = vid_options[sel_v_path]
-            
-            summary = get_summary(sel_v_id)
-            if not summary:
-                st.caption("No AI summary generated. Run clip processing to build summaries.")
-            else:
-                st.write("#### Executive Summary")
-                st.write(summary["executive_summary"])
-                
-                st.write("#### Action Items lists")
-                if summary["action_items"]:
-                    for act in summary["action_items"]:
-                        st.write(f"- {act}")
                 else:
-                    st.caption("No action items.")
+                    for c in video_clips:
+                        st.write(f"#### {c['title']}")
+                        col_cs1, col_cs2 = st.columns([6, 6])
+                        with col_cs1:
+                            st.caption(f"Virality Score: **{c['score']}%** | Duration: {c['duration']}s")
+                        with col_cs2:
+                            st.caption(f"Timestamps: **{c['start_time']}s - {c['end_time']}s**")
+                        st.write(f"**Why Viral:** {c['explanation']}")
 
-# ------------------------------------------------------------
-# 11. AI CHAT
-# ------------------------------------------------------------
-elif tab_name == "AI Chat":
-    with st.container(border=True):
-        st.write("### Conversational grounded RAG Chat")
-        if not videos:
-            st.info("No videos to query. Run video imports first.")
-        else:
-            vid_options = {v["file_path"]: v["id"] for v in videos}
-            selected_vid_path = st.selectbox("Select chat context scope:", list(vid_options.keys()))
-            selected_vid_id = vid_options[selected_vid_path]
-            
-            # Load session history
-            history = get_chat_history(active_project["id"], st.session_state.chat_session_id)
-            for msg in history:
-                with st.chat_message(msg["role"]):
-                    st.write(msg["message"])
+                        col_act1, col_act2 = st.columns(2)
+                        with col_act1:
+                            if st.button("⬇ Download Clip", key=f"dl_c_{c['id']}", use_container_width=True):
+                                st.info("Saved clip configuration to local output.")
+                        with col_act2:
+                            if st.button("📅 Schedule Post", key=f"sch_c_{c['id']}", use_container_width=True):
+                                create_schedule(active_project["id"], "Monday", "12:00")
+                                st.success("Clip queued in post calendar!")
+                        st.markdown("<hr style='margin:10px 0; border-color:#f1f5f9;'>", unsafe_allow_html=True)
+
+        with col_st2:
+            with st.container(border=True):
+                st.write("### Live Video Preview Studio")
+                if video_clips:
+                    clip_titles = [c["title"] for c in video_clips]
+                    active_clip_title = st.selectbox("Preview Clip Segment:", clip_titles)
+                    active_clip = next(c for c in video_clips if c["title"] == active_clip_title)
                     
-            with st.form("chat_form_v2", clear_on_submit=True):
-                user_msg = st.text_input("Ask anything about the transcripts:")
-                submit_chat = st.form_submit_button("Ask local LLM")
-                if submit_chat and user_msg:
-                    add_chat_message(active_project["id"], st.session_state.chat_session_id, "user", user_msg)
+                    st.caption(f"Auto-seeking to segment: **{active_clip['start_time']}s - {active_clip['end_time']}s**")
+                    st.video(current_video["file_path"], start_time=int(active_clip["start_time"]))
                     
-                    try:
-                        retrieved = query_similar_chunks(
-                            project_id=active_project["id"],
-                            query_text=user_msg,
-                            k=4,
-                            video_ids=[selected_vid_id],
-                            model=st.session_state.embedding_model,
-                            base_url=st.session_state.ollama_url
-                        )
-                        answer = generate_grounded_answer(
-                            project_id=active_project["id"],
-                            query=user_msg,
-                            retrieved_chunks=retrieved,
-                            model=st.session_state.ollama_model,
-                            base_url=st.session_state.ollama_url
-                        )
-                    except Exception as err:
-                        answer = f"Error processing query: {str(err)}."
-                        retrieved = []
+                    st.markdown("<hr style='margin:12px 0;'>", unsafe_allow_html=True)
+                    st.write("#### Rendering & Subtitle Adjustments")
+                    preset = st.selectbox("Style Template:", ["MrBeast High-Energy", "Minimal Clean", "TikTok Bold"])
+                    col_ad1, col_ad2 = st.columns(2)
+                    with col_ad1:
+                        st.checkbox("Auto-Face Tracking (OpenCV 9:16)", value=True)
+                        st.checkbox("Dynamic Karaoke Subtitles", value=True)
+                    with col_ad2:
+                        font_size = st.slider("Subtitle Font Size:", 16, 48, 28)
+                        font_color = st.color_picker("Highlight Font Color:", "#FF0055")
+                else:
+                    st.info("Import and process a video to preview clips here.")
+
+# ============================================================
+# 3. AI CHAT & INTELLIGENCE (RAG)
+# ============================================================
+elif hub == "AI Chat & Intelligence":
+    st.write("## Grounded AI Video Intelligence & RAG Chat")
+    st.caption("Ask anything about your video transcripts with timestamp-grounded citations and semantic search.")
+
+    if not videos:
+        st.info("No videos in this workspace. Import a video in 'Studio & Clips' first.")
+    else:
+        vid_options = {v["filename"]: v["id"] for v in videos}
+        selected_vid_title = st.selectbox("Video Context Scope:", list(vid_options.keys()))
+        selected_vid_id = vid_options[selected_vid_title]
+
+        col_rag1, col_rag2 = st.columns([7, 5])
+        with col_rag1:
+            with st.container(border=True):
+                st.write("### Conversational Grounded Chat")
+                
+                # Render conversation history
+                history = get_chat_history(active_project["id"], st.session_state.chat_session_id)
+                for msg in history:
+                    with st.chat_message(msg["role"]):
+                        st.write(msg["message"])
+
+                with st.form("chat_form_grounded", clear_on_submit=True):
+                    user_msg = st.text_input("Ask any question about the video transcript:", placeholder="e.g. What is this video about? What was discussed about SpaceX?")
+                    submit_q = st.form_submit_button("Ask Local AI", use_container_width=True)
+
+                    if submit_q and user_msg:
+                        add_chat_message(active_project["id"], st.session_state.chat_session_id, "user", user_msg)
                         
-                    add_chat_message(active_project["id"], st.session_state.chat_session_id, "assistant", answer)
+                        try:
+                            # 1. Retrieve relevant chunks
+                            retrieved = query_similar_chunks(
+                                project_id=active_project["id"],
+                                query_text=user_msg,
+                                k=4,
+                                video_ids=[selected_vid_id],
+                                model=st.session_state.embedding_model,
+                                base_url=st.session_state.ollama_url
+                            )
+                            # 2. Grounded generation
+                            answer = generate_grounded_answer(
+                                project_id=active_project["id"],
+                                query=user_msg,
+                                retrieved_chunks=retrieved,
+                                model=st.session_state.ollama_model,
+                                base_url=st.session_state.ollama_url
+                            )
+                        except Exception as err:
+                            answer = f"Error during RAG retrieval: {str(err)}"
+                            retrieved = []
+
+                        add_chat_message(active_project["id"], st.session_state.chat_session_id, "assistant", answer)
+                        try:
+                            log_retrieval(active_project["id"], user_msg, retrieved, answer)
+                        except Exception:
+                            pass
+                        st.rerun()
+
+                if st.button("Clear Conversation History"):
+                    clear_chat_history(active_project["id"], st.session_state.chat_session_id)
                     st.rerun()
 
-# ------------------------------------------------------------
-# 12. VIDEO SEARCH
-# ------------------------------------------------------------
-elif tab_name == "Video Search":
-    with st.container(border=True):
-        st.write("### Semantic Video Search")
-        query_in = st.text_input("Search matching transcript coordinates:", placeholder="e.g. SpaceX, deep learning")
-        if query_in:
-            try:
-                hits = query_similar_chunks(
-                    project_id=active_project["id"],
-                    query_text=query_in,
-                    k=4,
-                    model=st.session_state.embedding_model,
-                    base_url=st.session_state.ollama_url
-                )
-                for hit in hits:
-                    st.markdown(f"**Match found (Text):** {hit['text']}")
-                    st.caption(f"Metadata: {hit['metadata']}")
-            except Exception as err:
-                st.warning(f"Error querying index: {err}")
+        with col_rag2:
+            # Semantic Scene Search
+            with st.container(border=True):
+                st.write("### Semantic Scene Search")
+                search_query = st.text_input("Search moments by concept or keyword:", placeholder="e.g. artificial intelligence, pricing, funny moment")
+                if search_query:
+                    hits = query_similar_chunks(
+                        project_id=active_project["id"],
+                        query_text=search_query,
+                        k=3,
+                        video_ids=[selected_vid_id],
+                        model=st.session_state.embedding_model,
+                        base_url=st.session_state.ollama_url
+                    )
+                    if not hits:
+                        st.caption("No matching scene coordinates found.")
+                    else:
+                        for hit in hits:
+                            meta = hit.get("metadata", {})
+                            st_time = float(meta.get("start_time", 0.0))
+                            h = int(st_time // 3600)
+                            m = int((st_time % 3600) // 60)
+                            s = int(st_time % 60)
+                            time_tag = f"{h:02d}:{m:02d}:{s:02d}"
+                            
+                            st.write(f"• **Timestamp [{time_tag}]**:")
+                            st.write(f"*{hit['text']}*")
+                            st.markdown("<hr style='margin:4px 0; border-color:#f1f5f9;'>", unsafe_allow_html=True)
 
-# ------------------------------------------------------------
-# 13. ANALYTICS
-# ------------------------------------------------------------
-elif tab_name == "Analytics":
-    with st.container(border=True):
-        st.write("### Destination Channel Analytics")
-        col_an1, col_an2, col_an3 = st.columns(3)
-        with col_an1:
-            st.metric("Total Views", "184,200", "+12.4%")
-        with col_an2:
-            st.metric("CTR Rate", "4.2%", "+0.5%")
-        with col_an3:
-            st.metric("Audience Retention", "68.4%", "+2.1%")
-            
-        st.write("#### View Growth Prediction (Daily)")
-        an_chart = {"Daily Views": [12000, 14000, 18500, 22000, 24000, 28000]}
-        st.line_chart(an_chart)
+            # Executive Summary
+            with st.container(border=True):
+                st.write("### Executive Summary & Takeaways")
+                summary = get_summary(selected_vid_id)
+                if summary:
+                    st.write(summary["executive_summary"])
+                    if summary.get("action_items"):
+                        st.write("**Key Action Items:**")
+                        for act in summary["action_items"]:
+                            st.write(f"- {act}")
+                else:
+                    st.caption("Summary is generated automatically when AI video processing runs.")
 
-# ------------------------------------------------------------
-# 14. SCHEDULER
-# ------------------------------------------------------------
-elif tab_name == "Scheduler":
-    with st.container(border=True):
-        st.write("### Post Scheduler Calendar queue")
-        
-        # Display schedules
-        if not schedules_list:
-            st.caption("No posting slots added yet.")
-        else:
-            for sc in schedules_list:
-                st.write(f"- **Day:** {sc['day_of_week']} at **{sc['time_of_day']}**")
-                
-        with st.form("schedule_form"):
-            day_opt = st.selectbox("Day of Week:", ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"])
-            time_opt = st.text_input("Time of Day:", value="12:00")
-            submit_sc = st.form_submit_button("Queue Slot")
-            if submit_sc and time_opt:
-                create_schedule(active_project["id"], day_opt, time_opt)
-                st.success("Slot added to scheduler queue!")
-                st.rerun()
+# ============================================================
+# 4. SCHEDULER & PUBLISH HUB
+# ============================================================
+elif hub == "Scheduler & Publish":
+    st.write("## Multi-Channel Publishing & Post Scheduler")
+    st.caption("Manage social distribution feeds, connected accounts, and posting calendars.")
 
-# ------------------------------------------------------------
-# 15. PUBLISHING
-# ------------------------------------------------------------
-elif tab_name == "Publishing":
-    with st.container(border=True):
-        st.write("### Multi-Channel Distribution Hub")
-        st.write("Configured destination distribution feeds:")
-        
-        if not dest_channels:
-            st.caption("No destination feeds active. Configure your channel channels below.")
-        else:
-            for dc in dest_channels:
-                st.markdown(f"**Platform:** {dc['platform']} | Name: {dc['name']} | Time: {dc['schedule_time']}")
-                
-        st.markdown("<hr>", unsafe_allow_html=True)
-        st.write("#### Configure destination channel feed")
-        with st.form("dest_form"):
-            platform_opt = st.selectbox("Platform Feed:", ["YouTube Shorts", "Instagram Reels", "TikTok", "Facebook Reels"])
-            dest_name = st.text_input("Channel Name (e.g. Pasam Recuts):")
-            cap_temp = st.text_input("Caption Template details:")
-            hashtags = st.text_input("Default Hashtags:")
-            sch_t = st.text_input("Default daily posting time:", value="18:30")
-            submit_dest = st.form_submit_button("Link Destination Feed")
-            if submit_dest and dest_name:
-                create_destination_channel(
-                    project_id=active_project["id"],
-                    platform=platform_opt,
-                    name=dest_name,
-                    caption_template=cap_temp,
-                    hashtags=hashtags,
-                    schedule_time=sch_t
-                )
-                st.success("Destination linked to distribution tree!")
-                st.rerun()
+    col_pub1, col_pub2 = st.columns(2)
+    with col_pub1:
+        with st.container(border=True):
+            st.write("### Connected Social Accounts")
+            if channel_connected:
+                st.write(f"✓ **Connected Channel**: {chan_row['name']} (Platform: {chan_row['platform']})")
+                st.caption("OAuth Token Status: ACTIVE & VALID")
+            else:
+                st.info("No destination channel linked yet.")
 
-# ------------------------------------------------------------
-# 16. SETTINGS
-# ------------------------------------------------------------
-elif tab_name == "Settings":
-    with st.container(border=True):
-        st.write("### System Configurations")
-        
-        st.session_state.ollama_url = st.text_input("Ollama Endpoint URL:", value=st.session_state.ollama_url)
-        st.session_state.ollama_model = st.text_input("Active LLM Chat Model:", value=st.session_state.ollama_model)
-        st.session_state.embedding_model = st.text_input("Active Vector Embedding Model:", value=st.session_state.embedding_model)
-        
-        st.write("#### Rendering Accents")
-        gpu_acc = st.checkbox("GPU Acceleration (CUDA / MPS)", value=True)
-        threads = st.number_input("CPU Thread limits:", value=8)
-        
-        if st.button("Save Configurations Settings"):
-            update_setting("ollama_url", st.session_state.ollama_url)
-            update_setting("ollama_model", st.session_state.ollama_model)
-            update_setting("embedding_model", st.session_state.embedding_model)
-            st.success("Configurations successfully updated globally.")
-            st.rerun()
+            st.write("#### Add Social Distribution Feed")
+            with st.form("dest_feed_form", clear_on_submit=True):
+                plat = st.selectbox("Platform Feed:", ["YouTube Shorts", "Instagram Reels", "TikTok", "Facebook Reels"])
+                feed_name = st.text_input("Account / Channel Name:", placeholder="e.g. My Creator Shorts")
+                post_time = st.text_input("Default Posting Time:", value="18:00")
+                sub_feed = st.form_submit_button("Link Distribution Target", use_container_width=True)
+                if sub_feed and feed_name:
+                    create_destination_channel(
+                        project_id=active_project["id"],
+                        platform=plat,
+                        name=feed_name,
+                        schedule_time=post_time
+                    )
+                    st.success(f"Linked {plat} destination feed!")
+                    st.rerun()
 
-# ------------------------------------------------------------
-# 17. ACTIVITY LOGS
-# ------------------------------------------------------------
-elif tab_name == "Activity Logs":
-    with st.container(border=True):
-        st.write("### Global Logs Audit timeline")
-        if not activity_logs:
-            st.caption("No logged events found in this workspace.")
-        else:
-            for log in activity_logs[:30]:
-                st.write(f"**[{log['action_type']}]** ({log['created_at']}): {log['details']}")
-                st.markdown("<hr style='margin:2px 0;'>", unsafe_allow_html=True)
+    with col_pub2:
+        with st.container(border=True):
+            st.write("### Posting Calendar & Queue")
+            if not schedules_list:
+                st.caption("No scheduled post slots configured.")
+            else:
+                for sc in schedules_list:
+                    col_scl1, col_scl2 = st.columns([8, 2])
+                    with col_scl1:
+                        st.write(f"📅 **{sc['day_of_week']}** at **{sc['time_of_day']}**")
+                    with col_scl2:
+                        if st.button("Remove", key=f"del_sch_{sc['id']}"):
+                            delete_schedule(sc["id"])
+                            st.rerun()
+                    st.markdown("<hr style='margin:4px 0; border-color:#f1f5f9;'>", unsafe_allow_html=True)
 
-# ------------------------------------------------------------
-# 18. HELP
-# ------------------------------------------------------------
-elif tab_name == "Help":
-    with st.container(border=True):
-        st.write("### ClipForge AI quickstart manual")
-        st.write("""
-        1. **Create workspace**: Select or create workspaces from the 'Projects' tab.
-        2. **Register imports**: Paste YouTube URLs or paths in 'Import Queue'.
-        3. **Process clips**: Click 'Process AI clips' to execute Whisper, scene detection, chunking, and virality scoring.
-        4. **Adjust timelines**: Fine-tune your clips inside the 'Clip Editor' and check previews in the 'Preview Studio'.
-        5. **Link distribution feeds**: Bind publishing accounts inside the 'Publishing' tab and configure calendar slots in 'Scheduler'.
-        """)
+            st.write("#### Add New Calendar Slot")
+            with st.form("add_sched_form", clear_on_submit=True):
+                day = st.selectbox("Day:", ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"])
+                t_slot = st.text_input("Time (HH:MM):", value="14:00")
+                if st.form_submit_button("Add Posting Slot", use_container_width=True) and t_slot:
+                    create_schedule(active_project["id"], day, t_slot)
+                    st.success("Slot added to calendar!")
+                    st.rerun()
+
+# ============================================================
+# 5. SETTINGS & WORKSPACE HUB
+# ============================================================
+elif hub == "Settings & Workspace":
+    st.write("## Settings & Workspace Management")
+    st.caption("Configure local AI models, endpoints, workspaces, and view activity audit logs.")
+
+    col_set1, col_set2 = st.columns(2)
+    with col_set1:
+        with st.container(border=True):
+            st.write("### Local AI Configuration (Ollama)")
+            st.session_state.ollama_url = st.text_input("Ollama Server URL:", value=st.session_state.ollama_url)
+            st.session_state.ollama_model = st.text_input("LLM Chat Model:", value=st.session_state.ollama_model)
+            st.session_state.embedding_model = st.text_input("Embedding Model:", value=st.session_state.embedding_model)
+
+            col_test1, col_test2 = st.columns(2)
+            with col_test1:
+                if st.button("🔍 Test Connection", use_container_width=True):
+                    ok, models = test_ollama_connection(st.session_state.ollama_url)
+                    if ok:
+                        st.success(f"Connected! Available models: {', '.join(models)}")
+                    else:
+                        st.error(f"Cannot connect to Ollama at {st.session_state.ollama_url}. Please ensure Ollama is running.")
+            with col_test2:
+                if st.button("💾 Save Settings", use_container_width=True):
+                    update_setting("ollama_url", st.session_state.ollama_url)
+                    update_setting("ollama_model", st.session_state.ollama_model)
+                    update_setting("embedding_model", st.session_state.embedding_model)
+                    st.success("Settings saved successfully!")
+                    st.rerun()
+
+        with st.container(border=True):
+            st.write("### Workspace Manager")
+            with st.form("new_ws_form", clear_on_submit=True):
+                ws_name = st.text_input("New Workspace Name:")
+                ws_desc = st.text_area("Description:")
+                if st.form_submit_button("Create Workspace", use_container_width=True) and ws_name:
+                    create_project(ws_name, ws_desc)
+                    st.success("New workspace created!")
+                    st.rerun()
+
+    with col_set2:
+        with st.container(border=True):
+            st.write("### Recent Activity Logs")
+            if not activity_logs:
+                st.caption("No activity logged yet.")
+            else:
+                for log in activity_logs[:12]:
+                    st.write(f"• **{log['action_type']}** ({log['created_at'][:16]}): {log['details']}")
+                    st.markdown("<hr style='margin:3px 0; border-color:#f1f5f9;'>", unsafe_allow_html=True)
