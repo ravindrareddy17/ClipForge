@@ -5,7 +5,7 @@ import json
 from clipforge_engine.db import (
     get_video, update_video_status, create_clip, get_db_connection,
     create_transcript_chunk, save_embedding, create_topic, create_keyword,
-    add_graph_edge, save_summary
+    add_graph_edge, save_summary, update_pipeline_stage
 )
 from clipforge_engine.services.video import get_video_metadata, detect_scenes, get_crop_coordinates
 from clipforge_engine.services.transcribe import extract_audio, transcribe_audio
@@ -26,7 +26,9 @@ def fetch_youtube_metadata_and_audio(url, output_wav_path):
             'preferredcodec': 'wav',
             'preferredquality': '192',
         }],
+        'extractor_args': {'youtube': {'player_client': ['android', 'web']}},
         'quiet': True,
+        'no_warnings': True,
     }
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(url, download=True)

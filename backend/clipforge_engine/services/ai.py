@@ -1,14 +1,21 @@
 import httpx
 import json
 import re
+from clipforge_engine.db import get_settings
 
-OLLAMA_URL = "http://localhost:11434"
+def get_ollama_url():
+    try:
+        s = get_settings()
+        return s.get("ollama_url") or "http://localhost:11434"
+    except Exception:
+        return "http://localhost:11434"
 
 async def query_ollama(prompt, model="llama3:latest", system_prompt=None):
     """
-    Query local Ollama instance.
+    Query local Ollama instance with dynamic URL and ngrok header.
     """
-    url = f"{OLLAMA_URL}/api/generate"
+    base_url = get_ollama_url()
+    url = f"{base_url}/api/generate"
     payload = {
         "model": model,
         "prompt": prompt,
@@ -21,7 +28,8 @@ async def query_ollama(prompt, model="llama3:latest", system_prompt=None):
         payload["system"] = system_prompt
         
     try:
-        async with httpx.AsyncClient(timeout=30.0) as client:
+        headers = {"ngrok-skip-browser-warning": "1"}
+        async with httpx.AsyncClient(timeout=6.0, headers=headers) as client:
             response = await client.post(url, json=payload)
             if response.status_code == 200:
                 result = response.json()
@@ -30,16 +38,18 @@ async def query_ollama(prompt, model="llama3:latest", system_prompt=None):
                 print(f"Ollama returned status {response.status_code}: {response.text}")
                 return None
     except Exception as e:
-        print(f"Ollama connection error: {e}")
+        print(f"Ollama connection error (falling back to heuristics): {e}")
         return None
 
 async def select_best_model():
     """
     Select available model from Ollama, default to llama3:latest or qwen2.5:3b.
     """
+    base_url = get_ollama_url()
     try:
-        async with httpx.AsyncClient(timeout=3.0) as client:
-            response = await client.get(f"{OLLAMA_URL}/api/tags")
+        headers = {"ngrok-skip-browser-warning": "1"}
+        async with httpx.AsyncClient(timeout=3.0, headers=headers) as client:
+            response = await client.get(f"{base_url}/api/tags")
             if response.status_code == 200:
                 models = [m["name"] for m in response.json().get("models", [])]
                 for preferred in ["llama3:latest", "llama3", "qwen2.5:3b", "qwen3:4b"]:

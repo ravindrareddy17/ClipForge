@@ -194,6 +194,72 @@ def query_similar_chunks(project_id, query_text, k=5, video_ids=None, model="nom
                 "metadata": results["metadatas"][0][i],
                 "distance": results["distances"][0][i] if "distances" in results else 0.0
             })
+
+    # Robust fallback: If ChromaDB returned empty results, query SQLite transcript chunks or video transcript directly
+    if not parsed:
+        try:
+            from clipforge_engine.db import get_db_connection
+            conn = get_db_connection()
+            query_words = [w.lower() for w in query_text.split() if len(w) > 2]
+            
+            # Check transcript_chunks in SQLite
+            if video_ids:
+                sql = f"SELECT * FROM transcript_chunks WHERE project_id = ? AND video_id IN ({','.join(['?']*len(video_ids))})"
+                params = [project_id] + list(video_ids)
+            else:
+                sql = "SELECT * FROM transcript_chunks WHERE project_id = ?"
+                params = [project_id]
+            
+            rows = conn.execute(sql, params).fetchall()
+            matched_rows = []
+            for r in rows:
+                r_dict = dict(r)
+                text_lower = r_dict["text"].lower()
+                score = sum(1 for w in query_words if w in text_lower) if query_words else 1
+                if score > 0 or not query_words:
+                    matched_rows.append((score, r_dict))
+                    
+            matched_rows.sort(key=lambda x: x[0], reverse=True)
+            for _, r_dict in matched_rows[:k]:
+                parsed.append({
+                    "id": r_dict["id"],
+                    "text": r_dict["text"],
+                    "metadata": {
+                        "video_id": r_dict["video_id"],
+                        "project_id": r_dict["project_id"],
+                        "start_time": float(r_dict["start_time"]),
+                        "end_time": float(r_dict["end_time"]),
+                        "speaker": r_dict.get("speaker") or "Speaker 1"
+                    },
+                    "distance": 0.0
+                })
+                
+            # If still no chunks, check videos.transcript directly
+            if not parsed and video_ids:
+                v_row = conn.execute("SELECT transcript FROM videos WHERE id = ?", (video_ids[0],)).fetchone()
+                if v_row and v_row["transcript"]:
+                    try:
+                        tx_data = json.loads(v_row["transcript"])
+                        segments = tx_data if isinstance(tx_data, list) else tx_data.get("segments", [])
+                        for seg in segments[:k]:
+                            parsed.append({
+                                "id": f"seg_{seg.get('start', 0)}",
+                                "text": seg.get("text", ""),
+                                "metadata": {
+                                    "video_id": video_ids[0],
+                                    "project_id": project_id,
+                                    "start_time": float(seg.get("start", 0.0)),
+                                    "end_time": float(seg.get("end", 0.0)),
+                                    "speaker": "Speaker"
+                                },
+                                "distance": 0.0
+                            })
+                    except Exception:
+                        pass
+            conn.close()
+        except Exception as fallback_err:
+            print(f"SQLite transcript search fallback error: {fallback_err}")
+
     return parsed
 
 def generate_grounded_answer(project_id, query, retrieved_chunks, model="llama3.2", base_url="http://localhost:11434"):
