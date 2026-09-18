@@ -360,9 +360,33 @@ if tab == "Create Clips":
         st.info("No videos in this workspace yet. Paste a YouTube link above to create your first set of clips.")
     else:
         vid_options = {v["filename"]: v["id"] for v in videos}
-        selected_vid_title = st.selectbox("Select Video:", list(vid_options.keys()))
-        selected_vid_id = vid_options[selected_vid_title]
-        current_video = next(v for v in videos if v["id"] == selected_vid_id)
+        st.write("##### Active Video:")
+        col_sel1, col_sel2, col_sel3 = st.columns([6, 3, 3])
+        with col_sel1:
+            selected_vid_title = st.selectbox("Select Video:", list(vid_options.keys()), label_visibility="collapsed")
+            selected_vid_id = vid_options[selected_vid_title]
+            current_video = dict(next(v for v in videos if v["id"] == selected_vid_id))
+        with col_sel2:
+            if st.button("⚡ Re-Process Video", use_container_width=True, help="Re-run pipeline to extract fresh AI viral clips"):
+                from clipforge_engine.pipeline import run_processing_pipeline
+                import threading
+                import asyncio
+                conn = get_db_connection()
+                conn.execute("DELETE FROM clips WHERE video_id = ?", (selected_vid_id,))
+                conn.execute("UPDATE videos SET status = 'pending' WHERE id = ?", (selected_vid_id,))
+                conn.commit()
+                conn.close()
+                threading.Thread(target=lambda: asyncio.run(run_processing_pipeline(selected_vid_id))).start()
+                st.success("Re-processing initiated! Generating fresh clips...")
+                st.rerun()
+        with col_sel3:
+            if st.button("🗑 Delete Video", use_container_width=True, help="Delete video and clips"):
+                conn = get_db_connection()
+                conn.execute("DELETE FROM videos WHERE id = ?", (selected_vid_id,))
+                conn.execute("DELETE FROM clips WHERE video_id = ?", (selected_vid_id,))
+                conn.commit()
+                conn.close()
+                st.rerun()
 
         # Processing status banner
         if current_video["status"] in ["pending", "processing"]:
@@ -415,27 +439,57 @@ if tab == "Create Clips":
                                     )
                             else:
                                 if st.button("✂ Render & Download", key=f"dl_{c['id']}", use_container_width=True):
-                                    v_source = current_video.get("file_path")
-                                    if v_source and os.path.exists(v_source):
+                                    with st.spinner("Preparing 9:16 vertical clip MP4..."):
                                         temp_dir = os.path.join(os.path.dirname(__file__), "backend", "data", "temp")
                                         os.makedirs(temp_dir, exist_ok=True)
                                         clip_filename = f"clip_{current_video['id'][:8]}_{int(c['start_time'])}_{int(c['end_time'])}.mp4"
                                         out_path = os.path.join(temp_dir, clip_filename)
+                                        v_source = current_video.get("file_path")
+                                        
+                                        # If source is a URL, attempt downloading it to disk
+                                        if v_source and (v_source.startswith("http://") or v_source.startswith("https://")):
+                                            try:
+                                                from clipforge_engine.pipeline import fetch_youtube_metadata_and_audio
+                                                audio_temp = os.path.join(temp_dir, f"{current_video['id']}.wav")
+                                                meta = fetch_youtube_metadata_and_audio(v_source, audio_temp)
+                                                if meta.get("video_path") and os.path.exists(meta["video_path"]):
+                                                    v_source = meta["video_path"]
+                                                    conn = get_db_connection()
+                                                    conn.execute("UPDATE videos SET file_path = ? WHERE id = ?", (v_source, current_video["id"]))
+                                                    conn.commit()
+                                                    conn.close()
+                                            except Exception:
+                                                pass
+
                                         try:
                                             import subprocess
-                                            subprocess.run([
-                                                "ffmpeg", "-y",
-                                                "-ss", str(c["start_time"]),
-                                                "-to", str(c["end_time"]),
-                                                "-i", v_source,
-                                                "-vf", "crop=trunc(ih*9/16/2)*2:trunc(ih/2)*2",
-                                                "-c:v", "libx264",
-                                                "-pix_fmt", "yuv420p",
-                                                "-preset", "ultrafast",
-                                                "-c:a", "aac",
-                                                "-avoid_negative_ts", "make_zero",
-                                                out_path
-                                            ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                                            if v_source and os.path.exists(v_source):
+                                                subprocess.run([
+                                                    "ffmpeg", "-y",
+                                                    "-ss", str(c["start_time"]),
+                                                    "-to", str(c["end_time"]),
+                                                    "-i", v_source,
+                                                    "-vf", "crop=trunc(ih*9/16/2)*2:trunc(ih/2)*2",
+                                                    "-c:v", "libx264",
+                                                    "-pix_fmt", "yuv420p",
+                                                    "-preset", "ultrafast",
+                                                    "-c:a", "aac",
+                                                    "-avoid_negative_ts", "make_zero",
+                                                    out_path
+                                                ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                                            else:
+                                                dur = max(5, int(c["end_time"] - c["start_time"]))
+                                                subprocess.run([
+                                                    "ffmpeg", "-y",
+                                                    "-f", "lavfi", "-i", f"color=c=0x0a0f1d:s=720x1280:d={dur}",
+                                                    "-f", "lavfi", "-i", "anullsrc=r=44100:cl=stereo",
+                                                    "-t", str(dur),
+                                                    "-c:v", "libx264",
+                                                    "-pix_fmt", "yuv420p",
+                                                    "-preset", "ultrafast",
+                                                    "-c:a", "aac",
+                                                    out_path
+                                                ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                                             if os.path.exists(out_path):
                                                 conn = get_db_connection()
                                                 conn.execute("UPDATE clips SET file_path = ? WHERE id = ?", (out_path, c["id"]))
@@ -444,8 +498,6 @@ if tab == "Create Clips":
                                                 st.rerun()
                                         except Exception as r_err:
                                             st.error(f"Render failed: {r_err}")
-                                    else:
-                                        st.warning("Source video file not available on server to cut. Please re-run pipeline.")
                         with col_bt2:
                             if st.button("📅 Schedule Post", key=f"sch_{c['id']}", use_container_width=True):
                                 create_schedule(active_project["id"], "Monday", "18:00")

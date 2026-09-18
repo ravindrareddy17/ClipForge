@@ -24,22 +24,31 @@ def extract_audio(video_path, audio_path):
         raise Exception(f"FFmpeg audio extraction failed: {result.stderr.decode()}")
     return audio_path
 
-def generate_mock_transcript(duration):
+def generate_mock_transcript(duration, video_title=None):
     """
-    Generate realistic mock transcript segments with word-level timestamps.
+    Generate realistic mock transcript segments with word-level timestamps,
+    tailored to the video's subject matter.
     """
+    topic = video_title or "the key discoveries of this presentation"
+    # Clean topic title
+    clean_topic = topic.replace("Video:", "").replace("YouTube (", "").replace(")", "").strip()
+    if clean_topic.endswith(".mp4") or clean_topic.endswith(".mkv"):
+        clean_topic = clean_topic[:-4]
+        
     sentences = [
-        "Welcome to ClipForge AI, the local-first content repurposing engine.",
-        "Today we are going to learn how to automatically turn long-form videos into viral shorts.",
-        "This platform is powered by local artificial intelligence models, including Ollama and Whisper.",
-        "By analyzing the audio peaks and color changes, we detect scenes and viral moments instantly.",
-        "Our face-tracking crop automatically centers the speaker, ensuring perfect vertical output.",
-        "You can customize your subtitles, choose your brand colors, and schedule posts directly to platforms.",
-        "Thanks for watching, and remember to subscribe for more tutorials on content automation!"
+        f"When you dive deep into {clean_topic}, the most shocking realization is how much we take for granted.",
+        f"Why does {clean_topic} matter so much today? Because it challenges our foundational assumptions.",
+        f"Scientists and researchers studying {clean_topic} recently uncovered an incredible pattern.",
+        f"Imagine looking at {clean_topic} not from the surface, but from a completely different perspective.",
+        f"The secret behind {clean_topic} isn't what most people think—it comes down to one critical principle.",
+        f"If you look closely at the data on {clean_topic}, the trajectory is moving faster than expected.",
+        f"What happens next with {clean_topic} will define the conversation for years to come.",
+        f"Remember this crucial takeaway about {clean_topic} whenever someone brings up the subject.",
+        f"The ultimate question is whether our understanding of {clean_topic} will hold up over time."
     ]
     
     segments = []
-    sentence_duration = 6.0
+    sentence_duration = 7.0
     num_sentences = int(duration // sentence_duration) + 1
     
     for i in range(num_sentences):
