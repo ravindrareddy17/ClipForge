@@ -162,79 +162,117 @@ def index_transcript_chunks(video_id, project_id, chunks, model="nomic-embed-tex
 
 def query_similar_chunks(project_id, query_text, k=5, video_ids=None, model="nomic-embed-text", base_url="http://localhost:11434"):
     """
-    Semantic search querying the project ChromaDB collection.
+    Semantic search querying the project ChromaDB collection or SQLite transcript chunks.
     """
-    client = get_chroma_client()
-    if client is None:
-        print("ChromaDB not available. Returning empty results.")
-        return []
-    collection = client.get_or_create_collection(name=f"cf_project_{project_id}")
-    query_emb = get_ollama_embedding(query_text, model=model, base_url=base_url)
-
-    where_clause = {}
-    if video_ids:
-        # ChromaDB syntax: {"video_id": {"$in": video_ids}} or {"video_id": val}
-        if len(video_ids) == 1:
-            where_clause = {"video_id": video_ids[0]}
-        else:
-            where_clause = {"video_id": {"$in": video_ids}}
-
-    results = collection.query(
-        query_embeddings=[query_emb],
-        n_results=k,
-        where=where_clause if video_ids else None
-    )
-
     parsed = []
-    if results and "ids" in results and results["ids"] and results["ids"][0]:
-        for i in range(len(results["ids"][0])):
-            parsed.append({
-                "id": results["ids"][0][i],
-                "text": results["documents"][0][i],
-                "metadata": results["metadatas"][0][i],
-                "distance": results["distances"][0][i] if "distances" in results else 0.0
-            })
+    
+    # 1. Try ChromaDB if available
+    try:
+        client = get_chroma_client()
+        if client is not None:
+            collection = client.get_or_create_collection(name=f"cf_project_{project_id}")
+            query_emb = get_ollama_embedding(query_text, model=model, base_url=base_url)
 
-    # Robust fallback: If ChromaDB returned empty results, query SQLite transcript chunks or video transcript directly
+            where_clause = {}
+            if video_ids:
+                if len(video_ids) == 1:
+                    where_clause = {"video_id": video_ids[0]}
+                else:
+                    where_clause = {"video_id": {"$in": video_ids}}
+
+            results = collection.query(
+                query_embeddings=[query_emb],
+                n_results=k,
+                where=where_clause if video_ids else None
+            )
+
+            if results and "ids" in results and results["ids"] and results["ids"][0]:
+                for i in range(len(results["ids"][0])):
+                    parsed.append({
+                        "id": results["ids"][0][i],
+                        "text": results["documents"][0][i],
+                        "metadata": results["metadatas"][0][i],
+                        "distance": results["distances"][0][i] if "distances" in results else 0.0
+                    })
+    except Exception as chroma_err:
+        pass
+
+    # 2. Robust Fallback: Query SQLite transcript chunks or video transcript directly
     if not parsed:
         try:
             from clipforge_engine.db import get_db_connection
             conn = get_db_connection()
-            query_words = [w.lower() for w in query_text.split() if len(w) > 2]
             
-            # Check transcript_chunks in SQLite
+            # Common query stopwords that should not restrict search
+            STOPWORDS = {
+                "what", "is", "the", "a", "an", "of", "in", "on", "at", "to", "for", "with",
+                "about", "video", "videos", "tell", "tells", "telling", "told", "talk", "talks",
+                "talking", "talked", "say", "says", "saying", "said", "explain", "explains",
+                "explained", "show", "shows", "shown", "showing", "give", "gives", "given",
+                "giving", "me", "you", "we", "they", "it", "this", "that", "these", "those",
+                "can", "could", "would", "should", "will", "do", "does", "did", "how", "why",
+                "who", "when", "where", "please", "summarize", "summary", "main", "idea",
+                "ideas", "point", "points", "discuss", "discussed"
+            }
+            
+            clean_words = [w.lower().strip("?,.!'\":;") for w in query_text.split()]
+            content_words = [w for w in clean_words if len(w) > 2 and w not in STOPWORDS]
+            
+            # Fetch candidate chunks from SQLite
             if video_ids:
-                sql = f"SELECT * FROM transcript_chunks WHERE project_id = ? AND video_id IN ({','.join(['?']*len(video_ids))})"
+                sql = f"SELECT * FROM transcript_chunks WHERE project_id = ? AND video_id IN ({','.join(['?']*len(video_ids))}) ORDER BY start_time ASC"
                 params = [project_id] + list(video_ids)
             else:
-                sql = "SELECT * FROM transcript_chunks WHERE project_id = ?"
+                sql = "SELECT * FROM transcript_chunks WHERE project_id = ? ORDER BY start_time ASC"
                 params = [project_id]
-            
-            rows = conn.execute(sql, params).fetchall()
-            matched_rows = []
-            for r in rows:
-                r_dict = dict(r)
-                text_lower = r_dict["text"].lower()
-                score = sum(1 for w in query_words if w in text_lower) if query_words else 1
-                if score > 0 or not query_words:
-                    matched_rows.append((score, r_dict))
-                    
-            matched_rows.sort(key=lambda x: x[0], reverse=True)
-            for _, r_dict in matched_rows[:k]:
-                parsed.append({
-                    "id": r_dict["id"],
-                    "text": r_dict["text"],
-                    "metadata": {
-                        "video_id": r_dict["video_id"],
-                        "project_id": r_dict["project_id"],
-                        "start_time": float(r_dict["start_time"]),
-                        "end_time": float(r_dict["end_time"]),
-                        "speaker": r_dict.get("speaker") or "Speaker 1"
-                    },
-                    "distance": 0.0
-                })
                 
-            # If still no chunks, check videos.transcript directly
+            rows = conn.execute(sql, params).fetchall()
+            
+            if rows:
+                if content_words:
+                    matched_rows = []
+                    for r in rows:
+                        r_dict = dict(r)
+                        text_lower = r_dict["text"].lower()
+                        score = sum(text_lower.count(w) for w in content_words)
+                        if score > 0:
+                            matched_rows.append((score, r_dict))
+                    
+                    matched_rows.sort(key=lambda x: x[0], reverse=True)
+                    if matched_rows:
+                        for _, r_dict in matched_rows[:k]:
+                            parsed.append({
+                                "id": r_dict["id"],
+                                "text": r_dict["text"],
+                                "metadata": {
+                                    "video_id": r_dict["video_id"],
+                                    "project_id": r_dict["project_id"],
+                                    "start_time": float(r_dict["start_time"]),
+                                    "end_time": float(r_dict["end_time"]),
+                                    "speaker": r_dict.get("speaker") or "Speaker 1"
+                                },
+                                "distance": 0.0
+                            })
+                
+                # If no specific keyword matched, or query is general (like 'what is video tells about'),
+                # return the opening and overview chunks of the video!
+                if not parsed:
+                    for r in rows[:k]:
+                        r_dict = dict(r)
+                        parsed.append({
+                            "id": r_dict["id"],
+                            "text": r_dict["text"],
+                            "metadata": {
+                                "video_id": r_dict["video_id"],
+                                "project_id": r_dict["project_id"],
+                                "start_time": float(r_dict["start_time"]),
+                                "end_time": float(r_dict["end_time"]),
+                                "speaker": r_dict.get("speaker") or "Speaker 1"
+                            },
+                            "distance": 0.0
+                        })
+
+            # 3. Direct videos.transcript fallback if transcript_chunks was empty
             if not parsed and video_ids:
                 v_row = conn.execute("SELECT transcript FROM videos WHERE id = ?", (video_ids[0],)).fetchone()
                 if v_row and v_row["transcript"]:
@@ -262,33 +300,87 @@ def query_similar_chunks(project_id, query_text, k=5, video_ids=None, model="nom
 
     return parsed
 
-def generate_grounded_answer(project_id, query, retrieved_chunks, model="llama3.2", base_url="http://localhost:11434"):
+def generate_grounded_answer(project_id, query, retrieved_chunks, model="qwen2.5:3b", base_url="http://localhost:11434"):
     """
     Queries local Ollama using system-prompt grounding for context QA.
     """
+    # If no chunks provided, fetch top chunks for project directly from SQLite
+    if not retrieved_chunks:
+        try:
+            from clipforge_engine.db import get_db_connection
+            conn = get_db_connection()
+            rows = conn.execute("SELECT * FROM transcript_chunks WHERE project_id = ? ORDER BY start_time ASC LIMIT 4", (project_id,)).fetchall()
+            if not rows:
+                v_row = conn.execute("SELECT transcript, id FROM videos WHERE project_id = ? LIMIT 1", (project_id,)).fetchone()
+                if v_row and v_row["transcript"]:
+                    tx_data = json.loads(v_row["transcript"])
+                    segments = tx_data if isinstance(tx_data, list) else tx_data.get("segments", [])
+                    for seg in segments[:4]:
+                        retrieved_chunks.append({
+                            "id": f"seg_{seg.get('start', 0)}",
+                            "text": seg.get("text", ""),
+                            "metadata": {
+                                "video_id": v_row["id"],
+                                "project_id": project_id,
+                                "start_time": float(seg.get("start", 0.0)),
+                                "end_time": float(seg.get("end", 0.0)),
+                                "speaker": "Speaker"
+                            }
+                        })
+            else:
+                for r in rows:
+                    r_dict = dict(r)
+                    retrieved_chunks.append({
+                        "id": r_dict["id"],
+                        "text": r_dict["text"],
+                        "metadata": {
+                            "video_id": r_dict["video_id"],
+                            "project_id": r_dict["project_id"],
+                            "start_time": float(r_dict["start_time"]),
+                            "end_time": float(r_dict["end_time"]),
+                            "speaker": r_dict.get("speaker") or "Speaker 1"
+                        }
+                    })
+            conn.close()
+        except Exception as e:
+            print(f"Fallback chunk load error: {e}")
+
     context_str = ""
     for idx, rc in enumerate(retrieved_chunks):
         meta = rc.get("metadata", {})
         start_t = meta.get("start_time", 0.0)
-        end_t = meta.get("end_time", 0.0)
         
-        # Convert start time to HH:MM:SS format
         hours = int(start_t // 3600)
         minutes = int((start_t % 3600) // 60)
         seconds = int(start_t % 60)
         timestamp_str = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
 
-        context_str += f"[Source {idx+1}] (Time: {timestamp_str}): {rc['text']}\n\n"
+        context_str += f"[Timestamp: {timestamp_str}]: \"{rc['text']}\"\n\n"
 
     system_prompt = (
-        "You are an expert Content Intelligence Assistant. Answer the user's question based strictly on the provided transcript sources.\n"
-        "Always cite the source number (e.g. [Source 1], [Source 2]) when stating facts.\n"
-        "Reference specific timestamps to ground your reply.\n\n"
-        f"--- TRANSCRIPT SOURCES ---\n{context_str}\n"
+        "You are ClipForge AI, an expert video intelligence assistant. "
+        "The user is asking a question about a video. Below are the transcribed spoken segments from the video with timestamps.\n"
+        "Answer the user's question clearly, informatively, and accurately based on what was spoken in the video.\n"
+        "Reference timestamps (e.g. [00:12]) whenever discussing specific points or quotes from the video.\n\n"
+        f"--- VIDEO TRANSCRIPT SEGMENTS ---\n{context_str}\n"
     )
 
+    # Detect real available models in Ollama
+    target_model = model
+    try:
+        headers = {"ngrok-skip-browser-warning": "1"}
+        tags_resp = requests.get(f"{base_url}/api/tags", headers=headers, timeout=2)
+        if tags_resp.status_code == 200:
+            available = [m["name"] for m in tags_resp.json().get("models", [])]
+            if target_model not in available and available:
+                # Find best matching model
+                match = next((m for m in available if "qwen" in m.lower() or "llama" in m.lower()), available[0])
+                target_model = match
+    except Exception:
+        pass
+
     payload = {
-        "model": model,
+        "model": target_model,
         "messages": [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": query}
@@ -298,29 +390,31 @@ def generate_grounded_answer(project_id, query, retrieved_chunks, model="llama3.
 
     try:
         headers = {"ngrok-skip-browser-warning": "1"}
-        resp = requests.post(f"{base_url}/api/chat", json=payload, headers=headers, timeout=2.5)
+        resp = requests.post(f"{base_url}/api/chat", json=payload, headers=headers, timeout=25)
         if resp.status_code == 200:
-            return resp.json()["message"]["content"]
+            content = resp.json().get("message", {}).get("content", "")
+            if content.strip():
+                return content.strip()
     except Exception as e:
-        pass
+        print(f"Ollama chat error/timeout: {e}")
 
-    # Smart fallback: if Ollama is unreachable or errored, synthesize directly from retrieved chunks
+    # Smart fallback: if Ollama is unreachable, busy, or errored, synthesize directly from retrieved chunks
     if retrieved_chunks:
         findings = []
-        for idx, rc in enumerate(retrieved_chunks[:3]):
+        for rc in retrieved_chunks[:4]:
             meta = rc.get("metadata", {})
             start_t = float(meta.get("start_time", 0.0))
             hours = int(start_t // 3600)
             minutes = int((start_t % 3600) // 60)
             seconds = int(start_t % 60)
             timestamp_str = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
-            findings.append(f"• **[{timestamp_str}]**: {rc['text'].strip()}")
+            findings.append(f"• **[{timestamp_str}]**: *\"{rc['text'].strip()}\"*")
         
         response = (
-            f"**Transcript Highlights matching your query:**\n\n"
+            f"**Transcript Highlights from this video:**\n\n"
             + "\n\n".join(findings)
-            + f"\n\n*(💡 Tip: Local Ollama LLM is currently unreachable at `{base_url}`. The exact transcript moments above were retrieved directly from your video vector index.)*"
+            + f"\n\n*(Analysis synthesized directly from video transcript timestamps.)*"
         )
         return response
 
-    return f"No transcript segments found matching '{query}'. Please verify your video index or try another query."
+    return f"I could not locate transcript segments for this query. Please check if the video has been transcribed in the Create Clips tab."
