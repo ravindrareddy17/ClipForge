@@ -1,6 +1,7 @@
 import os
 import shutil
 import uuid
+import traceback
 from fastapi import FastAPI, UploadFile, File, Form, BackgroundTasks, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
@@ -12,12 +13,15 @@ from clipforge_engine.db import (
     create_project, get_projects, get_project,
     create_video, get_videos, get_video,
     get_clips, get_clip, get_all_clips, update_clip,
-    get_settings, update_setting
+    get_settings, update_setting, get_db_connection,
+    add_chat_message, get_chat_history, clear_chat_history,
+    get_pipeline_stages, get_summary
 )
 from clipforge_engine.pipeline import run_processing_pipeline
 from clipforge_engine.services.video import render_clip, get_crop_coordinates
 from clipforge_engine.services.subtitles import generate_ass_file
 from clipforge_engine.services.ai import generate_titles, generate_metadata, generate_hooks
+from clipforge_engine.rag import query_similar_chunks, generate_grounded_answer
 
 app = FastAPI(title="ClipForge AI API")
 
@@ -43,6 +47,7 @@ os.makedirs(TEMP_DIR, exist_ok=True)
 # Serve video directories statically
 app.mount("/static/imports", StaticFiles(directory=IMPORTS_DIR), name="imports")
 app.mount("/static/clips", StaticFiles(directory=CLIPS_DIR), name="clips")
+app.mount("/static/temp", StaticFiles(directory=TEMP_DIR), name="temp")
 
 # --- Schemas ---
 class ProjectCreate(BaseModel):
@@ -304,6 +309,175 @@ async def api_generate_clip_metadata(clip_id: str):
         "hooks": hooks,
         "metadata": meta
     }
+
+# Helper to resolve clip on disk
+def resolve_clip_file_path(clip: dict, video: dict = None) -> Optional[str]:
+    raw_path = clip.get("file_path")
+    if raw_path:
+        # Check static paths
+        if raw_path.startswith("/static/clips/"):
+            cand = os.path.join(CLIPS_DIR, os.path.basename(raw_path))
+            if os.path.exists(cand):
+                return cand
+        elif raw_path.startswith("/static/temp/"):
+            cand = os.path.join(TEMP_DIR, os.path.basename(raw_path))
+            if os.path.exists(cand):
+                return cand
+        # Check absolute or relative paths
+        if os.path.isabs(raw_path) and os.path.exists(raw_path):
+            return raw_path
+        if os.path.exists(raw_path):
+            return os.path.abspath(raw_path)
+
+    # Check CLIPS_DIR for {clip_id}.mp4
+    cand_clip = os.path.join(CLIPS_DIR, f"{clip['id']}.mp4")
+    if os.path.exists(cand_clip):
+        return cand_clip
+
+    # Check TEMP_DIR for clip_{video_id[:8]}_{start}_{end}.mp4
+    video_id = clip.get("video_id", "")
+    cand_temp = os.path.join(TEMP_DIR, f"clip_{video_id[:8]}_{int(clip.get('start_time', 0))}_{int(clip.get('end_time', 0))}.mp4")
+    if os.path.exists(cand_temp):
+        return cand_temp
+
+    # Fallback to source video if available
+    if video and video.get("file_path") and os.path.exists(video["file_path"]):
+        return video["file_path"]
+
+    return None
+
+@app.get("/api/clips/{clip_id}/stream")
+def api_stream_clip(clip_id: str):
+    clip = get_clip(clip_id)
+    if not clip:
+        raise HTTPException(status_code=404, detail="Clip not found")
+    video = get_video(clip["video_id"])
+    file_path = resolve_clip_file_path(clip, video)
+    if not file_path or not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="Video file not found on disk")
+    return FileResponse(file_path, media_type="video/mp4")
+
+@app.get("/api/clips/{clip_id}/download")
+def api_download_clip(clip_id: str):
+    clip = get_clip(clip_id)
+    if not clip:
+        raise HTTPException(status_code=404, detail="Clip not found")
+    video = get_video(clip["video_id"])
+    file_path = resolve_clip_file_path(clip, video)
+    if not file_path or not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="Video file not found on disk")
+    safe_title = "".join(c for c in clip.get("title", "clip") if c.isalnum() or c in (" ", "_", "-")).strip() or "clip"
+    return FileResponse(
+        file_path,
+        media_type="video/mp4",
+        filename=f"{safe_title}.mp4",
+        content_disposition_type="attachment"
+    )
+
+@app.get("/api/videos/{video_id}/stream")
+def api_stream_video(video_id: str):
+    video = get_video(video_id)
+    if not video:
+        raise HTTPException(status_code=404, detail="Video not found")
+    vpath = video.get("file_path")
+    if not vpath or not os.path.exists(vpath):
+        raise HTTPException(status_code=404, detail="Source video file not found on disk")
+    return FileResponse(vpath, media_type="video/mp4")
+
+@app.get("/api/videos/{video_id}/stages")
+def api_get_video_stages(video_id: str):
+    return get_pipeline_stages(video_id)
+
+@app.post("/api/videos/{video_id}/process")
+def api_process_video(video_id: str, background_tasks: BackgroundTasks):
+    video = get_video(video_id)
+    if not video:
+        raise HTTPException(status_code=404, detail="Video not found")
+    background_tasks.add_task(run_processing_pipeline, video_id)
+    return {"status": "processing_started", "video_id": video_id}
+
+@app.get("/api/videos/{video_id}/summary")
+def api_get_video_summary(video_id: str):
+    summary = get_summary(video_id)
+    return summary or {}
+
+class SearchRequest(BaseModel):
+    project_id: str
+    query: str
+
+@app.post("/api/videos/{video_id}/search")
+def api_search_video(video_id: str, req: SearchRequest):
+    settings = get_settings()
+    ollama_url = settings.get("ollama_url", "http://localhost:11434")
+    embed_model = settings.get("embedding_model", "nomic-embed-text")
+    try:
+        hits = query_similar_chunks(
+            project_id=req.project_id,
+            query_text=req.query,
+            k=5,
+            video_ids=[video_id],
+            model=embed_model,
+            base_url=ollama_url
+        )
+        return hits
+    except Exception as e:
+        print(f"Moment search error: {e}")
+        return []
+
+class ChatRequest(BaseModel):
+    project_id: str
+    session_id: Optional[str] = "default"
+    video_id: Optional[str] = None
+    query: str
+
+@app.post("/api/chat")
+def api_chat(req: ChatRequest):
+    if not req.query.strip():
+        raise HTTPException(status_code=400, detail="Query cannot be empty")
+    
+    add_chat_message(req.project_id, req.session_id, "user", req.query)
+    
+    settings = get_settings()
+    ollama_url = settings.get("ollama_url", "http://localhost:11434")
+    ollama_model = settings.get("ollama_model", "llama3")
+    embed_model = settings.get("embedding_model", "nomic-embed-text")
+    
+    video_ids = [req.video_id] if req.video_id else None
+    try:
+        retrieved = query_similar_chunks(
+            project_id=req.project_id,
+            query_text=req.query,
+            k=4,
+            video_ids=video_ids,
+            model=embed_model,
+            base_url=ollama_url
+        )
+        answer = generate_grounded_answer(
+            project_id=req.project_id,
+            query=req.query,
+            retrieved_chunks=retrieved,
+            model=ollama_model,
+            base_url=ollama_url
+        )
+    except Exception as err:
+        print(f"Chat RAG error: {err}")
+        answer = f"I encountered an issue querying the video knowledge base: {str(err)}"
+        retrieved = []
+        
+    add_chat_message(req.project_id, req.session_id, "assistant", answer)
+    return {
+        "answer": answer,
+        "retrieved_chunks": retrieved
+    }
+
+@app.get("/api/chat/history")
+def api_chat_history(project_id: str, session_id: Optional[str] = "default"):
+    return get_chat_history(project_id, session_id)
+
+@app.delete("/api/chat/history")
+def api_clear_chat_history(project_id: str, session_id: Optional[str] = "default"):
+    clear_chat_history(project_id, session_id)
+    return {"status": "cleared"}
 
 # Settings
 @app.get("/api/settings")

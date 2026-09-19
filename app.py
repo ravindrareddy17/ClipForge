@@ -56,6 +56,25 @@ def test_ollama_connection(url):
         return False, str(e)
     return False, "Failed to connect"
 
+# Helper to resolve clip/video paths from relative, static, or absolute formats
+def resolve_file_path(p):
+    if not p:
+        return None
+    if p.startswith("/static/"):
+        rel = p.replace("/static/", "").replace("/", os.sep)
+        full = os.path.join(os.path.dirname(__file__), "backend", "data", rel)
+        if os.path.exists(full):
+            return full
+    if os.path.isabs(p) and os.path.exists(p):
+        return p
+    local_cand = os.path.join(os.path.dirname(__file__), "backend", "data", "temp", os.path.basename(p))
+    if os.path.exists(local_cand):
+        return local_cand
+    local_clip = os.path.join(os.path.dirname(__file__), "backend", "data", "clips", os.path.basename(p))
+    if os.path.exists(local_clip):
+        return local_clip
+    return p if os.path.exists(p) else None
+
 # Modern, High-Contrast Minimalist Dark Theme
 st.markdown("""
 <style>
@@ -433,7 +452,7 @@ if tab == "Create Clips":
                         
                         col_bt1, col_bt2 = st.columns(2)
                         with col_bt1:
-                            clip_file = c.get("file_path")
+                            clip_file = resolve_file_path(c.get("file_path"))
                             has_clip = clip_file and os.path.exists(clip_file) and os.path.getsize(clip_file) > 1000
                             if has_clip:
                                 col_d1, col_d2 = st.columns([7, 3])
@@ -511,7 +530,7 @@ if tab == "Create Clips":
                                 create_schedule(active_project["id"], "Monday", "18:00")
                                 st.success("Added to publishing queue!")
                     with col_c2:
-                        clip_file = c.get("file_path")
+                        clip_file = resolve_file_path(c.get("file_path"))
                         if clip_file and os.path.exists(clip_file) and os.path.getsize(clip_file) > 1000:
                             st.video(clip_file)
                         elif current_video.get("file_path") and (current_video["file_path"].startswith("http://") or current_video["file_path"].startswith("https://")):

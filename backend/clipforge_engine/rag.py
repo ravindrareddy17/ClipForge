@@ -35,7 +35,7 @@ def get_ollama_embedding(text, model="nomic-embed-text", base_url="http://localh
 
     # Try legacy embeddings first
     try:
-        resp = requests.post(f"{base_url}/api/embeddings", json={"model": model, "prompt": text}, headers=headers, timeout=15)
+        resp = requests.post(f"{base_url}/api/embeddings", json={"model": model, "prompt": text}, headers=headers, timeout=1.5)
         if resp.status_code == 200:
             data = resp.json()
             if "embedding" in data:
@@ -45,13 +45,13 @@ def get_ollama_embedding(text, model="nomic-embed-text", base_url="http://localh
 
     # Try standard embed endpoint
     try:
-        resp = requests.post(f"{base_url}/api/embed", json={"model": model, "input": [text]}, headers=headers, timeout=15)
+        resp = requests.post(f"{base_url}/api/embed", json={"model": model, "input": [text]}, headers=headers, timeout=1.5)
         if resp.status_code == 200:
             data = resp.json()
             if "embeddings" in data and data["embeddings"]:
                 return data["embeddings"][0]
     except Exception as e:
-        print(f"Error querying local Ollama embeddings: {e}")
+        pass
 
     # Return empty representation matching nomic-embed-text dimensions
     return [0.0] * 768
@@ -298,11 +298,11 @@ def generate_grounded_answer(project_id, query, retrieved_chunks, model="llama3.
 
     try:
         headers = {"ngrok-skip-browser-warning": "1"}
-        resp = requests.post(f"{base_url}/api/chat", json=payload, headers=headers, timeout=30)
+        resp = requests.post(f"{base_url}/api/chat", json=payload, headers=headers, timeout=2.5)
         if resp.status_code == 200:
             return resp.json()["message"]["content"]
     except Exception as e:
-        print(f"Ollama chat error/offline: {e}")
+        pass
 
     # Smart fallback: if Ollama is unreachable or errored, synthesize directly from retrieved chunks
     if retrieved_chunks:

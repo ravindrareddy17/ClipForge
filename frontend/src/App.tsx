@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   LayoutDashboard, FolderKanban, Radio, Video, Cpu, Film, 
   Share2, Calendar, BarChart3, Palette, Sliders, Edit3, 
   RefreshCw, Upload, CheckCircle2, Clock, 
-  Scissors, Settings, Sparkles, Plus, Check, ChevronRight
+  Scissors, Settings, Sparkles, Plus, Check, ChevronRight,
+  MessageSquare, Download, Search, FileText, Bot, Send, Trash2
 } from 'lucide-react';
 
 // API Configuration
@@ -109,6 +110,182 @@ export default function App() {
     { id: "render", label: "Auto Render", active: false },
     { id: "schedule", label: "Schedule Post", active: false }
   ]);
+
+  // AI Studio States
+  const [aiSubTab, setAiSubTab] = useState<"chat" | "search" | "pipeline" | "summary">("chat");
+  const [chatMessages, setChatMessages] = useState<{ id: string; role: "user" | "assistant"; message: string; citations?: any[] }[]>([
+    { id: "msg-welcome", role: "assistant", message: "Hi! I'm your ClipForge AI Assistant. Ask me anything about your video transcripts, or click one of the suggestions below to discover viral moments and insights!" }
+  ]);
+  const [chatInput, setChatInput] = useState("");
+  const [isChatLoading, setIsChatLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [pipelineStages, setPipelineStages] = useState<any[]>([]);
+  const [isProcessingVideo, setIsProcessingVideo] = useState(false);
+  const [videoSummary, setVideoSummary] = useState<any>(null);
+  const [isLoadingSummary, setIsLoadingSummary] = useState(false);
+  const chatBottomRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    chatBottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [chatMessages]);
+
+  const handleSendMessage = async (customQuery?: string) => {
+    const query = customQuery || chatInput;
+    if (!query.trim()) return;
+
+    const userMsg = { id: `user-${Date.now()}`, role: "user" as const, message: query };
+    setChatMessages(prev => [...prev, userMsg]);
+    setChatInput("");
+    setIsChatLoading(true);
+
+    if (isBackendOnline && currentProject) {
+      try {
+        const res = await fetch(`${API_URL}/api/chat`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            project_id: currentProject.id,
+            session_id: "default",
+            video_id: selectedVideo?.id || null,
+            query: query
+          })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setChatMessages(prev => [
+            ...prev,
+            { id: `ai-${Date.now()}`, role: "assistant" as const, message: data.answer, citations: data.retrieved_chunks }
+          ]);
+        } else {
+          throw new Error("Chat request failed");
+        }
+      } catch (e) {
+        setChatMessages(prev => [
+          ...prev,
+          { id: `ai-${Date.now()}`, role: "assistant" as const, message: "⚠️ Could not connect to AI engine. Backend may be starting up." }
+        ]);
+      }
+    } else {
+      setTimeout(() => {
+        let mockReply = "";
+        const lower = query.toLowerCase();
+        if (lower.includes("summar")) {
+          mockReply = `Here is an executive summary of "${selectedVideo?.filename || 'the video'}":\n\n• **Core Topic**: Scaling short-form video generation using local offline AI.\n• **Key Takeaway**: Running Whisper and Llama 3 locally reduces turnaround by 80% while ensuring 100% video privacy.\n• **High Impact Timestamp**: [00:12] - Architecture overview.`;
+        } else if (lower.includes("viral") || lower.includes("hook") || lower.includes("clip")) {
+          mockReply = `⚡ **Viral Moments Detected:**\n\n1. **[00:12 - 00:35]** "The secret to AI automation" — Virality Score: **95%**. Strong opening hook with high vocal inflection.\n2. **[01:05 - 01:25]** "How face tracking works" — Virality Score: **87%**. High visual motion demonstration.\n\n👉 *You can view or render these in the Generated Clips tab!*`;
+        } else {
+          mockReply = `In "${selectedVideo?.filename || 'the video'}", the speaker focuses on automated workflows. At timestamp **[00:12]**, the speaker introduces: *"Welcome to local artificial intelligence..."*. Feel free to search specific keywords or jump to that segment!`;
+        }
+        setChatMessages(prev => [
+          ...prev,
+          { id: `ai-${Date.now()}`, role: "assistant" as const, message: mockReply }
+        ]);
+      }, 500);
+    }
+    setIsChatLoading(false);
+  };
+
+  const handleClearChat = async () => {
+    if (isBackendOnline && currentProject) {
+      try {
+        await fetch(`${API_URL}/api/chat/history?project_id=${currentProject.id}&session_id=default`, { method: "DELETE" });
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    setChatMessages([
+      { id: "msg-welcome", role: "assistant", message: "Conversation cleared. How can I help you analyze your videos?" }
+    ]);
+  };
+
+  const handleSearchMoments = async () => {
+    if (!searchQuery.trim() || !selectedVideo) return;
+    setIsSearching(true);
+    if (isBackendOnline && currentProject) {
+      try {
+        const res = await fetch(`${API_URL}/api/videos/${selectedVideo.id}/search`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ project_id: currentProject.id, query: searchQuery })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setSearchResults(data);
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    } else {
+      setTimeout(() => {
+        setSearchResults([
+          {
+            start_time: 12.5,
+            end_time: 35.2,
+            text: "...welcome to local artificial intelligence. We are running local Whisper models, OpenCV face tracking, and local Ollama inference models...",
+            score: 0.95
+          },
+          {
+            start_time: 65.0,
+            end_time: 85.0,
+            text: "...our face tracking centers automatically without manual keyframing, producing instant vertical 9:16 reels...",
+            score: 0.87
+          }
+        ]);
+      }, 300);
+    }
+    setIsSearching(false);
+  };
+
+  const handleTriggerPipeline = async () => {
+    if (!selectedVideo) return;
+    setIsProcessingVideo(true);
+    if (isBackendOnline) {
+      try {
+        await fetch(`${API_URL}/api/videos/${selectedVideo.id}/process`, { method: "POST" });
+        fetchPipelineStages();
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setTimeout(() => setIsProcessingVideo(false), 2000);
+      }
+    } else {
+      setTimeout(() => {
+        setIsProcessingVideo(false);
+        alert("Pipeline analysis complete! 2 viral clips proposed.");
+      }, 1500);
+    }
+  };
+
+  const fetchPipelineStages = async () => {
+    if (!selectedVideo || !isBackendOnline) return;
+    try {
+      const res = await fetch(`${API_URL}/api/videos/${selectedVideo.id}/stages`);
+      if (res.ok) {
+        const data = await res.json();
+        setPipelineStages(data);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const fetchVideoSummary = async () => {
+    if (!selectedVideo || !isBackendOnline) return;
+    setIsLoadingSummary(true);
+    try {
+      const res = await fetch(`${API_URL}/api/videos/${selectedVideo.id}/summary`);
+      if (res.ok) {
+        const data = await res.json();
+        setVideoSummary(data);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsLoadingSummary(false);
+    }
+  };
 
   // Check Backend Status
   const checkBackendStatus = async () => {
@@ -463,7 +640,7 @@ export default function App() {
             { id: "projects", label: "Projects", icon: FolderKanban },
             { id: "channels", label: "Channels", icon: Radio },
             { id: "video-library", label: "Video Library", icon: Video },
-            { id: "ai-processing", label: "AI Processing", icon: Cpu },
+            { id: "ai-processing", label: "AI Studio & Chat", icon: Bot },
             { id: "generated-clips", label: "Generated Clips", icon: Film },
             { id: "upload-queue", label: "Upload Queue", icon: Share2 },
             { id: "scheduler", label: "Scheduler", icon: Calendar },
@@ -844,47 +1021,386 @@ export default function App() {
             </div>
           )}
 
-          {/* 5. AI PROCESSING MONITOR */}
+          {/* 5. AI STUDIO & VIDEO CHAT */}
           {activeTab === "ai-processing" && (
-            <div className="space-y-8 max-w-4xl">
-              <div className="glass-panel rounded-2xl p-8 text-center relative overflow-hidden">
-                <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-[#FF0055] to-[#00F0FF] animate-pulse"></div>
-                
-                <Cpu className="w-16 h-16 text-[#FF0055] mx-auto mb-6 animate-pulse" />
-                <h3 className="text-xl font-bold text-white mb-2">AI Processing Pipeline</h3>
-                <p className="text-sm text-slate-400 max-w-md mx-auto mb-8">
-                  The local engine is analyzing your file. We run local Whisper models, OpenCV face tracking, and local Ollama inference models.
-                </p>
-
-                {/* Pipeline visual steps */}
-                <div className="max-w-2xl mx-auto space-y-6 text-left">
-                  {[
-                    { label: "Step 1: Reading Video Metadata", desc: "Checking file dimensions, framerate and audio format.", status: "completed" },
-                    { label: "Step 2: Color Histogram scene cuts", desc: "Scanning frames at intervals to find logical cut points.", status: "completed" },
-                    { label: "Step 3: Speech-To-Text Whisper Sync", desc: "Generating word-by-word timestamp coordinates.", status: "active" },
-                    { label: "Step 4: Ollama Moment Valuation", desc: "Running local Llama3 model prompts to rank segments.", status: "pending" },
-                    { label: "Step 5: Crop Optimization", desc: "Tracking speaker face paths and preparing clipping instructions.", status: "pending" }
-                  ].map((step, i) => (
-                    <div key={i} className="flex gap-4 p-4 rounded-xl border border-slate-800/40 bg-slate-900/10">
-                      <div className="mt-1">
-                        {step.status === "completed" && <CheckCircle2 className="w-5 h-5 text-emerald-400" />}
-                        {step.status === "active" && <RefreshCw className="w-5 h-5 text-[#FF0055] animate-spin" />}
-                        {step.status === "pending" && <Clock className="w-5 h-5 text-slate-600" />}
-                      </div>
-                      <div>
-                        <h4 className={`text-sm font-bold ${step.status === 'active' ? 'text-white' : step.status === 'completed' ? 'text-slate-300' : 'text-slate-600'}`}>{step.label}</h4>
-                        <p className={`text-xs mt-0.5 ${step.status === 'pending' ? 'text-slate-700' : 'text-slate-500'}`}>{step.desc}</p>
-                      </div>
-                    </div>
-                  ))}
+            <div className="space-y-6 max-w-5xl mx-auto">
+              {/* Header with Video Selector & Sub-nav */}
+              <div className="glass-panel rounded-2xl p-5 border border-slate-800 flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="p-1.5 rounded-lg bg-pink-500/10 text-[#FF0055] border border-pink-500/20">
+                      <Bot className="w-5 h-5" />
+                    </span>
+                    <h3 className="text-lg font-bold text-white">AI Video Intelligence Studio</h3>
+                  </div>
+                  <p className="text-xs text-slate-400 mt-1">
+                    Ask questions, search key moments with timestamps, or monitor the local Whisper & LLM pipeline.
+                  </p>
                 </div>
 
-                <div className="mt-8 pt-6 border-t border-slate-800 flex items-center justify-between text-xs text-slate-500 max-w-2xl mx-auto">
-                  <span>Engine: Python 3.12 (Local)</span>
-                  <span>Whisper Mode: CPU tiny</span>
-                  <span>LLM: llama3 (Ollama)</span>
+                {/* Video Selector */}
+                <div className="flex items-center gap-3">
+                  <span className="text-xs text-slate-400 font-bold">Target Video:</span>
+                  <select 
+                    value={selectedVideo?.id || ""}
+                    onChange={(e) => {
+                      const found = videos.find(v => v.id === e.target.value);
+                      if (found) setSelectedVideo(found);
+                    }}
+                    className="bg-slate-900 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-slate-200 outline-none focus:border-[#FF0055]"
+                  >
+                    <option value="">-- Choose Video --</option>
+                    {videos.map(v => (
+                      <option key={v.id} value={v.id}>{v.filename}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
+
+              {/* Sub-tab Navigation */}
+              <div className="flex items-center gap-2 border-b border-slate-800 pb-2">
+                {[
+                  { id: "chat", label: "💬 Video Chatbot", icon: MessageSquare },
+                  { id: "search", label: "🔍 Moment Search", icon: Search },
+                  { id: "pipeline", label: "⚡ Pipeline Monitor", icon: Cpu },
+                  { id: "summary", label: "📋 Executive Summary", icon: FileText },
+                ].map(tab => {
+                  const active = aiSubTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => {
+                        setAiSubTab(tab.id as any);
+                        if (tab.id === "pipeline") fetchPipelineStages();
+                        if (tab.id === "summary") fetchVideoSummary();
+                      }}
+                      className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${
+                        active
+                          ? "bg-slate-800 text-white border border-[#FF0055]/50 shadow-sm"
+                          : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/40"
+                      }`}
+                    >
+                      {tab.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* TAB 1: AI VIDEO CHATBOT */}
+              {aiSubTab === "chat" && (
+                <div className="glass-panel rounded-2xl p-6 border border-slate-800 flex flex-col h-[600px]">
+                  {/* Chat Top Bar */}
+                  <div className="flex items-center justify-between pb-3 border-b border-slate-800 text-xs">
+                    <span className="text-slate-400 flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-[#00F0FF]" />
+                      Grounded in: <strong className="text-slate-200">{selectedVideo?.filename || "All Imported Videos"}</strong>
+                    </span>
+                    <button 
+                      onClick={handleClearChat}
+                      className="text-slate-500 hover:text-rose-400 flex items-center gap-1 transition-colors cursor-pointer"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" /> Clear History
+                    </button>
+                  </div>
+
+                  {/* Messages Scroll Area */}
+                  <div className="flex-1 overflow-y-auto py-4 space-y-4 pr-2">
+                    {chatMessages.map(msg => (
+                      <div 
+                        key={msg.id} 
+                        className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                      >
+                        {msg.role === 'assistant' && (
+                          <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#FF0055] to-[#7928CA] flex items-center justify-center text-white shrink-0 shadow-md">
+                            <Bot className="w-4 h-4" />
+                          </div>
+                        )}
+                        <div 
+                          className={`max-w-[80%] rounded-2xl px-4 py-3 text-xs leading-relaxed ${
+                            msg.role === 'user' 
+                              ? 'bg-gradient-to-r from-[#FF0055] to-pink-600 text-white rounded-br-none shadow-md'
+                              : 'bg-slate-900 border border-slate-800 text-slate-200 rounded-bl-none shadow-sm'
+                          }`}
+                        >
+                          <div className="whitespace-pre-wrap">{msg.message}</div>
+                          
+                          {/* Citations if any */}
+                          {msg.citations && msg.citations.length > 0 && (
+                            <div className="mt-3 pt-2 border-t border-slate-800/80 flex flex-wrap gap-1.5">
+                              <span className="text-[10px] text-slate-400 font-bold block w-full">Timestamp Citations:</span>
+                              {msg.citations.map((c: any, ci: number) => {
+                                const stSec = c.metadata?.start_time || c.start_time || 0;
+                                const mins = Math.floor(stSec / 60);
+                                const secs = Math.floor(stSec % 60);
+                                const stamp = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+                                return (
+                                  <button
+                                    key={ci}
+                                    onClick={() => {
+                                      setActiveTab("generated-clips");
+                                    }}
+                                    className="px-2 py-0.5 rounded bg-slate-800 hover:bg-[#FF0055]/20 text-[#00F0FF] hover:text-white text-[10px] font-mono border border-slate-700 transition-colors cursor-pointer"
+                                  >
+                                    ▶ [{stamp}] {c.text ? `"${c.text.slice(0, 30)}..."` : ""}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                        {msg.role === 'user' && (
+                          <div className="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-300 shrink-0">
+                            👤
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                    {isChatLoading && (
+                      <div className="flex gap-3 items-center text-slate-400 text-xs">
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#FF0055] to-[#7928CA] flex items-center justify-center text-white shrink-0 animate-pulse">
+                          <Bot className="w-4 h-4" />
+                        </div>
+                        <div className="bg-slate-900 border border-slate-800 rounded-2xl px-4 py-2.5 flex items-center gap-2">
+                          <RefreshCw className="w-3.5 h-3.5 animate-spin text-[#FF0055]" />
+                          Analyzing transcripts & generating answer...
+                        </div>
+                      </div>
+                    )}
+                    <div ref={chatBottomRef} />
+                  </div>
+
+                  {/* Suggestion Chips */}
+                  <div className="pt-3 pb-2 flex flex-wrap gap-2">
+                    {[
+                      "⚡ Summarize key takeaways",
+                      "🔥 Find the most viral moment",
+                      "💡 What was the conclusion?",
+                      "✂️ Which segment is best for TikTok?"
+                    ].map((sug, si) => (
+                      <button
+                        key={si}
+                        onClick={() => handleSendMessage(sug)}
+                        className="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-[11px] text-slate-400 hover:text-slate-200 border border-slate-800 transition-colors cursor-pointer"
+                      >
+                        {sug}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Input Box */}
+                  <div className="pt-2 border-t border-slate-800 flex gap-2">
+                    <input 
+                      type="text"
+                      placeholder={selectedVideo ? `Ask about "${selectedVideo.filename}"...` : "Select a video and ask any question..."}
+                      value={chatInput}
+                      onChange={(e) => setChatInput(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === 'Enter') handleSendMessage(); }}
+                      className="flex-1 bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white placeholder:text-slate-500 outline-none focus:border-[#FF0055]"
+                    />
+                    <button
+                      onClick={() => handleSendMessage()}
+                      disabled={isChatLoading || !chatInput.trim()}
+                      className="px-4 py-2.5 bg-gradient-to-r from-[#FF0055] to-pink-600 hover:from-pink-600 hover:to-pink-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-md cursor-pointer"
+                    >
+                      <Send className="w-3.5 h-3.5" /> Send
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 2: SEMANTIC MOMENT SEARCH */}
+              {aiSubTab === "search" && (
+                <div className="glass-panel rounded-2xl p-6 border border-slate-800 space-y-6">
+                  <div>
+                    <h4 className="text-sm font-bold text-white mb-1">Instant Semantic Scene Search</h4>
+                    <p className="text-xs text-slate-400">
+                      Find exact spoken words or topics with timestamps. Click "Clip This Moment" to instantly load it into the editor.
+                    </p>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <input 
+                      type="text"
+                      placeholder="e.g. artificial intelligence, pricing, funny moment, revenue..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === 'Enter') handleSearchMoments(); }}
+                      className="flex-1 bg-slate-900 border border-slate-800 rounded-xl px-4 py-2 text-xs text-white placeholder:text-slate-500 outline-none focus:border-[#FF0055]"
+                    />
+                    <button
+                      onClick={handleSearchMoments}
+                      disabled={isSearching}
+                      className="px-5 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 border border-slate-700 transition-colors cursor-pointer"
+                    >
+                      <Search className="w-3.5 h-3.5 text-[#00F0FF]" /> Search
+                    </button>
+                  </div>
+
+                  {/* Search Results */}
+                  <div className="space-y-3">
+                    {searchResults.length > 0 ? (
+                      searchResults.map((hit, hi) => {
+                        const stSec = hit.start_time || hit.metadata?.start_time || 0;
+                        const endSec = hit.end_time || hit.metadata?.end_time || stSec + 20;
+                        const mins = Math.floor(stSec / 60);
+                        const secs = Math.floor(stSec % 60);
+                        const stamp = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+                        return (
+                          <div key={hi} className="p-4 rounded-xl bg-slate-900/80 border border-slate-800 flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+                            <div className="space-y-1 flex-1">
+                              <div className="flex items-center gap-2">
+                                <span className="px-2 py-0.5 rounded bg-pink-500/10 text-[#FF0055] font-mono text-[10px] font-bold border border-pink-500/20">
+                                  [{stamp}] ({stSec.toFixed(1)}s - {endSec.toFixed(1)}s)
+                                </span>
+                                {hit.score && (
+                                  <span className="text-[10px] text-emerald-400 font-semibold">
+                                    {(hit.score * 100).toFixed(0)}% Relevance
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-xs text-slate-300 italic">
+                                "{hit.text}"
+                              </p>
+                            </div>
+                            <button
+                              onClick={() => {
+                                setClipTitle(`Clip: ${searchQuery || 'Scene'} [${stamp}]`);
+                                setClipStart(stSec);
+                                setClipEnd(endSec);
+                                setSelectedClip({
+                                  id: `search-clip-${Date.now()}`,
+                                  video_id: selectedVideo?.id || "demo-v1",
+                                  title: `Clip at ${stamp}`,
+                                  start_time: stSec,
+                                  end_time: endSec,
+                                  duration: endSec - stSec,
+                                  score: 90,
+                                  explanation: `Matched query "${searchQuery}"`,
+                                  status: "ready_to_render",
+                                  subtitles: [],
+                                  subtitle_style: subtitleStyle,
+                                  created_at: new Date().toISOString()
+                                });
+                                setActiveTab("editor");
+                              }}
+                              className="px-3.5 py-1.5 bg-[#FF0055]/10 hover:bg-[#FF0055] text-[#FF0055] hover:text-white border border-[#FF0055]/30 rounded-lg text-xs font-bold transition-all flex items-center gap-1 cursor-pointer shrink-0"
+                            >
+                              <Scissors className="w-3.5 h-3.5" /> Clip This Moment
+                            </button>
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <div className="text-center py-12 text-slate-500 text-xs">
+                        {isSearching ? "Searching transcript embeddings..." : "Enter a search query above to pinpoint exact spoken lines."}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 3: PIPELINE MONITOR */}
+              {aiSubTab === "pipeline" && (
+                <div className="glass-panel rounded-2xl p-6 border border-slate-800 space-y-6">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <div>
+                      <h4 className="text-sm font-bold text-white mb-1">Local Processing Pipeline</h4>
+                      <p className="text-xs text-slate-400">
+                        Tracks metadata extraction, Whisper speech-to-text, scene boundary cuts, and virality scoring.
+                      </p>
+                    </div>
+                    <button
+                      onClick={handleTriggerPipeline}
+                      disabled={isProcessingVideo || !selectedVideo}
+                      className="px-5 py-2 bg-gradient-to-r from-[#FF0055] to-pink-600 hover:from-pink-600 hover:to-pink-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer shadow-lg shadow-pink-500/10"
+                    >
+                      <RefreshCw className={`w-3.5 h-3.5 ${isProcessingVideo ? 'animate-spin' : ''}`} />
+                      {isProcessingVideo ? "Processing..." : "⚡ Run AI Pipeline"}
+                    </button>
+                  </div>
+
+                  <div className="space-y-3">
+                    {(pipelineStages.length > 0 ? pipelineStages : [
+                      { stage_name: "Import & Metadata", status: "completed", message: "Video dimensions, framerate and audio format extracted.", duration_seconds: 0.8 },
+                      { stage_name: "Extract Audio WAV", status: "completed", message: "16kHz mono audio extracted for Whisper.", duration_seconds: 1.2 },
+                      { stage_name: "Whisper Speech-To-Text", status: "completed", message: "Word-level timestamp synchronization generated.", duration_seconds: 4.5 },
+                      { stage_name: "Scene Boundary Detection", status: "completed", message: "Color histogram visual transitions analyzed.", duration_seconds: 2.1 },
+                      { stage_name: "Viral Moment Scoring", status: "completed", message: "Ollama Llama 3 ranked segments by engagement score.", duration_seconds: 3.4 },
+                      { stage_name: "Auto 9:16 Face Crop", status: "waiting", message: "OpenCV face tracker calculates center coordinates.", duration_seconds: 0.0 },
+                    ]).map((stg, i) => (
+                      <div key={i} className="flex gap-4 p-3.5 rounded-xl border border-slate-800/60 bg-slate-900/40 items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          {stg.status === "completed" && <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />}
+                          {stg.status === "running" && <RefreshCw className="w-4 h-4 text-[#FF0055] animate-spin shrink-0" />}
+                          {stg.status === "waiting" && <Clock className="w-4 h-4 text-slate-600 shrink-0" />}
+                          <div>
+                            <h5 className="text-xs font-bold text-slate-200">{stg.stage_name}</h5>
+                            <p className="text-[11px] text-slate-500 mt-0.5">{stg.message}</p>
+                          </div>
+                        </div>
+                        <span className="text-[10px] font-mono text-slate-500">
+                          {stg.duration_seconds ? `${stg.duration_seconds.toFixed(1)}s` : "Pending"}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="pt-4 border-t border-slate-800 flex items-center justify-between text-xs text-slate-500">
+                    <span>Engine: Python 3.12 (Local FastAPI)</span>
+                    <span>Whisper Mode: CPU tiny</span>
+                    <span>LLM: llama3 (Ollama)</span>
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 4: EXECUTIVE SUMMARY */}
+              {aiSubTab === "summary" && (
+                <div className="glass-panel rounded-2xl p-6 border border-slate-800 space-y-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="text-sm font-bold text-white mb-1">AI Executive Summary</h4>
+                      <p className="text-xs text-slate-400">
+                        Structured overview and key topics generated by local LLM agents.
+                      </p>
+                    </div>
+                    <button
+                      onClick={fetchVideoSummary}
+                      disabled={isLoadingSummary || !selectedVideo}
+                      className="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 border border-slate-700 cursor-pointer"
+                    >
+                      <RefreshCw className={`w-3.5 h-3.5 ${isLoadingSummary ? 'animate-spin text-[#00F0FF]' : ''}`} /> Refresh
+                    </button>
+                  </div>
+
+                  <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 space-y-4">
+                    <div>
+                      <h5 className="text-xs font-bold text-[#FF0055] uppercase tracking-wider mb-1.5">Executive Overview</h5>
+                      <p className="text-xs text-slate-300 leading-relaxed">
+                        {videoSummary?.executive_summary || 
+                          `This video outlines modern techniques for automated short-form video slicing and local AI deployment. It highlights how local Whisper speech recognition combined with face tracking allows creators to turn long-form recordings into viral 9:16 vertical shorts within seconds.`
+                        }
+                      </p>
+                    </div>
+
+                    <div>
+                      <h5 className="text-xs font-bold text-[#00F0FF] uppercase tracking-wider mb-2">Key Topics Covered</h5>
+                      <div className="flex flex-wrap gap-2">
+                        {(videoSummary?.key_topics || [
+                          "Local Whisper Speech-To-Text",
+                          "Ollama LLM Moment Scoring",
+                          "OpenCV Face Tracking & 9:16 Crop",
+                          "Dynamic Word Subtitles",
+                          "Multi-Platform Automation"
+                        ]).map((topic: string, ti: number) => (
+                          <span key={ti} className="px-2.5 py-1 rounded-md bg-slate-800 text-slate-300 text-[11px] border border-slate-700">
+                            #{topic}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -924,10 +1440,21 @@ export default function App() {
                     
                     {/* Visual Card Top */}
                     <div className="h-44 bg-slate-900 relative flex items-center justify-center overflow-hidden">
-                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950 to-transparent z-10"></div>
+                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950 to-transparent z-10 pointer-events-none"></div>
                       
-                      {/* Grid representation or video player */}
-                      <Film className="w-12 h-12 text-slate-700 group-hover:scale-110 transition-transform duration-300" />
+                      {/* Video Player or Placeholder */}
+                      {c.file_path ? (
+                        <video 
+                          src={c.file_path.startsWith("http") ? c.file_path : `${API_URL}/api/clips/${c.id}/stream`}
+                          controls
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="flex flex-col items-center justify-center text-center p-4">
+                          <Film className="w-10 h-10 text-slate-600 mb-2 group-hover:text-[#FF0055] transition-colors" />
+                          <span className="text-[11px] text-slate-500 font-medium">Ready for Vertical Cut</span>
+                        </div>
+                      )}
                       
                       {/* Virality Score Badge */}
                       <div className="absolute top-4 left-4 bg-slate-950/80 border border-slate-800 px-3 py-1 rounded-full text-xs font-bold text-[#FF0055] flex items-center gap-1 z-20">
@@ -952,7 +1479,7 @@ export default function App() {
                         </div>
                       </div>
 
-                      <div className="mt-6 pt-4 border-t border-slate-800/50 flex items-center justify-between">
+                      <div className="mt-6 pt-4 border-t border-slate-800/50 flex items-center justify-between gap-2">
                         <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${
                           c.status === 'completed' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' :
                           c.status === 'rendering' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20 animate-pulse' :
@@ -961,12 +1488,24 @@ export default function App() {
                           {c.status.replace("_", " ")}
                         </span>
                         
-                        <button 
-                          onClick={() => handleOpenEditor(c)}
-                          className="bg-slate-800 hover:bg-[#FF0055]/10 border border-slate-700 hover:border-[#FF0055]/30 hover:text-white px-4 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
-                        >
-                          <Edit3 className="w-3.5 h-3.5 text-[#FF0055]" /> Review & Edit
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <a 
+                            href={c.file_path && c.file_path.startsWith("http") ? c.file_path : `${API_URL}/api/clips/${c.id}/download`}
+                            download={`${c.title || 'clip'}.mp4`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
+                            title="Download MP4"
+                          >
+                            <Download className="w-3.5 h-3.5 text-[#00F0FF]" />
+                          </a>
+                          <button 
+                            onClick={() => handleOpenEditor(c)}
+                            className="bg-slate-800 hover:bg-[#FF0055]/10 border border-slate-700 hover:border-[#FF0055]/30 text-slate-300 hover:text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
+                          >
+                            <Edit3 className="w-3.5 h-3.5 text-[#FF0055]" /> Review & Edit
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1003,6 +1542,17 @@ export default function App() {
                   <h3 className="text-base font-bold text-white">{clipTitle}</h3>
                 </div>
                 <div className="flex items-center gap-2">
+                  {selectedClip.file_path && (
+                    <a 
+                      href={selectedClip.file_path.startsWith("http") ? selectedClip.file_path : `${API_URL}/api/clips/${selectedClip.id}/download`}
+                      download={`${clipTitle || 'clip'}.mp4`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <Download className="w-3.5 h-3.5 text-[#00F0FF]" /> Download MP4
+                    </a>
+                  )}
                   <button 
                     onClick={handleRenderClip}
                     className="bg-gradient-to-r from-[#FF0055] to-pink-600 hover:from-pink-600 hover:to-pink-700 text-white px-6 py-2 rounded-lg text-xs font-bold transition-colors cursor-pointer shadow-lg shadow-pink-500/10"
@@ -1020,19 +1570,30 @@ export default function App() {
                   {/* Phone player frame */}
                   <div className="aspect-[9/16] max-h-[500px] mx-auto bg-slate-950 rounded-[32px] border-4 border-slate-800 shadow-2xl relative overflow-hidden flex flex-col justify-center items-center">
                     
-                    {/* Rendered Player / Original Source Mock */}
-                    {selectedClip.file_path || isBackendOnline ? (
+                    {/* Rendered Player / Source Video Preview */}
+                    {selectedClip.file_path ? (
                       <video 
-                        src={selectedClip.file_path ? (selectedClip.file_path.startsWith("http") ? selectedClip.file_path : `${API_URL}${selectedClip.file_path}`) : ""}
+                        key={`clip-${selectedClip.id}`}
+                        src={selectedClip.file_path.startsWith("http") ? selectedClip.file_path : `${API_URL}/api/clips/${selectedClip.id}/stream`}
                         controls
+                        playsInline
                         className="w-full h-full object-cover"
-                        poster="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=600&auto=format&fit=crop"
+                      />
+                    ) : selectedVideo?.file_path && isBackendOnline ? (
+                      <video 
+                        key={`source-${selectedClip.id}`}
+                        src={selectedVideo.file_path.startsWith("http") ? selectedVideo.file_path : `${API_URL}/api/videos/${selectedVideo.id}/stream#t=${clipStart},${clipEnd}`}
+                        controls
+                        playsInline
+                        className="w-full h-full object-cover"
                       />
                     ) : (
                       <div className="text-center p-6 space-y-4">
                         <Film className="w-12 h-12 text-[#FF0055] mx-auto animate-pulse" />
-                        <h4 className="text-sm font-bold text-white">Clip Not Rendered Yet</h4>
-                        <p className="text-xs text-slate-500 max-w-[200px] mx-auto">Render clip using FFmpeg to burn dynamic word subtitles and crop to 9:16 vertical.</p>
+                        <h4 className="text-sm font-bold text-white">Clip Segment: {clipStart.toFixed(1)}s - {clipEnd.toFixed(1)}s</h4>
+                        <p className="text-xs text-slate-400 max-w-[200px] mx-auto">
+                          Click "Render Clip" to burn dynamic subtitles and export the vertical 9:16 video.
+                        </p>
                       </div>
                     )}
 
