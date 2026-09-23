@@ -1,8 +1,8 @@
 [theme]
 base = "dark"
-primaryColor = "#3b82f6"
+primaryColor = "#6366f1"
 backgroundColor = "#090d16"
-secondaryBackgroundColor = "#0d121f"
+secondaryBackgroundColor = "#0f172a"
 textColor = "#f8fafc"
 font = "sans serif"
 
@@ -10,3 +10,4 @@ font = "sans serif"
 headless = true
 enableCORS = false
 enableXsrfProtection = false
+maxUploadSize = 500

@@ -10,8 +10,8 @@ __pycache__/
 *.pyo
 *.pyd
 
-# Streamlit config & logs
-.streamlit/
+# Streamlit secrets & logs
+.streamlit/secrets.toml
 *.log
 
 # Database and temporary media files
