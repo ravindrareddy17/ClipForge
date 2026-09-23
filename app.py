@@ -35,7 +35,8 @@ from clipforge_engine.video_qa_agents import run_video_qa_pipeline
 from clipforge_engine.channel import resolve_channel_videos, import_channel_videos, search_channel_library
 from clipforge_engine.llm_client import (
     get_active_provider, get_groq_api_key, get_gemini_api_key,
-    test_provider_connection, get_active_model, DEFAULT_MODELS
+    test_provider_connection, get_active_model, DEFAULT_MODELS,
+    mask_api_key
 )
 import clipforge_engine.cse473_lab as cse473
 
@@ -1020,12 +1021,25 @@ elif tab == "Library & Settings":
             st.session_state.llm_provider = inv_prov_map[selected_disp]
 
             if st.session_state.llm_provider == "groq":
-                st.session_state.groq_api_key = st.text_input(
-                    "Groq API Key:",
-                    value=st.session_state.groq_api_key,
+                active_groq_key = get_groq_api_key()
+                has_key = bool(active_groq_key and len(active_groq_key) > 8)
+                if has_key:
+                    st.markdown(
+                        f"<div style='display:flex; align-items:center; gap:8px; margin-bottom:8px;'>"
+                        f"<span style='color:#34d399; font-weight:600; font-size:0.85rem;'>🔒 Groq Key Configured:</span>"
+                        f"<code style='color:#94a3b8; background:#1f2937; padding:2px 8px; border-radius:4px;'>{mask_api_key(active_groq_key)}</code>"
+                        f"</div>",
+                        unsafe_allow_html=True
+                    )
+                new_groq_key = st.text_input(
+                    "Update Groq API Key:" if has_key else "Enter Groq API Key:",
                     type="password",
-                    placeholder="gsk_..."
+                    placeholder="Leave blank to use securely configured key" if has_key else "gsk_...",
+                    key="groq_key_input"
                 )
+                if new_groq_key.strip():
+                    st.session_state.groq_api_key = new_groq_key.strip()
+
                 groq_model_options = ["openai/gpt-oss-20b", "qwen/qwen3.8-27b", "openai/gpt-oss-120b"]
                 if st.session_state.groq_model not in groq_model_options:
                     groq_model_options.insert(0, st.session_state.groq_model)
@@ -1034,15 +1048,28 @@ elif tab == "Library & Settings":
                     groq_model_options,
                     index=groq_model_options.index(st.session_state.groq_model) if st.session_state.groq_model in groq_model_options else 0
                 )
-                st.caption("⚡ Groq processes 500+ tokens/sec. Free API keys at [console.groq.com/keys](https://console.groq.com/keys).")
+                st.caption("⚡ Groq processes 500+ tokens/sec. Keys are stored securely in backend secrets and hidden from the platform.")
 
             elif st.session_state.llm_provider == "gemini":
-                st.session_state.gemini_api_key = st.text_input(
-                    "Google Gemini API Key:",
-                    value=st.session_state.gemini_api_key,
+                active_gemini_key = get_gemini_api_key()
+                has_key = bool(active_gemini_key and len(active_gemini_key) > 8)
+                if has_key:
+                    st.markdown(
+                        f"<div style='display:flex; align-items:center; gap:8px; margin-bottom:8px;'>"
+                        f"<span style='color:#34d399; font-weight:600; font-size:0.85rem;'>🔒 Gemini Key Configured:</span>"
+                        f"<code style='color:#94a3b8; background:#1f2937; padding:2px 8px; border-radius:4px;'>{mask_api_key(active_gemini_key)}</code>"
+                        f"</div>",
+                        unsafe_allow_html=True
+                    )
+                new_gemini_key = st.text_input(
+                    "Update Gemini API Key:" if has_key else "Enter Gemini API Key:",
                     type="password",
-                    placeholder="AQ..."
+                    placeholder="Leave blank to use securely configured key" if has_key else "AQ...",
+                    key="gemini_key_input"
                 )
+                if new_gemini_key.strip():
+                    st.session_state.gemini_api_key = new_gemini_key.strip()
+
                 gemini_model_options = ["gemini-3.6-flash", "gemini-3.5-flash", "gemini-3.7-flash"]
                 if st.session_state.gemini_model not in gemini_model_options:
                     gemini_model_options.insert(0, st.session_state.gemini_model)
@@ -1051,7 +1078,7 @@ elif tab == "Library & Settings":
                     gemini_model_options,
                     index=gemini_model_options.index(st.session_state.gemini_model) if st.session_state.gemini_model in gemini_model_options else 0
                 )
-                st.caption("✨ Official Google Gemini models. Free API keys at [aistudio.google.com](https://aistudio.google.com/app/apikey).")
+                st.caption("✨ Official Google Gemini models. Keys are stored securely in backend secrets and hidden from the platform.")
 
             else:
                 st.session_state.ollama_url = st.text_input("Ollama Server URL:", value=st.session_state.ollama_url)
@@ -1075,9 +1102,13 @@ elif tab == "Library & Settings":
             with col_tst2:
                 if st.button("💾 Save AI Settings", use_container_width=True):
                     update_setting("llm_provider", st.session_state.llm_provider)
-                    update_setting("groq_api_key", st.session_state.groq_api_key)
+                    if 'new_groq_key' in locals() and new_groq_key.strip():
+                        update_setting("groq_api_key", new_groq_key.strip())
+                        st.session_state.groq_api_key = new_groq_key.strip()
                     update_setting("groq_model", st.session_state.groq_model)
-                    update_setting("gemini_api_key", st.session_state.gemini_api_key)
+                    if 'new_gemini_key' in locals() and new_gemini_key.strip():
+                        update_setting("gemini_api_key", new_gemini_key.strip())
+                        st.session_state.gemini_api_key = new_gemini_key.strip()
                     update_setting("gemini_model", st.session_state.gemini_model)
                     update_setting("ollama_url", st.session_state.ollama_url)
                     update_setting("ollama_model", st.session_state.ollama_model)

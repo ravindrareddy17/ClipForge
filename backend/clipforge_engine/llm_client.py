@@ -29,6 +29,22 @@ FALLBACK_MODELS = {
     "ollama": ["llama3:latest", "llama3", "mistral:latest"]
 }
 
+def mask_api_key(key: Optional[str]) -> str:
+    """Safely masks an API key so it is never exposed in logs or UI."""
+    if not key or len(key.strip()) < 8:
+        return "Not Configured"
+    k = key.strip()
+    return f"{k[:4]}••••••••••••••••{k[-4:]}"
+
+def scrub_sensitive_info(text: str) -> str:
+    """Removes API keys from error messages, URLs, or exception traces."""
+    if not text:
+        return ""
+    text = re.sub(r'key=[a-zA-Z0-9_\-]+', 'key=••••••••', text)
+    text = re.sub(r'gsk_[a-zA-Z0-9]{20,}', 'gsk_••••••••', text)
+    text = re.sub(r'Bearer\s+[a-zA-Z0-9_\-]+', 'Bearer ••••••••', text)
+    return text
+
 def _is_in_streamlit_context() -> bool:
     try:
         from streamlit.runtime import exists
@@ -234,11 +250,11 @@ def call_groq_chat(
             # If model not found or forbidden, try next fallback
             if e.code in [404, 400]:
                 continue
-            raise RuntimeError(last_err)
+            raise RuntimeError(scrub_sensitive_info(last_err))
         except Exception as e:
             last_err = str(e)
 
-    raise RuntimeError(f"All Groq models failed. Last error: {last_err}")
+    raise RuntimeError(f"All Groq models failed. Last error: {scrub_sensitive_info(last_err or '')}")
 
 
 def call_gemini_generate(
@@ -319,11 +335,11 @@ def call_gemini_generate(
             last_err = f"HTTP {e.code}: {err_body}"
             if e.code in [404, 400]:
                 continue
-            raise RuntimeError(last_err)
+            raise RuntimeError(scrub_sensitive_info(last_err))
         except Exception as e:
             last_err = str(e)
 
-    raise RuntimeError(f"All Gemini models failed. Last error: {last_err}")
+    raise RuntimeError(f"All Gemini models failed. Last error: {scrub_sensitive_info(last_err or '')}")
 
 
 def call_ollama_local(
@@ -521,28 +537,28 @@ def test_provider_connection(
             if not k:
                 return False, "No Groq API key found."
             m = model or DEFAULT_MODELS["groq"]
-            res = call_groq_chat(
+            call_groq_chat(
                 messages=[{"role": "user", "content": "Ping"}],
                 model=m,
                 api_key=k,
                 max_tokens=10,
                 timeout=10.0
             )
-            return True, f"Connected to Groq Cloud ({m})! Response: '{res[:30]}...'"
+            return True, f"Connected to Groq Cloud ({m}) successfully!"
 
         elif p == "gemini":
             k = api_key or get_gemini_api_key()
             if not k:
                 return False, "No Gemini API key found."
             m = model or DEFAULT_MODELS["gemini"]
-            res = call_gemini_generate(
+            call_gemini_generate(
                 prompt="Ping",
                 model=m,
                 api_key=k,
                 max_tokens=10,
                 timeout=10.0
             )
-            return True, f"Connected to Google Gemini ({m})! Response: '{res[:30]}...'"
+            return True, f"Connected to Google Gemini ({m}) successfully!"
 
         elif p == "ollama":
             base_url = (url or get_ollama_url()).rstrip("/")
@@ -555,4 +571,4 @@ def test_provider_connection(
 
         return False, f"Unknown provider: {provider}"
     except Exception as e:
-        return False, str(e)
+        return False, scrub_sensitive_info(str(e))
