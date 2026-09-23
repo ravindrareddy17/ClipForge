@@ -113,19 +113,27 @@ def extract_timestamp_buttons(text: str):
 # Modern, High-Contrast Minimalist Dark Theme
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
     
     /* Base theme & background */
     .stApp {
-        background-color: #090d16 !important;
-        color: #f1f5f9 !important;
-        font-family: 'Inter', sans-serif !important;
+        background-color: #06080f !important;
+        background-image: 
+            radial-gradient(circle at 10% 8%, rgba(99, 102, 241, 0.12) 0%, transparent 35%),
+            radial-gradient(circle at 90% 12%, rgba(139, 92, 246, 0.10) 0%, transparent 40%),
+            radial-gradient(circle at 50% 95%, rgba(14, 165, 233, 0.07) 0%, transparent 45%),
+            radial-gradient(circle at 85% 85%, rgba(217, 70, 239, 0.05) 0%, transparent 35%) !important;
+        background-attachment: fixed !important;
+        color: #f8fafc !important;
+        font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
     }
     
     /* Top Header Navbar */
     header[data-testid="stHeader"] {
-        background-color: #090d16 !important;
-        border-bottom: 1px solid #1f2937 !important;
+        background: rgba(6, 8, 15, 0.75) !important;
+        backdrop-filter: blur(14px) !important;
+        -webkit-backdrop-filter: blur(14px) !important;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
     }
     header[data-testid="stHeader"] * {
         color: #94a3b8 !important;
@@ -133,15 +141,60 @@ st.markdown("""
     
     /* Headings */
     h1, h2, h3, h4, h5, h6 {
-        font-family: 'Inter', sans-serif !important;
+        font-family: 'Plus Jakarta Sans', sans-serif !important;
         font-weight: 700 !important;
         color: #ffffff !important;
-        letter-spacing: -0.02em;
+        letter-spacing: -0.025em !important;
+    }
+    
+    /* Gradient Title Utilities */
+    .gradient-title {
+        background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 45%, #a5b4fc 100%) !important;
+        -webkit-background-clip: text !important;
+        -webkit-text-fill-color: transparent !important;
+        font-weight: 800 !important;
+        letter-spacing: -0.03em !important;
+    }
+    .gradient-accent {
+        background: linear-gradient(135deg, #818cf8 0%, #c084fc 50%, #f472b6 100%) !important;
+        -webkit-background-clip: text !important;
+        -webkit-text-fill-color: transparent !important;
+        font-weight: 700 !important;
+    }
+    
+    /* Feature Pills */
+    .feature-pill-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 9999px;
+        padding: 4px 12px;
+        font-size: 0.76rem;
+        color: #cbd5e1;
+        font-weight: 600;
+        backdrop-filter: blur(8px);
+    }
+    
+    /* Hook Rationale Callout Box */
+    .hook-rationale-box {
+        background: rgba(15, 23, 42, 0.65);
+        border-left: 3px solid #8b5cf6;
+        border-radius: 0 10px 10px 0;
+        padding: 12px 16px;
+        margin: 12px 0;
+        color: #cbd5e1;
+        font-size: 0.92rem;
+        line-height: 1.6;
+        border-top: 1px solid rgba(255, 255, 255, 0.05);
+        border-right: 1px solid rgba(255, 255, 255, 0.05);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     }
     
     /* Labels */
     label, p, span {
-        font-family: 'Inter', sans-serif !important;
+        font-family: 'Plus Jakarta Sans', sans-serif !important;
         color: #cbd5e1 !important;
     }
     .stApp label, .stSelectbox label, .stTextInput label {
@@ -150,82 +203,140 @@ st.markdown("""
         font-size: 0.88rem !important;
     }
     
-    /* Clean Dark Cards */
+    /* Glassmorphic Dark Cards */
     div[data-testid="stVerticalBlockBorderDiv"] {
-        background: #111827 !important;
-        border: 1px solid #1f2937 !important;
+        background: linear-gradient(180deg, rgba(16, 24, 40, 0.65) 0%, rgba(10, 15, 28, 0.8) 100%) !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
         border-radius: 16px !important;
         padding: 1.5rem !important;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3) !important;
+        box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+        backdrop-filter: blur(16px) !important;
+        -webkit-backdrop-filter: blur(16px) !important;
         margin-bottom: 1.25rem !important;
+        transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
     }
     div[data-testid="stVerticalBlockBorderDiv"]:hover {
-        border-color: #374151 !important;
+        border-color: rgba(99, 102, 241, 0.35) !important;
+        box-shadow: 0 16px 38px -6px rgba(0, 0, 0, 0.6), 0 0 20px rgba(99, 102, 241, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.12) !important;
     }
     
     /* Sidebar */
     section[data-testid="stSidebar"] {
-        background-color: #0d121f !important;
-        border-right: 1px solid #1f2937 !important;
+        background: linear-gradient(180deg, #090d18 0%, #05070d 100%) !important;
+        border-right: 1px solid rgba(255, 255, 255, 0.07) !important;
+        box-shadow: 4px 0 24px rgba(0, 0, 0, 0.3) !important;
+    }
+    section[data-testid="stSidebar"] div[data-testid="stVerticalBlock"] {
+        gap: 0.45rem !important;
     }
     section[data-testid="stSidebar"] button {
-        background: transparent !important;
-        border: none !important;
+        background: rgba(255, 255, 255, 0.02) !important;
+        border: 1px solid rgba(255, 255, 255, 0.04) !important;
         box-shadow: none !important;
         color: #94a3b8 !important;
         text-align: left !important;
         justify-content: flex-start !important;
-        padding: 12px 16px !important;
-        margin: 4px 0 !important;
+        padding: 11px 16px !important;
+        margin: 2px 0 !important;
         border-radius: 12px !important;
         font-weight: 600 !important;
-        font-size: 0.95rem !important;
-        transition: all 0.15s ease !important;
+        font-size: 0.92rem !important;
+        transition: all 0.18s ease-in-out !important;
     }
     section[data-testid="stSidebar"] button:hover {
-        background: #1e293b !important;
-        color: #60a5fa !important;
+        background: rgba(99, 102, 241, 0.12) !important;
+        border-color: rgba(99, 102, 241, 0.3) !important;
+        color: #ffffff !important;
+        transform: translateX(3px) !important;
     }
     
-    /* All Standard Buttons */
+    /* Standard Buttons */
     div.stButton > button {
-        background-color: #1e293b !important;
-        color: #ffffff !important;
-        border: 1px solid #334155 !important;
+        background: linear-gradient(180deg, rgba(30, 41, 59, 0.75) 0%, rgba(15, 23, 42, 0.88) 100%) !important;
+        color: #e2e8f0 !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
         border-radius: 10px !important;
         font-weight: 600 !important;
-        font-size: 0.9rem !important;
+        font-size: 0.88rem !important;
         padding: 8px 16px !important;
-        transition: all 0.15s ease !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25) !important;
+        transition: all 0.18s ease-in-out !important;
     }
     div.stButton > button:hover {
-        background-color: #2d3748 !important;
-        border-color: #60a5fa !important;
+        background: linear-gradient(180deg, rgba(51, 65, 85, 0.85) 0%, rgba(30, 41, 59, 0.95) 100%) !important;
+        border-color: rgba(99, 102, 241, 0.5) !important;
         color: #ffffff !important;
+        transform: translateY(-1px) !important;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35), 0 0 12px rgba(99, 102, 241, 0.2) !important;
     }
     
     /* Primary Submit Buttons */
     div[data-testid="stFormSubmitButton"] > button {
-        background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%) !important;
+        background: linear-gradient(135deg, #6366f1 0%, #7c3aed 50%, #d946ef 100%) !important;
         color: #ffffff !important;
         border: none !important;
         border-radius: 12px !important;
-        padding: 10px 24px !important;
+        padding: 10px 22px !important;
         font-weight: 700 !important;
         font-size: 0.95rem !important;
-        box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35) !important;
+        letter-spacing: 0.01em !important;
+        box-shadow: 0 4px 18px rgba(99, 102, 241, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
     }
     div[data-testid="stFormSubmitButton"] > button:hover {
+        transform: translateY(-2px) !important;
+        box-shadow: 0 8px 25px rgba(124, 58, 237, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
+        filter: brightness(1.08) !important;
+    }
+    div[data-testid="stFormSubmitButton"] > button:active {
+        transform: translateY(0px) !important;
+    }
+    
+    /* Download Buttons */
+    div[data-testid="stDownloadButton"] > button {
+        background: linear-gradient(135deg, #059669 0%, #10b981 100%) !important;
+        color: #ffffff !important;
+        border: 1px solid rgba(52, 211, 153, 0.4) !important;
+        border-radius: 10px !important;
+        font-weight: 700 !important;
+        font-size: 0.88rem !important;
+        padding: 8px 16px !important;
+        box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3) !important;
+        transition: all 0.18s ease-in-out !important;
+    }
+    div[data-testid="stDownloadButton"] > button:hover {
+        background: linear-gradient(135deg, #047857 0%, #059669 100%) !important;
+        border-color: #34d399 !important;
         transform: translateY(-1px) !important;
-        box-shadow: 0 6px 20px rgba(37, 99, 235, 0.5) !important;
+        box-shadow: 0 6px 18px rgba(16, 185, 129, 0.45) !important;
+    }
+    
+    /* Timestamp Seeking Pill Buttons */
+    button[key*="ts_"], button[key*="srch_seek_"] {
+        font-family: 'JetBrains Mono', monospace !important;
+        background: rgba(99, 102, 241, 0.12) !important;
+        border: 1px solid rgba(99, 102, 241, 0.35) !important;
+        color: #a5b4fc !important;
+        border-radius: 8px !important;
+        padding: 5px 10px !important;
+        font-size: 0.82rem !important;
+        font-weight: 600 !important;
+        transition: all 0.15s ease !important;
+    }
+    button[key*="ts_"]:hover, button[key*="srch_seek_"]:hover {
+        background: rgba(99, 102, 241, 0.3) !important;
+        border-color: #818cf8 !important;
+        color: #ffffff !important;
+        box-shadow: 0 0 12px rgba(99, 102, 241, 0.4) !important;
     }
     
     /* Alert Boxes (st.info, st.success, etc.) */
     div[data-testid="stAlert"] {
-        background-color: #131d31 !important;
-        border: 1px solid #2563eb !important;
+        background-color: rgba(15, 23, 42, 0.85) !important;
         border-radius: 12px !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
         color: #ffffff !important;
+        backdrop-filter: blur(12px) !important;
     }
     div[data-testid="stAlert"] * {
         color: #ffffff !important;
@@ -235,10 +346,19 @@ st.markdown("""
     div[data-testid="stTextInput"] input, 
     div[data-testid="stTextArea"] textarea,
     div[data-testid="stSelectbox"] > div {
-        background-color: #1e293b !important;
+        background-color: rgba(15, 23, 42, 0.75) !important;
         color: #ffffff !important;
-        border: 1px solid #334155 !important;
+        border: 1px solid rgba(255, 255, 255, 0.12) !important;
         border-radius: 12px !important;
+        font-size: 0.92rem !important;
+        transition: border-color 0.2s, box-shadow 0.2s !important;
+    }
+    div[data-testid="stTextInput"] input:focus, 
+    div[data-testid="stTextArea"] textarea:focus,
+    div[data-testid="stSelectbox"] > div:focus-within {
+        border-color: #6366f1 !important;
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25) !important;
+        outline: none !important;
     }
     div[data-testid="stSelectbox"] * {
         color: #ffffff !important;
@@ -246,35 +366,100 @@ st.markdown("""
     
     /* Chat bubbles */
     div[data-testid="stChatMessage"] {
-        background-color: #111827 !important;
-        border: 1px solid #1f2937 !important;
+        background: linear-gradient(180deg, rgba(17, 24, 39, 0.8) 0%, rgba(11, 17, 30, 0.9) 100%) !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
         border-radius: 14px !important;
-        padding: 14px 18px !important;
-        margin-bottom: 10px !important;
+        padding: 16px 20px !important;
+        margin-bottom: 12px !important;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25) !important;
     }
     div[data-testid="stChatMessage"][data-testid*="user"] {
-        background-color: #1e293b !important;
-        border-color: #334155 !important;
+        background: linear-gradient(135deg, rgba(30, 41, 59, 0.75) 0%, rgba(15, 23, 42, 0.85) 100%) !important;
+        border: 1px solid rgba(99, 102, 241, 0.3) !important;
+        box-shadow: 0 4px 16px rgba(99, 102, 241, 0.08) !important;
     }
     div[data-testid="stChatMessage"] p, div[data-testid="stChatMessage"] span, div[data-testid="stChatMessage"] li {
         color: #f1f5f9 !important;
-        font-size: 0.95rem !important;
-        line-height: 1.65 !important;
+        font-size: 0.94rem !important;
+        line-height: 1.68 !important;
     }
     
     /* Status Badges */
     .status-pill {
-        padding: 5px 14px;
+        padding: 4px 12px;
         border-radius: 9999px;
-        font-size: 0.75rem;
+        font-size: 0.72rem;
         font-weight: 700;
         text-transform: uppercase;
-        letter-spacing: 0.05em;
-        display: inline-block;
+        letter-spacing: 0.06em;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        line-height: 1.4;
     }
-    .pill-green { background: #064e3b; color: #34d399; border: 1px solid #059669; }
-    .pill-blue { background: #1e3a5f; color: #60a5fa; border: 1px solid #2563eb; }
-    .pill-yellow { background: #451a03; color: #f59e0b; border: 1px solid #b45309; }
+    .pill-green {
+        background: rgba(16, 185, 129, 0.12);
+        color: #34d399;
+        border: 1px solid rgba(52, 211, 153, 0.35);
+        box-shadow: 0 0 10px rgba(16, 185, 129, 0.15);
+    }
+    .pill-blue {
+        background: rgba(59, 130, 246, 0.12);
+        color: #60a5fa;
+        border: 1px solid rgba(96, 165, 250, 0.35);
+        box-shadow: 0 0 10px rgba(59, 130, 246, 0.15);
+    }
+    .pill-purple {
+        background: rgba(168, 85, 247, 0.12);
+        color: #c084fc;
+        border: 1px solid rgba(192, 132, 252, 0.35);
+        box-shadow: 0 0 10px rgba(168, 85, 247, 0.15);
+    }
+    .pill-yellow {
+        background: rgba(245, 158, 11, 0.12);
+        color: #fbbf24;
+        border: 1px solid rgba(251, 191, 36, 0.35);
+    }
+    .pill-rose {
+        background: rgba(244, 63, 94, 0.12);
+        color: #fb7185;
+        border: 1px solid rgba(251, 113, 133, 0.35);
+    }
+    
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+        background: rgba(6, 8, 15, 0.8);
+    }
+    ::-webkit-scrollbar-thumb {
+        background: rgba(99, 102, 241, 0.25);
+        border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+        background: rgba(99, 102, 241, 0.5);
+    }
+    
+    /* Interactive Tabs (stTabs) */
+    button[data-baseweb="tab"] {
+        background: transparent !important;
+        color: #94a3b8 !important;
+        font-weight: 600 !important;
+        border-radius: 8px !important;
+        padding: 8px 16px !important;
+        transition: all 0.2s ease !important;
+    }
+    button[data-baseweb="tab"]:hover {
+        color: #ffffff !important;
+        background: rgba(255, 255, 255, 0.04) !important;
+    }
+    button[data-baseweb="tab"][aria-selected="true"] {
+        color: #a5b4fc !important;
+        background: rgba(99, 102, 241, 0.15) !important;
+        border-bottom: 2px solid #818cf8 !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -334,11 +519,14 @@ if not projects:
 # Sidebar: Simple 3-Tab Navigation
 with st.sidebar:
     st.markdown("""
-    <div style='display: flex; align-items: center; gap: 12px; margin-bottom: 24px; padding-top: 4px;'>
-        <div style='width: 40px; height: 40px; border-radius: 12px; background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%); display: flex; align-items: center; justify-content: center; font-weight: 900; color: white; font-size: 1.25rem; box-shadow: 0 4px 14px rgba(37,99,235,0.4);'>⚡</div>
+    <div style='display: flex; align-items: center; gap: 12px; margin-bottom: 22px; padding: 6px 2px;'>
+        <div style='width: 44px; height: 44px; border-radius: 14px; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #d946ef 100%); display: flex; align-items: center; justify-content: center; font-weight: 900; color: white; font-size: 1.35rem; box-shadow: 0 4px 20px rgba(99, 102, 241, 0.45); border: 1px solid rgba(255, 255, 255, 0.2); flex-shrink: 0;'>⚡</div>
         <div>
-            <h2 style='margin: 0; font-size: 1.25rem; font-weight: 800; color: #ffffff;'>ClipForge AI</h2>
-            <span style='font-size: 0.68rem; color: #60a5fa; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;'>Video Repurposing</span>
+            <div style='display: flex; align-items: center; gap: 7px;'>
+                <h2 style='margin: 0; font-size: 1.25rem; font-weight: 800; letter-spacing: -0.02em;' class='gradient-title'>ClipForge</h2>
+                <span class='status-pill pill-purple' style='padding: 2px 7px; font-size: 0.62rem;'>V2 PRO</span>
+            </div>
+            <span style='font-size: 0.68rem; color: #94a3b8; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em;'>Autonomous AI Video Studio</span>
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -347,7 +535,7 @@ with st.sidebar:
     selected_project_name = st.selectbox("Active Workspace", project_names)
     active_project = next(p for p in projects if p["name"] == selected_project_name)
 
-    st.markdown("<hr style='border-color: #1f2937; margin: 16px 0;'>", unsafe_allow_html=True)
+    st.markdown("<hr style='border-color: rgba(255,255,255,0.07); margin: 16px 0;'>", unsafe_allow_html=True)
 
     # 5 Navigation Tabs
     nav_tabs = [
@@ -365,7 +553,7 @@ with st.sidebar:
             st.session_state.active_tab = tab_name
             st.rerun()
 
-    st.markdown("<hr style='border-color: #1f2937; margin: 20px 0;'>", unsafe_allow_html=True)
+    st.markdown("<hr style='border-color: rgba(255,255,255,0.07); margin: 20px 0;'>", unsafe_allow_html=True)
     
     # Dynamic Multi-Provider AI Status Badge
     active_prov = st.session_state.llm_provider
@@ -373,21 +561,21 @@ with st.sidebar:
         k = st.session_state.groq_api_key
         if k and len(k) > 10:
             m_disp = st.session_state.groq_model.split("/")[-1]
-            st.markdown(f"<span class='status-pill pill-green'>● Groq Online ({m_disp})</span>", unsafe_allow_html=True)
+            st.markdown(f"<div style='display:flex; justify-content:center;'><span class='status-pill pill-green'>⚡ Groq Online ({m_disp})</span></div>", unsafe_allow_html=True)
         else:
-            st.markdown("<span class='status-pill pill-yellow'>● Groq Key Missing</span>", unsafe_allow_html=True)
+            st.markdown("<div style='display:flex; justify-content:center;'><span class='status-pill pill-yellow'>⚠️ Groq Key Missing</span></div>", unsafe_allow_html=True)
     elif active_prov == "gemini":
         k = st.session_state.gemini_api_key
         if k and len(k) > 10:
-            st.markdown(f"<span class='status-pill pill-green'>● Gemini Online ({st.session_state.gemini_model})</span>", unsafe_allow_html=True)
+            st.markdown(f"<div style='display:flex; justify-content:center;'><span class='status-pill pill-green'>✨ Gemini Online ({st.session_state.gemini_model})</span></div>", unsafe_allow_html=True)
         else:
-            st.markdown("<span class='status-pill pill-yellow'>● Gemini Key Missing</span>", unsafe_allow_html=True)
+            st.markdown("<div style='display:flex; justify-content:center;'><span class='status-pill pill-yellow'>⚠️ Gemini Key Missing</span></div>", unsafe_allow_html=True)
     else:
         is_online, models_list = test_ollama_connection(st.session_state.ollama_url)
         if is_online:
-            st.markdown(f"<span class='status-pill pill-green'>● Ollama Online ({len(models_list)} models)</span>", unsafe_allow_html=True)
+            st.markdown(f"<div style='display:flex; justify-content:center;'><span class='status-pill pill-green'>🖥️ Ollama Online ({len(models_list)} models)</span></div>", unsafe_allow_html=True)
         else:
-            st.markdown("<span class='status-pill pill-yellow'>● Ollama Offline (Local Mode)</span>", unsafe_allow_html=True)
+            st.markdown("<div style='display:flex; justify-content:center;'><span class='status-pill pill-yellow'>🖥️ Ollama Offline (Local Mode)</span></div>", unsafe_allow_html=True)
 
 # Fetch database records for active workspace
 videos = get_videos(active_project["id"])
@@ -399,15 +587,29 @@ tab = st.session_state.active_tab
 if tab == "Create Clips":
     col_t1, col_t2 = st.columns([9, 3])
     with col_t1:
-        st.markdown("<h1 style='margin:0; font-size:1.85rem;'>⚡ Create Viral Shorts</h1>", unsafe_allow_html=True)
-        st.caption("Paste any YouTube link or video file to automatically extract engaging vertical clips with subtitles.")
+        st.markdown("<h1 class='gradient-title' style='margin:0; font-size:2rem;'>⚡ Create Viral Shorts</h1>", unsafe_allow_html=True)
+        st.markdown(
+            "<p style='color:#94a3b8; font-size:0.92rem; margin-top:4px;'>"
+            "Paste any YouTube link or video file to extract high-retention vertical clips with subtitles & AI hooks."
+            "</p>",
+            unsafe_allow_html=True
+        )
+        st.markdown(
+            "<div style='display:flex; gap:8px; margin-top:6px; margin-bottom:12px; flex-wrap:wrap;'>"
+            "<span class='feature-pill-badge'>✨ 9:16 Smart Auto-Framing</span>"
+            "<span class='feature-pill-badge'>🔥 Viral Hook Scoring</span>"
+            "<span class='feature-pill-badge'>📝 Word-Level Transcription</span>"
+            "<span class='feature-pill-badge'>⚡ Multi-Provider Cloud LLM</span>"
+            "</div>",
+            unsafe_allow_html=True
+        )
     with col_t2:
-        if st.button("🔄 Refresh Page", use_container_width=True):
+        if st.button("🔄 Refresh Studio", use_container_width=True):
             st.rerun()
 
     # Input Box: Simple, Clean, Prominent
     with st.container(border=True):
-        st.write("### 📥 Ingest Video")
+        st.markdown("<h3 style='margin:0 0 10px 0;' class='gradient-title'>📥 Ingest Video</h3>", unsafe_allow_html=True)
         with st.form("simple_import_form", clear_on_submit=True):
             col_in1, col_in2 = st.columns([9, 3])
             with col_in1:
@@ -499,7 +701,7 @@ if tab == "Create Clips":
                 threading.Thread(target=lambda: asyncio.run(run_processing_pipeline(selected_vid_id))).start()
                 st.rerun()
         elif clips:
-            st.markdown(f"### 🔥 Extracted Viral Moments ({len(clips)} Ready)")
+            st.markdown(f"<h3 style='margin:16px 0 10px 0;' class='gradient-title'>🔥 Extracted Viral Moments ({len(clips)} Ready)</h3>", unsafe_allow_html=True)
             
             # Display clips cleanly
             for c in clips:
@@ -507,13 +709,21 @@ if tab == "Create Clips":
                 with st.container(border=True):
                     col_c1, col_c2 = st.columns([7, 5])
                     with col_c1:
-                        st.markdown(f"<h3 style='margin:0 0 6px 0;'>{c['title']}</h3>", unsafe_allow_html=True)
+                        st.markdown(f"<h3 style='margin:0 0 8px 0; color:#f8fafc;'>{c['title']}</h3>", unsafe_allow_html=True)
                         st.markdown(
-                            f"<span class='status-pill pill-green'>🔥 {c['score']}% VIRAL SCORE</span> &nbsp; "
-                            f"<span style='color:#94a3b8; font-size:0.85rem;'>⏱ Duration: <b>{int(c['duration'])}s</b> ({int(c['start_time'])}s - {int(c['end_time'])}s)</span>",
+                            f"<div style='display:flex; align-items:center; gap:8px; margin-bottom:12px; flex-wrap:wrap;'>"
+                            f"<span class='status-pill pill-green'>🔥 {c['score']}% VIRAL SCORE</span>"
+                            f"<span class='status-pill pill-purple'>⏱ {int(c['duration'])}s DURATION</span>"
+                            f"<span style='color:#94a3b8; font-size:0.84rem; font-family:\"JetBrains Mono\", monospace;'>[{int(c['start_time'])}s → {int(c['end_time'])}s]</span>"
+                            f"</div>",
                             unsafe_allow_html=True
                         )
-                        st.markdown(f"<p style='color:#cbd5e1; margin-top:12px; font-size:0.92rem;'><b>Hook Rationale:</b> {c['explanation']}</p>", unsafe_allow_html=True)
+                        st.markdown(
+                            f"<div class='hook-rationale-box'>"
+                            f"<b style='color:#c084fc;'>💡 Hook Rationale:</b> {c['explanation']}"
+                            f"</div>",
+                            unsafe_allow_html=True
+                        )
                         
                         col_bt1, col_bt2 = st.columns(2)
                         with col_bt1:
@@ -610,8 +820,13 @@ if tab == "Create Clips":
 # TAB 2: AI VIDEO CHAT (Grounded RAG Intelligence)
 # ============================================================
 elif tab == "AI Video Chat":
-    st.markdown("<h1 style='margin:0; font-size:1.85rem;'>💬 AI Video Chatbot</h1>", unsafe_allow_html=True)
-    st.caption("Ask questions about your video transcripts with timestamp-grounded citations and interactive player seeking.")
+    st.markdown("<h1 class='gradient-title' style='margin:0; font-size:2rem;'>💬 AI Video Chatbot</h1>", unsafe_allow_html=True)
+    st.markdown(
+        "<p style='color:#94a3b8; font-size:0.92rem; margin-top:4px;'>"
+        "Timestamp-grounded multi-agent conversational RAG with synchronized player seeking."
+        "</p>",
+        unsafe_allow_html=True
+    )
 
     if not videos:
         st.info("No videos available. Ingest a video in 'Create Clips' first.")
@@ -625,7 +840,7 @@ elif tab == "AI Video Chat":
 
         with col_player:
             with st.container(border=True):
-                st.markdown(f"### 📺 Video Player")
+                st.markdown("<h3 style='margin:0 0 8px 0;' class='gradient-title'>📺 Video Player</h3>", unsafe_allow_html=True)
                 m_curr = st.session_state.seek_time // 60
                 s_curr = st.session_state.seek_time % 60
                 st.caption(f"Currently seeking to: **[{m_curr:02d}:{s_curr:02d}]** ({st.session_state.seek_time}s)")
@@ -647,6 +862,7 @@ elif tab == "AI Video Chat":
 
         with col_chat:
             with st.container(border=True):
+                st.markdown("<h3 style='margin:0 0 10px 0;' class='gradient-title'>💬 Conversational Q&A</h3>", unsafe_allow_html=True)
                 # Video-scoped chat history
                 history = get_chat_history(active_project["id"], st.session_state.chat_session_id, video_id=selected_vid_id)
                 if not history:
@@ -660,7 +876,7 @@ elif tab == "AI Video Chat":
                             if msg["role"] == "assistant":
                                 ts_list = extract_timestamp_buttons(msg["message"])
                                 if ts_list:
-                                    st.markdown("<span style='font-size:0.75rem; color:#94a3b8; font-weight:600;'>CLICK TIMESTAMP TO SEEK PLAYER:</span>", unsafe_allow_html=True)
+                                    st.markdown("<div style='margin-top:10px; margin-bottom:4px;'><span style='font-size:0.75rem; color:#818cf8; font-weight:700; letter-spacing:0.04em;'>⚡ JUMP TO TIMESTAMPS:</span></div>", unsafe_allow_html=True)
                                     cols_btn = st.columns(min(4, len(ts_list)))
                                     for b_idx, (tag, sec) in enumerate(ts_list[:6]):
                                         with cols_btn[b_idx % len(cols_btn)]:
@@ -709,7 +925,7 @@ elif tab == "AI Video Chat":
 
         # Quick Instant Scene Search
         with st.container(border=True):
-            st.write("### 🔍 Instant Scene Search by Keyword or Concept")
+            st.markdown("<h3 style='margin:0 0 10px 0;' class='gradient-title'>🔍 Instant Scene Search by Keyword</h3>", unsafe_allow_html=True)
             search_term = st.text_input("Find exact spoken moment:", placeholder="e.g. Alpha Centauri, Mars, astronomical unit, galaxy", label_visibility="collapsed")
             if search_term:
                 hits = query_similar_chunks(
@@ -740,11 +956,16 @@ elif tab == "AI Video Chat":
 # TAB: YOUTUBE CHANNELS
 # ============================================================
 elif tab == "YouTube Channels":
-    st.markdown("<h1 style='margin:0; font-size:1.85rem;'>📺 YouTube Channel Ingestion</h1>", unsafe_allow_html=True)
-    st.caption("Discover, preview, and batch-ingest videos from any YouTube channel or playlist without downloading media upfront.")
+    st.markdown("<h1 class='gradient-title' style='margin:0; font-size:2rem;'>📺 YouTube Channel Discovery</h1>", unsafe_allow_html=True)
+    st.markdown(
+        "<p style='color:#94a3b8; font-size:0.92rem; margin-top:4px;'>"
+        "Discover, preview, and batch-ingest videos from any YouTube channel or playlist without downloading media upfront."
+        "</p>",
+        unsafe_allow_html=True
+    )
 
     with st.container(border=True):
-        st.write("### 🔍 Discover Channel Videos")
+        st.markdown("<h3 style='margin:0 0 10px 0;' class='gradient-title'>🔍 Discover Channel Videos</h3>", unsafe_allow_html=True)
         col_ch_in, col_ch_cnt, col_ch_btn = st.columns([7, 2, 3])
         with col_ch_in:
             ch_url = st.text_input("Channel or Playlist URL:", placeholder="e.g. https://www.youtube.com/@Veritasium or @Kurzgesagt", label_visibility="collapsed")
@@ -763,7 +984,7 @@ elif tab == "YouTube Channels":
                     st.warning("Could not find videos for this URL. Please verify channel format.")
 
     if st.session_state.channel_discovered_videos:
-        st.markdown(f"### 📋 Discovered Videos ({len(st.session_state.channel_discovered_videos)})")
+        st.markdown(f"<h3 style='margin:16px 0 10px 0;' class='gradient-title'>📋 Discovered Videos ({len(st.session_state.channel_discovered_videos)})</h3>", unsafe_allow_html=True)
         selected_for_import = []
 
         with st.form("channel_import_form"):
@@ -798,7 +1019,7 @@ elif tab == "YouTube Channels":
 
     # Cross-Channel Search
     with st.container(border=True):
-        st.write("### 🔎 Search Across All Channel Videos")
+        st.markdown("<h3 style='margin:0 0 10px 0;' class='gradient-title'>🔎 Search Across All Channel Videos</h3>", unsafe_allow_html=True)
         ch_query = st.text_input("Search topic across all channel videos:", placeholder="e.g. black holes, artificial intelligence, expansion", key="ch_search_input")
         if ch_query:
             ch_hits = search_channel_library(active_project["id"], ch_query, k=5)
@@ -812,8 +1033,13 @@ elif tab == "YouTube Channels":
 # TAB: CSE473 AI LAB
 # ============================================================
 elif tab == "CSE473 AI Lab":
-    st.markdown("<h1 style='margin:0; font-size:1.85rem;'>🧪 CSE473 AI Lab — Interactive Studio</h1>", unsafe_allow_html=True)
-    st.caption("Interactive academic demonstrations covering Units I through VI of the CSE473 LLM & Generative AI curriculum.")
+    st.markdown("<h1 class='gradient-title' style='margin:0; font-size:2rem;'>🧪 CSE473 AI Research Lab</h1>", unsafe_allow_html=True)
+    st.markdown(
+        "<p style='color:#94a3b8; font-size:0.92rem; margin-top:4px;'>"
+        "Interactive academic studio covering Units I–VI of the CSE473 LLM & Generative AI curriculum."
+        "</p>",
+        unsafe_allow_html=True
+    )
 
     lab_sub_tabs = st.tabs([
         "🧠 Unit I: LLM Foundations",
@@ -973,13 +1199,18 @@ elif tab == "CSE473 AI Lab":
 # TAB 3: LIBRARY & SETTINGS
 # ============================================================
 elif tab == "Library & Settings":
-    st.markdown("<h1 style='margin:0; font-size:1.85rem;'>⚙️ Video Library & Settings</h1>", unsafe_allow_html=True)
-    st.caption("Manage your video archive, Ollama AI model endpoints, and workspaces.")
+    st.markdown("<h1 class='gradient-title' style='margin:0; font-size:2rem;'>⚙️ Studio Settings & AI Config</h1>", unsafe_allow_html=True)
+    st.markdown(
+        "<p style='color:#94a3b8; font-size:0.92rem; margin-top:4px;'>"
+        "Manage cloud LLM engines (Groq Cloud, Google Gemini), video archive, and multi-workspace tenancy."
+        "</p>",
+        unsafe_allow_html=True
+    )
 
     col_s1, col_s2 = st.columns(2)
     with col_s1:
         with st.container(border=True):
-            st.write("### 🎬 Video Library")
+            st.markdown("<h3 style='margin:0 0 10px 0;' class='gradient-title'>🎬 Video Library</h3>", unsafe_allow_html=True)
             if not videos:
                 st.caption("No videos imported yet.")
             else:
@@ -996,11 +1227,11 @@ elif tab == "Library & Settings":
                             conn.commit()
                             conn.close()
                             st.rerun()
-                    st.markdown("<hr style='margin:6px 0; border-color:#1f2937;'>", unsafe_allow_html=True)
+                    st.markdown("<hr style='margin:6px 0; border-color:rgba(255,255,255,0.06);'>", unsafe_allow_html=True)
 
     with col_s2:
         with st.container(border=True):
-            st.write("### 🤖 AI Engine & Cloud API Provider")
+            st.markdown("<h3 style='margin:0 0 10px 0;' class='gradient-title'>🤖 AI Engine & Cloud API Provider</h3>", unsafe_allow_html=True)
             st.caption("Configure Cloud LLM inference (Groq / Gemini) for instant processing on Streamlit Cloud or Local Ollama.")
 
             prov_display_map = {
@@ -1027,7 +1258,7 @@ elif tab == "Library & Settings":
                     st.markdown(
                         f"<div style='display:flex; align-items:center; gap:8px; margin-bottom:8px;'>"
                         f"<span style='color:#34d399; font-weight:600; font-size:0.85rem;'>🔒 Groq Key Configured:</span>"
-                        f"<code style='color:#94a3b8; background:#1f2937; padding:2px 8px; border-radius:4px;'>{mask_api_key(active_groq_key)}</code>"
+                        f"<code style='color:#94a3b8; background:rgba(30,41,59,0.7); padding:2px 8px; border-radius:6px; border:1px solid rgba(255,255,255,0.08);'>{mask_api_key(active_groq_key)}</code>"
                         f"</div>",
                         unsafe_allow_html=True
                     )
@@ -1057,7 +1288,7 @@ elif tab == "Library & Settings":
                     st.markdown(
                         f"<div style='display:flex; align-items:center; gap:8px; margin-bottom:8px;'>"
                         f"<span style='color:#34d399; font-weight:600; font-size:0.85rem;'>🔒 Gemini Key Configured:</span>"
-                        f"<code style='color:#94a3b8; background:#1f2937; padding:2px 8px; border-radius:4px;'>{mask_api_key(active_gemini_key)}</code>"
+                        f"<code style='color:#94a3b8; background:rgba(30,41,59,0.7); padding:2px 8px; border-radius:6px; border:1px solid rgba(255,255,255,0.08);'>{mask_api_key(active_gemini_key)}</code>"
                         f"</div>",
                         unsafe_allow_html=True
                     )
@@ -1117,7 +1348,7 @@ elif tab == "Library & Settings":
                     st.rerun()
 
         with st.container(border=True):
-            st.write("### 📁 Workspace Manager")
+            st.markdown("<h3 style='margin:0 0 10px 0;' class='gradient-title'>📁 Workspace Manager</h3>", unsafe_allow_html=True)
             with st.form("create_workspace_form", clear_on_submit=True):
                 new_name = st.text_input("New Workspace Name:")
                 if st.form_submit_button("Create Workspace", use_container_width=True) and new_name:
