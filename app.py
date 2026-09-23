@@ -115,54 +115,92 @@ st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
     
-    /* Base theme & background */
+    /* 1. Base theme & atmospheric background */
     .stApp {
-        background-color: #06080f !important;
+        background-color: #080b11 !important;
         background-image: 
-            radial-gradient(circle at 10% 8%, rgba(99, 102, 241, 0.12) 0%, transparent 35%),
-            radial-gradient(circle at 90% 12%, rgba(139, 92, 246, 0.10) 0%, transparent 40%),
-            radial-gradient(circle at 50% 95%, rgba(14, 165, 233, 0.07) 0%, transparent 45%),
-            radial-gradient(circle at 85% 85%, rgba(217, 70, 239, 0.05) 0%, transparent 35%) !important;
+            radial-gradient(circle at 15% 10%, rgba(99, 102, 241, 0.09) 0%, transparent 40%),
+            radial-gradient(circle at 85% 15%, rgba(139, 92, 246, 0.08) 0%, transparent 45%),
+            radial-gradient(circle at 50% 90%, rgba(14, 165, 233, 0.06) 0%, transparent 50%) !important;
         background-attachment: fixed !important;
-        color: #f8fafc !important;
-        font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+        color: #f1f5f9 !important;
+        font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     }
     
-    /* Top Header Navbar */
+    /* 2. CRITICAL FIX: Protect Material Icons so collapse arrows never render as text like 'keyboard_double_' */
+    [data-testid="stIconMaterial"],
+    .material-symbols-rounded,
+    .material-icons,
+    [class*="material-symbols"],
+    button[data-testid="stSidebarCollapseButton"] *,
+    button[data-testid="stSidebarCollapseButton"] span,
+    header[data-testid="stHeader"] button *,
+    header[data-testid="stHeader"] span {
+        font-family: 'Material Symbols Rounded', 'Material Icons', sans-serif !important;
+        letter-spacing: normal !important;
+        text-transform: none !important;
+        white-space: nowrap !important;
+        word-wrap: normal !important;
+        direction: ltr !important;
+    }
+    
+    /* 3. Header Navbar */
     header[data-testid="stHeader"] {
-        background: rgba(6, 8, 15, 0.75) !important;
-        backdrop-filter: blur(14px) !important;
-        -webkit-backdrop-filter: blur(14px) !important;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+        background: rgba(8, 11, 17, 0.85) !important;
+        backdrop-filter: blur(16px) !important;
+        -webkit-backdrop-filter: blur(16px) !important;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
     }
     header[data-testid="stHeader"] * {
         color: #94a3b8 !important;
     }
+    button[data-testid="stSidebarCollapseButton"] {
+        background: rgba(255, 255, 255, 0.04) !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        border-radius: 8px !important;
+        padding: 4px 6px !important;
+        transition: all 0.15s ease !important;
+    }
+    button[data-testid="stSidebarCollapseButton"]:hover {
+        background: rgba(99, 102, 241, 0.2) !important;
+        border-color: rgba(99, 102, 241, 0.4) !important;
+    }
     
-    /* Headings */
+    /* 4. Headings & Gradient Titles */
     h1, h2, h3, h4, h5, h6 {
         font-family: 'Plus Jakarta Sans', sans-serif !important;
         font-weight: 700 !important;
         color: #ffffff !important;
-        letter-spacing: -0.025em !important;
+        letter-spacing: -0.02em !important;
     }
-    
-    /* Gradient Title Utilities */
     .gradient-title {
-        background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 45%, #a5b4fc 100%) !important;
+        background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 50%, #a5b4fc 100%) !important;
         -webkit-background-clip: text !important;
         -webkit-text-fill-color: transparent !important;
         font-weight: 800 !important;
-        letter-spacing: -0.03em !important;
+        letter-spacing: -0.025em !important;
     }
     .gradient-accent {
-        background: linear-gradient(135deg, #818cf8 0%, #c084fc 50%, #f472b6 100%) !important;
+        background: linear-gradient(135deg, #818cf8 0%, #c084fc 100%) !important;
         -webkit-background-clip: text !important;
         -webkit-text-fill-color: transparent !important;
         font-weight: 700 !important;
     }
     
-    /* Feature Pills */
+    /* 5. Typography */
+    label, p, .stMarkdown p {
+        font-family: 'Plus Jakarta Sans', sans-serif;
+        color: #cbd5e1;
+        line-height: 1.6;
+    }
+    .stApp label, .stSelectbox label, .stTextInput label {
+        color: #cbd5e1 !important;
+        font-weight: 600 !important;
+        font-size: 0.86rem !important;
+        letter-spacing: 0.01em !important;
+    }
+    
+    /* 6. Feature Pills & Callout Boxes */
     .feature-pill-badge {
         display: inline-flex;
         align-items: center;
@@ -176,10 +214,8 @@ st.markdown("""
         font-weight: 600;
         backdrop-filter: blur(8px);
     }
-    
-    /* Hook Rationale Callout Box */
     .hook-rationale-box {
-        background: rgba(15, 23, 42, 0.65);
+        background: rgba(15, 23, 42, 0.6);
         border-left: 3px solid #8b5cf6;
         border-radius: 0 10px 10px 0;
         padding: 12px 16px;
@@ -192,206 +228,212 @@ st.markdown("""
         border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     }
     
-    /* Labels */
-    label, p, span {
-        font-family: 'Plus Jakarta Sans', sans-serif !important;
-        color: #cbd5e1 !important;
-    }
-    .stApp label, .stSelectbox label, .stTextInput label {
-        color: #cbd5e1 !important;
-        font-weight: 600 !important;
-        font-size: 0.88rem !important;
-    }
-    
-    /* Glassmorphic Dark Cards */
+    /* 7. Glassmorphic Dark Cards */
     div[data-testid="stVerticalBlockBorderDiv"] {
-        background: linear-gradient(180deg, rgba(16, 24, 40, 0.65) 0%, rgba(10, 15, 28, 0.8) 100%) !important;
-        border: 1px solid rgba(255, 255, 255, 0.08) !important;
-        border-radius: 16px !important;
-        padding: 1.5rem !important;
-        box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
-        backdrop-filter: blur(16px) !important;
-        -webkit-backdrop-filter: blur(16px) !important;
-        margin-bottom: 1.25rem !important;
-        transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+        background: linear-gradient(180deg, rgba(17, 24, 39, 0.6) 0%, rgba(13, 19, 32, 0.75) 100%) !important;
+        border: 1px solid rgba(255, 255, 255, 0.07) !important;
+        border-radius: 14px !important;
+        padding: 1.35rem !important;
+        box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
+        backdrop-filter: blur(14px) !important;
+        -webkit-backdrop-filter: blur(14px) !important;
+        margin-bottom: 1.15rem !important;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
     }
     div[data-testid="stVerticalBlockBorderDiv"]:hover {
-        border-color: rgba(99, 102, 241, 0.35) !important;
-        box-shadow: 0 16px 38px -6px rgba(0, 0, 0, 0.6), 0 0 20px rgba(99, 102, 241, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.12) !important;
+        border-color: rgba(99, 102, 241, 0.3) !important;
+        box-shadow: 0 12px 30px -4px rgba(0, 0, 0, 0.5), 0 0 16px rgba(99, 102, 241, 0.08) !important;
     }
     
-    /* Sidebar */
+    /* 8. Sidebar Styling */
     section[data-testid="stSidebar"] {
-        background: linear-gradient(180deg, #090d18 0%, #05070d 100%) !important;
-        border-right: 1px solid rgba(255, 255, 255, 0.07) !important;
+        background: linear-gradient(180deg, #090c14 0%, #06080e 100%) !important;
+        border-right: 1px solid rgba(255, 255, 255, 0.06) !important;
         box-shadow: 4px 0 24px rgba(0, 0, 0, 0.3) !important;
     }
     section[data-testid="stSidebar"] div[data-testid="stVerticalBlock"] {
-        gap: 0.45rem !important;
-    }
-    section[data-testid="stSidebar"] button {
-        background: rgba(255, 255, 255, 0.02) !important;
-        border: 1px solid rgba(255, 255, 255, 0.04) !important;
-        box-shadow: none !important;
-        color: #94a3b8 !important;
-        text-align: left !important;
-        justify-content: flex-start !important;
-        padding: 11px 16px !important;
-        margin: 2px 0 !important;
-        border-radius: 12px !important;
-        font-weight: 600 !important;
-        font-size: 0.92rem !important;
-        transition: all 0.18s ease-in-out !important;
-    }
-    section[data-testid="stSidebar"] button:hover {
-        background: rgba(99, 102, 241, 0.12) !important;
-        border-color: rgba(99, 102, 241, 0.3) !important;
-        color: #ffffff !important;
-        transform: translateX(3px) !important;
+        gap: 0.3rem !important;
     }
     
-    /* Standard Buttons */
+    /* Sidebar Navigation Buttons - Clean List Row Style */
+    section[data-testid="stSidebar"] div.stButton > button {
+        text-align: left !important;
+        justify-content: flex-start !important;
+        padding: 10px 14px !important;
+        margin: 1px 0 !important;
+        border-radius: 10px !important;
+        font-weight: 500 !important;
+        font-size: 0.9rem !important;
+        transition: all 0.15s ease-in-out !important;
+        background: transparent !important;
+        border: 1px solid transparent !important;
+        color: #94a3b8 !important;
+        box-shadow: none !important;
+    }
+    section[data-testid="stSidebar"] div.stButton > button:hover {
+        background: rgba(255, 255, 255, 0.04) !important;
+        border-color: rgba(255, 255, 255, 0.08) !important;
+        color: #f8fafc !important;
+        transform: translateX(3px) !important;
+        box-shadow: none !important;
+    }
+    /* Active Nav Button */
+    section[data-testid="stSidebar"] div.stButton > button[kind="primary"],
+    section[data-testid="stSidebar"] div.stButton > button[data-testid="baseButton-primary"] {
+        background: linear-gradient(90deg, rgba(99, 102, 241, 0.2) 0%, rgba(139, 92, 246, 0.08) 100%) !important;
+        border: 1px solid rgba(99, 102, 241, 0.4) !important;
+        border-left: 3px solid #818cf8 !important;
+        color: #ffffff !important;
+        font-weight: 700 !important;
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2) !important;
+    }
+    section[data-testid="stSidebar"] div.stButton > button[kind="primary"]:hover,
+    section[data-testid="stSidebar"] div.stButton > button[data-testid="baseButton-primary"]:hover {
+        background: linear-gradient(90deg, rgba(99, 102, 241, 0.28) 0%, rgba(139, 92, 246, 0.14) 100%) !important;
+        border-color: rgba(99, 102, 241, 0.55) !important;
+        color: #ffffff !important;
+        transform: none !important;
+    }
+    
+    /* 9. Standard Page Buttons */
     div.stButton > button {
-        background: linear-gradient(180deg, rgba(30, 41, 59, 0.75) 0%, rgba(15, 23, 42, 0.88) 100%) !important;
+        background: linear-gradient(180deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.8) 100%) !important;
         color: #e2e8f0 !important;
         border: 1px solid rgba(255, 255, 255, 0.1) !important;
-        border-radius: 10px !important;
+        border-radius: 9px !important;
         font-weight: 600 !important;
         font-size: 0.88rem !important;
-        padding: 8px 16px !important;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25) !important;
-        transition: all 0.18s ease-in-out !important;
+        padding: 7px 16px !important;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25) !important;
+        transition: all 0.15s ease-in-out !important;
     }
     div.stButton > button:hover {
-        background: linear-gradient(180deg, rgba(51, 65, 85, 0.85) 0%, rgba(30, 41, 59, 0.95) 100%) !important;
+        background: linear-gradient(180deg, rgba(51, 65, 85, 0.8) 0%, rgba(30, 41, 59, 0.9) 100%) !important;
         border-color: rgba(99, 102, 241, 0.5) !important;
         color: #ffffff !important;
         transform: translateY(-1px) !important;
-        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35), 0 0 12px rgba(99, 102, 241, 0.2) !important;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35), 0 0 10px rgba(99, 102, 241, 0.18) !important;
     }
     
-    /* Primary Submit Buttons */
+    /* 10. Primary Submit Buttons (CTAs) */
     div[data-testid="stFormSubmitButton"] > button {
-        background: linear-gradient(135deg, #6366f1 0%, #7c3aed 50%, #d946ef 100%) !important;
+        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%) !important;
         color: #ffffff !important;
         border: none !important;
-        border-radius: 12px !important;
-        padding: 10px 22px !important;
+        border-radius: 10px !important;
+        padding: 9px 20px !important;
         font-weight: 700 !important;
-        font-size: 0.95rem !important;
+        font-size: 0.92rem !important;
         letter-spacing: 0.01em !important;
-        box-shadow: 0 4px 18px rgba(99, 102, 241, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
-        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+        box-shadow: 0 4px 16px rgba(99, 102, 241, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+        transition: all 0.18s ease !important;
     }
     div[data-testid="stFormSubmitButton"] > button:hover {
-        transform: translateY(-2px) !important;
-        box-shadow: 0 8px 25px rgba(124, 58, 237, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
+        transform: translateY(-1px) !important;
+        box-shadow: 0 6px 22px rgba(124, 58, 237, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
         filter: brightness(1.08) !important;
     }
-    div[data-testid="stFormSubmitButton"] > button:active {
-        transform: translateY(0px) !important;
-    }
     
-    /* Download Buttons */
+    /* 11. Download Buttons */
     div[data-testid="stDownloadButton"] > button {
         background: linear-gradient(135deg, #059669 0%, #10b981 100%) !important;
         color: #ffffff !important;
         border: 1px solid rgba(52, 211, 153, 0.4) !important;
-        border-radius: 10px !important;
+        border-radius: 9px !important;
         font-weight: 700 !important;
         font-size: 0.88rem !important;
-        padding: 8px 16px !important;
-        box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3) !important;
-        transition: all 0.18s ease-in-out !important;
+        padding: 7px 16px !important;
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.28) !important;
+        transition: all 0.15s ease !important;
     }
     div[data-testid="stDownloadButton"] > button:hover {
         background: linear-gradient(135deg, #047857 0%, #059669 100%) !important;
         border-color: #34d399 !important;
         transform: translateY(-1px) !important;
-        box-shadow: 0 6px 18px rgba(16, 185, 129, 0.45) !important;
+        box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4) !important;
     }
     
-    /* Timestamp Seeking Pill Buttons */
+    /* 12. Monospace Timestamp Seeking Pill Buttons */
     button[key*="ts_"], button[key*="srch_seek_"] {
         font-family: 'JetBrains Mono', monospace !important;
         background: rgba(99, 102, 241, 0.12) !important;
         border: 1px solid rgba(99, 102, 241, 0.35) !important;
         color: #a5b4fc !important;
-        border-radius: 8px !important;
-        padding: 5px 10px !important;
-        font-size: 0.82rem !important;
+        border-radius: 7px !important;
+        padding: 4px 9px !important;
+        font-size: 0.8rem !important;
         font-weight: 600 !important;
         transition: all 0.15s ease !important;
     }
     button[key*="ts_"]:hover, button[key*="srch_seek_"]:hover {
-        background: rgba(99, 102, 241, 0.3) !important;
+        background: rgba(99, 102, 241, 0.25) !important;
         border-color: #818cf8 !important;
         color: #ffffff !important;
-        box-shadow: 0 0 12px rgba(99, 102, 241, 0.4) !important;
+        box-shadow: 0 0 10px rgba(99, 102, 241, 0.35) !important;
     }
     
-    /* Alert Boxes (st.info, st.success, etc.) */
+    /* 13. Alert Boxes (st.info, st.success, etc.) */
     div[data-testid="stAlert"] {
-        background-color: rgba(15, 23, 42, 0.85) !important;
-        border-radius: 12px !important;
-        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        background-color: rgba(15, 23, 42, 0.8) !important;
+        border-radius: 10px !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
         color: #ffffff !important;
-        backdrop-filter: blur(12px) !important;
+        backdrop-filter: blur(10px) !important;
     }
     div[data-testid="stAlert"] * {
         color: #ffffff !important;
     }
     
-    /* Input & Selectbox styling */
+    /* 14. Inputs & Selectboxes */
     div[data-testid="stTextInput"] input, 
     div[data-testid="stTextArea"] textarea,
     div[data-testid="stSelectbox"] > div {
-        background-color: rgba(15, 23, 42, 0.75) !important;
+        background-color: rgba(15, 23, 42, 0.7) !important;
         color: #ffffff !important;
-        border: 1px solid rgba(255, 255, 255, 0.12) !important;
-        border-radius: 12px !important;
-        font-size: 0.92rem !important;
-        transition: border-color 0.2s, box-shadow 0.2s !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        border-radius: 10px !important;
+        font-size: 0.9rem !important;
+        transition: border-color 0.18s, box-shadow 0.18s !important;
     }
     div[data-testid="stTextInput"] input:focus, 
     div[data-testid="stTextArea"] textarea:focus,
     div[data-testid="stSelectbox"] > div:focus-within {
         border-color: #6366f1 !important;
-        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25) !important;
+        box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.25) !important;
         outline: none !important;
     }
     div[data-testid="stSelectbox"] * {
         color: #ffffff !important;
     }
     
-    /* Chat bubbles */
+    /* 15. Chat Bubbles */
     div[data-testid="stChatMessage"] {
-        background: linear-gradient(180deg, rgba(17, 24, 39, 0.8) 0%, rgba(11, 17, 30, 0.9) 100%) !important;
-        border: 1px solid rgba(255, 255, 255, 0.08) !important;
-        border-radius: 14px !important;
-        padding: 16px 20px !important;
-        margin-bottom: 12px !important;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25) !important;
+        background: linear-gradient(180deg, rgba(17, 24, 39, 0.75) 0%, rgba(11, 17, 30, 0.85) 100%) !important;
+        border: 1px solid rgba(255, 255, 255, 0.07) !important;
+        border-radius: 12px !important;
+        padding: 14px 18px !important;
+        margin-bottom: 10px !important;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2) !important;
     }
     div[data-testid="stChatMessage"][data-testid*="user"] {
-        background: linear-gradient(135deg, rgba(30, 41, 59, 0.75) 0%, rgba(15, 23, 42, 0.85) 100%) !important;
-        border: 1px solid rgba(99, 102, 241, 0.3) !important;
-        box-shadow: 0 4px 16px rgba(99, 102, 241, 0.08) !important;
+        background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.8) 100%) !important;
+        border: 1px solid rgba(99, 102, 241, 0.25) !important;
+        box-shadow: 0 4px 14px rgba(99, 102, 241, 0.06) !important;
     }
     div[data-testid="stChatMessage"] p, div[data-testid="stChatMessage"] span, div[data-testid="stChatMessage"] li {
         color: #f1f5f9 !important;
-        font-size: 0.94rem !important;
-        line-height: 1.68 !important;
+        font-size: 0.93rem !important;
+        line-height: 1.65 !important;
     }
     
-    /* Status Badges */
+    /* 16. Status Badges */
     .status-pill {
         padding: 4px 12px;
         border-radius: 9999px;
         font-size: 0.72rem;
         font-weight: 700;
         text-transform: uppercase;
-        letter-spacing: 0.06em;
+        letter-spacing: 0.05em;
         display: inline-flex;
         align-items: center;
         gap: 6px;
@@ -401,64 +443,79 @@ st.markdown("""
         background: rgba(16, 185, 129, 0.12);
         color: #34d399;
         border: 1px solid rgba(52, 211, 153, 0.35);
-        box-shadow: 0 0 10px rgba(16, 185, 129, 0.15);
+        box-shadow: 0 0 8px rgba(16, 185, 129, 0.15);
     }
     .pill-blue {
         background: rgba(59, 130, 246, 0.12);
         color: #60a5fa;
         border: 1px solid rgba(96, 165, 250, 0.35);
-        box-shadow: 0 0 10px rgba(59, 130, 246, 0.15);
     }
     .pill-purple {
         background: rgba(168, 85, 247, 0.12);
         color: #c084fc;
         border: 1px solid rgba(192, 132, 252, 0.35);
-        box-shadow: 0 0 10px rgba(168, 85, 247, 0.15);
     }
     .pill-yellow {
         background: rgba(245, 158, 11, 0.12);
         color: #fbbf24;
         border: 1px solid rgba(251, 191, 36, 0.35);
     }
-    .pill-rose {
-        background: rgba(244, 63, 94, 0.12);
-        color: #fb7185;
-        border: 1px solid rgba(251, 113, 133, 0.35);
+    
+    /* 17. Interactive StTabs (Segmented Pill Switcher) */
+    div[data-baseweb="tab-list"] {
+        background: rgba(15, 23, 42, 0.65) !important;
+        padding: 5px !important;
+        border-radius: 12px !important;
+        border: 1px solid rgba(255, 255, 255, 0.06) !important;
+        gap: 4px !important;
+        margin-bottom: 1.25rem !important;
+    }
+    div[data-baseweb="tab-highlight"],
+    div[data-baseweb="tab-border"] {
+        display: none !important;
+    }
+    button[data-baseweb="tab"] {
+        background: transparent !important;
+        color: #94a3b8 !important;
+        font-weight: 600 !important;
+        border: 1px solid transparent !important;
+        border-radius: 8px !important;
+        padding: 7px 14px !important;
+        font-size: 0.85rem !important;
+        outline: none !important;
+        box-shadow: none !important;
+        transition: all 0.18s ease !important;
+    }
+    button[data-baseweb="tab"]:hover {
+        color: #f1f5f9 !important;
+        background: rgba(255, 255, 255, 0.05) !important;
+    }
+    button[data-baseweb="tab"][aria-selected="true"] {
+        background: linear-gradient(135deg, rgba(99, 102, 241, 0.28) 0%, rgba(139, 92, 246, 0.2) 100%) !important;
+        color: #ffffff !important;
+        font-weight: 700 !important;
+        border: 1px solid rgba(99, 102, 241, 0.45) !important;
+        box-shadow: 0 2px 10px rgba(99, 102, 241, 0.2) !important;
+    }
+    button[data-baseweb="tab"]:focus {
+        outline: none !important;
+        box-shadow: none !important;
     }
     
-    /* Custom Scrollbar */
+    /* 18. Custom Scrollbars */
     ::-webkit-scrollbar {
-        width: 8px;
-        height: 8px;
+        width: 7px;
+        height: 7px;
     }
     ::-webkit-scrollbar-track {
-        background: rgba(6, 8, 15, 0.8);
+        background: rgba(8, 11, 17, 0.8);
     }
     ::-webkit-scrollbar-thumb {
         background: rgba(99, 102, 241, 0.25);
         border-radius: 9999px;
     }
     ::-webkit-scrollbar-thumb:hover {
-        background: rgba(99, 102, 241, 0.5);
-    }
-    
-    /* Interactive Tabs (stTabs) */
-    button[data-baseweb="tab"] {
-        background: transparent !important;
-        color: #94a3b8 !important;
-        font-weight: 600 !important;
-        border-radius: 8px !important;
-        padding: 8px 16px !important;
-        transition: all 0.2s ease !important;
-    }
-    button[data-baseweb="tab"]:hover {
-        color: #ffffff !important;
-        background: rgba(255, 255, 255, 0.04) !important;
-    }
-    button[data-baseweb="tab"][aria-selected="true"] {
-        color: #a5b4fc !important;
-        background: rgba(99, 102, 241, 0.15) !important;
-        border-bottom: 2px solid #818cf8 !important;
+        background: rgba(99, 102, 241, 0.45);
     }
 </style>
 """, unsafe_allow_html=True)
@@ -519,14 +576,14 @@ if not projects:
 # Sidebar: Simple 3-Tab Navigation
 with st.sidebar:
     st.markdown("""
-    <div style='display: flex; align-items: center; gap: 12px; margin-bottom: 22px; padding: 6px 2px;'>
-        <div style='width: 44px; height: 44px; border-radius: 14px; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #d946ef 100%); display: flex; align-items: center; justify-content: center; font-weight: 900; color: white; font-size: 1.35rem; box-shadow: 0 4px 20px rgba(99, 102, 241, 0.45); border: 1px solid rgba(255, 255, 255, 0.2); flex-shrink: 0;'>⚡</div>
-        <div>
-            <div style='display: flex; align-items: center; gap: 7px;'>
-                <h2 style='margin: 0; font-size: 1.25rem; font-weight: 800; letter-spacing: -0.02em;' class='gradient-title'>ClipForge</h2>
-                <span class='status-pill pill-purple' style='padding: 2px 7px; font-size: 0.62rem;'>V2 PRO</span>
+    <div style='display: flex; align-items: center; gap: 12px; margin-bottom: 20px; padding: 10px 12px; background: rgba(17, 24, 39, 0.6); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; backdrop-filter: blur(12px);'>
+        <div style='width: 38px; height: 38px; border-radius: 9px; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #d946ef 100%); display: flex; align-items: center; justify-content: center; font-size: 1.25rem; color: #ffffff; box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4); flex-shrink: 0;'>⚡</div>
+        <div style='flex: 1; min-width: 0;'>
+            <div style='display: flex; align-items: center; justify-content: space-between;'>
+                <span style='font-size: 1.15rem; font-weight: 800; color: #ffffff; letter-spacing: -0.02em;'>ClipForge</span>
+                <span style='background: rgba(99, 102, 241, 0.2); color: #a5b4fc; font-size: 0.62rem; font-weight: 700; padding: 2px 6px; border-radius: 5px; border: 1px solid rgba(99, 102, 241, 0.35); letter-spacing: 0.04em;'>V2 PRO</span>
             </div>
-            <span style='font-size: 0.68rem; color: #94a3b8; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em;'>Autonomous AI Video Studio</span>
+            <div style='font-size: 0.66rem; color: #94a3b8; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 1px;'>AI Video Studio</div>
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -535,7 +592,7 @@ with st.sidebar:
     selected_project_name = st.selectbox("Active Workspace", project_names)
     active_project = next(p for p in projects if p["name"] == selected_project_name)
 
-    st.markdown("<hr style='border-color: rgba(255,255,255,0.07); margin: 16px 0;'>", unsafe_allow_html=True)
+    st.markdown("<hr style='border-color: rgba(255,255,255,0.06); margin: 14px 0;'>", unsafe_allow_html=True)
 
     # 5 Navigation Tabs
     nav_tabs = [
@@ -548,34 +605,82 @@ with st.sidebar:
 
     for tab_name, icon in nav_tabs:
         is_active = st.session_state.active_tab == tab_name
-        label = f"{icon}  {tab_name}" if not is_active else f"👉 {icon}  {tab_name}"
-        if st.button(label, key=f"nav_{tab_name}", use_container_width=True):
+        btn_type = "primary" if is_active else "secondary"
+        if st.button(f"{icon}  {tab_name}", key=f"nav_{tab_name}", type=btn_type, use_container_width=True):
             st.session_state.active_tab = tab_name
             st.rerun()
 
-    st.markdown("<hr style='border-color: rgba(255,255,255,0.07); margin: 20px 0;'>", unsafe_allow_html=True)
+    st.markdown("<hr style='border-color: rgba(255,255,255,0.06); margin: 16px 0;'>", unsafe_allow_html=True)
     
-    # Dynamic Multi-Provider AI Status Badge
+    # Modern Telemetry AI Engine Status Card
     active_prov = st.session_state.llm_provider
     if active_prov == "groq":
         k = st.session_state.groq_api_key
         if k and len(k) > 10:
             m_disp = st.session_state.groq_model.split("/")[-1]
-            st.markdown(f"<div style='display:flex; justify-content:center;'><span class='status-pill pill-green'>⚡ Groq Online ({m_disp})</span></div>", unsafe_allow_html=True)
+            st.markdown(f"""
+            <div style='padding: 10px 12px; background: rgba(16, 24, 40, 0.65); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 10px; display: flex; align-items: center; gap: 9px;'>
+                <span style='width: 8px; height: 8px; border-radius: 50%; background: #10b981; box-shadow: 0 0 8px #10b981; display: inline-block; flex-shrink: 0;'></span>
+                <div style='flex: 1; min-width: 0;'>
+                    <div style='font-size: 0.72rem; font-weight: 700; color: #34d399; text-transform: uppercase; letter-spacing: 0.05em;'>Groq Cloud Active</div>
+                    <div style='font-size: 0.68rem; color: #94a3b8; font-family: "JetBrains Mono", monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;'>{m_disp}</div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
         else:
-            st.markdown("<div style='display:flex; justify-content:center;'><span class='status-pill pill-yellow'>⚠️ Groq Key Missing</span></div>", unsafe_allow_html=True)
+            st.markdown("""
+            <div style='padding: 10px 12px; background: rgba(30, 20, 10, 0.65); border: 1px solid rgba(245, 158, 11, 0.35); border-radius: 10px; display: flex; align-items: center; gap: 9px;'>
+                <span style='width: 8px; height: 8px; border-radius: 50%; background: #f59e0b; box-shadow: 0 0 8px #f59e0b; display: inline-block; flex-shrink: 0;'></span>
+                <div style='flex: 1; min-width: 0;'>
+                    <div style='font-size: 0.72rem; font-weight: 700; color: #fbbf24; text-transform: uppercase; letter-spacing: 0.05em;'>Groq Key Missing</div>
+                    <div style='font-size: 0.68rem; color: #cbd5e1;'>Configure in Settings</div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
     elif active_prov == "gemini":
         k = st.session_state.gemini_api_key
         if k and len(k) > 10:
-            st.markdown(f"<div style='display:flex; justify-content:center;'><span class='status-pill pill-green'>✨ Gemini Online ({st.session_state.gemini_model})</span></div>", unsafe_allow_html=True)
+            st.markdown(f"""
+            <div style='padding: 10px 12px; background: rgba(16, 24, 40, 0.65); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 10px; display: flex; align-items: center; gap: 9px;'>
+                <span style='width: 8px; height: 8px; border-radius: 50%; background: #10b981; box-shadow: 0 0 8px #10b981; display: inline-block; flex-shrink: 0;'></span>
+                <div style='flex: 1; min-width: 0;'>
+                    <div style='font-size: 0.72rem; font-weight: 700; color: #34d399; text-transform: uppercase; letter-spacing: 0.05em;'>Gemini Active</div>
+                    <div style='font-size: 0.68rem; color: #94a3b8; font-family: "JetBrains Mono", monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;'>{st.session_state.gemini_model}</div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
         else:
-            st.markdown("<div style='display:flex; justify-content:center;'><span class='status-pill pill-yellow'>⚠️ Gemini Key Missing</span></div>", unsafe_allow_html=True)
+            st.markdown("""
+            <div style='padding: 10px 12px; background: rgba(30, 20, 10, 0.65); border: 1px solid rgba(245, 158, 11, 0.35); border-radius: 10px; display: flex; align-items: center; gap: 9px;'>
+                <span style='width: 8px; height: 8px; border-radius: 50%; background: #f59e0b; box-shadow: 0 0 8px #f59e0b; display: inline-block; flex-shrink: 0;'></span>
+                <div style='flex: 1; min-width: 0;'>
+                    <div style='font-size: 0.72rem; font-weight: 700; color: #fbbf24; text-transform: uppercase; letter-spacing: 0.05em;'>Gemini Key Missing</div>
+                    <div style='font-size: 0.68rem; color: #cbd5e1;'>Configure in Settings</div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
     else:
         is_online, models_list = test_ollama_connection(st.session_state.ollama_url)
         if is_online:
-            st.markdown(f"<div style='display:flex; justify-content:center;'><span class='status-pill pill-green'>🖥️ Ollama Online ({len(models_list)} models)</span></div>", unsafe_allow_html=True)
+            st.markdown(f"""
+            <div style='padding: 10px 12px; background: rgba(16, 24, 40, 0.65); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 10px; display: flex; align-items: center; gap: 9px;'>
+                <span style='width: 8px; height: 8px; border-radius: 50%; background: #3b82f6; box-shadow: 0 0 8px #3b82f6; display: inline-block; flex-shrink: 0;'></span>
+                <div style='flex: 1; min-width: 0;'>
+                    <div style='font-size: 0.72rem; font-weight: 700; color: #60a5fa; text-transform: uppercase; letter-spacing: 0.05em;'>Ollama Online</div>
+                    <div style='font-size: 0.68rem; color: #94a3b8; font-family: "JetBrains Mono", monospace;'>{len(models_list)} models loaded</div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
         else:
-            st.markdown("<div style='display:flex; justify-content:center;'><span class='status-pill pill-yellow'>🖥️ Ollama Offline (Local Mode)</span></div>", unsafe_allow_html=True)
+            st.markdown("""
+            <div style='padding: 10px 12px; background: rgba(30, 20, 10, 0.65); border: 1px solid rgba(245, 158, 11, 0.35); border-radius: 10px; display: flex; align-items: center; gap: 9px;'>
+                <span style='width: 8px; height: 8px; border-radius: 50%; background: #f59e0b; box-shadow: 0 0 8px #f59e0b; display: inline-block; flex-shrink: 0;'></span>
+                <div style='flex: 1; min-width: 0;'>
+                    <div style='font-size: 0.72rem; font-weight: 700; color: #fbbf24; text-transform: uppercase; letter-spacing: 0.05em;'>Ollama Offline</div>
+                    <div style='font-size: 0.68rem; color: #cbd5e1;'>Self-Hosted Local Mode</div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
 
 # Fetch database records for active workspace
 videos = get_videos(active_project["id"])
@@ -1050,150 +1155,158 @@ elif tab == "CSE473 AI Lab":
 
     # UNIT I
     with lab_sub_tabs[0]:
-        st.markdown("### Unit I: Tokenization, Self-Attention & Transformer Architecture")
+        st.markdown("<h3 class='gradient-title' style='margin:8px 0 16px 0;'>Unit I: Tokenization, Self-Attention & Transformer Architecture</h3>", unsafe_allow_html=True)
         
-        # Tokenizer visualizer
-        st.write("#### 1. Interactive Tokenizer Visualizer")
-        sample_tok_input = st.text_input("Enter text to tokenize:", value="ClipForge AI provides local video intelligence with RAG.")
-        if sample_tok_input:
-            tok_data = cse473.visualize_tokenization(sample_tok_input)
-            st.write(f"**Tokens Generated:** `{tok_data['total_tokens']}` | **Characters:** `{tok_data['total_chars']}` | **Avg Chars/Token:** `{tok_data['chars_per_token']}`")
-            
-            # Badges
-            tok_badges = ""
-            colors = ["#1e3a5f", "#451a03", "#064e3b", "#3b0764", "#1e293b"]
-            for i, t in enumerate(tok_data["tokens"]):
-                c = colors[i % len(colors)]
-                tok_badges += f"<span style='background:{c}; padding:4px 8px; border-radius:6px; margin:2px; display:inline-block; font-family:monospace; font-size:0.85rem;'>{t['token_text']} <sub style='color:#94a3b8;'>ID:{t['token_id']}</sub></span> "
-            st.markdown(tok_badges, unsafe_allow_html=True)
+        with st.container(border=True):
+            st.markdown("<h4 style='margin:0 0 6px 0; color:#f8fafc;'>🔤 1. Interactive Tokenizer Visualizer</h4>", unsafe_allow_html=True)
+            st.caption("Visualizes BPE / subword tokenization, vocabulary mapping, token boundaries, and character-to-token compression ratio.")
+            sample_tok_input = st.text_input("Enter text to tokenize:", value="ClipForge AI provides local video intelligence with RAG.", key="tok_input_fld")
+            if sample_tok_input:
+                tok_data = cse473.visualize_tokenization(sample_tok_input)
+                col_m1, col_m2, col_m3 = st.columns(3)
+                with col_m1:
+                    st.metric("Total Tokens", tok_data['total_tokens'])
+                with col_m2:
+                    st.metric("Total Characters", tok_data['total_chars'])
+                with col_m3:
+                    st.metric("Avg Chars/Token", f"{tok_data['chars_per_token']:.2f}")
+                
+                # Badges
+                tok_badges = ""
+                colors = ["#1e3a5f", "#451a03", "#064e3b", "#3b0764", "#1e293b"]
+                for i, t in enumerate(tok_data["tokens"]):
+                    c = colors[i % len(colors)]
+                    tok_badges += f"<span style='background:{c}; padding:4px 9px; border-radius:6px; margin:3px; display:inline-block; font-family:monospace; font-size:0.85rem; border:1px solid rgba(255,255,255,0.1);'>{t['token_text']} <sub style='color:#94a3b8;'>ID:{t['token_id']}</sub></span> "
+                st.markdown(f"<div style='margin-top:10px;'>{tok_badges}</div>", unsafe_allow_html=True)
 
-        st.markdown("<hr style='border-color:#1f2937; margin:20px 0;'>", unsafe_allow_html=True)
+        with st.container(border=True):
+            st.markdown("<h4 style='margin:0 0 6px 0; color:#f8fafc;'>🔥 2. Scaled Dot-Product Self-Attention Heatmap</h4>", unsafe_allow_html=True)
+            st.caption("Computes Softmax(QK^T / sqrt(d_k)) attention matrices across multiple simulated heads.")
+            sample_words = st.text_input("Attention Sequence Tokens (comma separated):", value="ClipForge, processes, video, transcripts, accurately", key="attn_tokens_fld")
+            heads_count = st.slider("Number of Attention Heads:", 1, 4, 2, key="attn_heads_sld")
+            if sample_words:
+                tokens_list = [w.strip() for w in sample_words.split(",") if w.strip()]
+                attn_data = cse473.compute_attention_weights(tokens_list, num_heads=heads_count)
+                cols_heads = st.columns(heads_count)
+                for h_idx in range(heads_count):
+                    with cols_heads[h_idx]:
+                        st.markdown(f"**Head {h_idx + 1} Attention Matrix:**")
+                        matrix = attn_data["heads"][h_idx]["weights"]
+                        st.dataframe(matrix, use_container_width=True)
 
-        # Scaled Dot-Product Self-Attention
-        st.write("#### 2. Scaled Dot-Product Self-Attention Heatmap")
-        sample_words = st.text_input("Attention Sequence Tokens (comma separated):", value="ClipForge, processes, video, transcripts, accurately")
-        heads_count = st.slider("Number of Attention Heads:", 1, 4, 2)
-        if sample_words:
-            tokens_list = [w.strip() for w in sample_words.split(",") if w.strip()]
-            attn_data = cse473.compute_attention_weights(tokens_list, num_heads=heads_count)
-            cols_heads = st.columns(heads_count)
-            for h_idx in range(heads_count):
-                with cols_heads[h_idx]:
-                    st.write(f"**Head {h_idx + 1} Attention Matrix:**")
-                    matrix = attn_data["heads"][h_idx]["weights"]
-                    st.dataframe(matrix, use_container_width=True)
-
-        st.markdown("<hr style='border-color:#1f2937; margin:20px 0;'>", unsafe_allow_html=True)
-
-        # Transformer Forward Pass
-        st.write("#### 3. Transformer Block Forward Pass Stages")
-        if st.button("Inspect Forward Pass Computations"):
-            fwd = cse473.transformer_forward_pass_demo(sample_tok_input)
-            for stg in fwd["stages"]:
-                with st.expander(f"{stg['stage']} — Output Tensor {stg['shape']}"):
-                    st.write(stg.get("summary") or f"Sample values: `{stg.get('sample')}`")
+        with st.container(border=True):
+            st.markdown("<h4 style='margin:0 0 6px 0; color:#f8fafc;'>⚡ 3. Transformer Block Forward Pass Stages</h4>", unsafe_allow_html=True)
+            st.caption("Inspect step-by-step tensor transformations: Input Embedding -> LayerNorm -> Multi-Head Attention -> Residual -> Feed-Forward.")
+            if st.button("Inspect Forward Pass Computations", use_container_width=True):
+                fwd = cse473.transformer_forward_pass_demo(sample_tok_input)
+                for stg in fwd["stages"]:
+                    with st.expander(f"{stg['stage']} — Output Tensor {stg['shape']}"):
+                        st.write(stg.get("summary") or f"Sample values: `{stg.get('sample')}`")
 
     # UNIT II
     with lab_sub_tabs[1]:
-        st.markdown("### Unit II: Multi-Paradigm Prompt Comparator & Tool Calling")
+        st.markdown("<h3 class='gradient-title' style='margin:8px 0 16px 0;'>Unit II: Multi-Paradigm Prompt Comparator & Tool Calling</h3>", unsafe_allow_html=True)
         
-        st.write("#### 1. Prompt Engineering Comparator (6 Paradigms)")
-        comp_query = st.text_input("Test Question for Paradigms:", value="What did the speaker say about Alpha Centauri?")
-        if st.button("⚡ Run Prompt Comparator Across 6 Paradigms"):
-            with st.spinner("Executing Zero-Shot, Few-Shot, JSON, Role-Based, ReAct, and Chain-of-Thought prompts..."):
-                comp_res = cse473.compare_prompts(comp_query, model=st.session_state.ollama_model)
-                p_cols = st.columns(2)
-                paradigms_list = list(comp_res["paradigms"].items())
-                for idx, (p_name, p_val) in enumerate(paradigms_list):
-                    with p_cols[idx % 2]:
-                        with st.container(border=True):
-                            st.write(f"**{p_name}** ({p_val['latency_seconds']}s)")
-                            st.caption(f"System: *\"{p_val['system_prompt'][:80]}...\"*")
-                            st.write(p_val["response"])
+        with st.container(border=True):
+            st.markdown("<h4 style='margin:0 0 6px 0; color:#f8fafc;'>🎯 1. Prompt Engineering Comparator (6 Paradigms)</h4>", unsafe_allow_html=True)
+            st.caption("Executes identical queries across Zero-Shot, Few-Shot, JSON Schema, Role-Based, ReAct, and Chain-of-Thought prompting strategies.")
+            comp_query = st.text_input("Test Question for Paradigms:", value="What did the speaker say about Alpha Centauri?", key="comp_q_fld")
+            if st.button("⚡ Run Prompt Comparator Across 6 Paradigms", use_container_width=True):
+                with st.spinner("Executing Zero-Shot, Few-Shot, JSON, Role-Based, ReAct, and Chain-of-Thought prompts..."):
+                    comp_res = cse473.compare_prompts(comp_query, model=st.session_state.ollama_model)
+                    p_cols = st.columns(2)
+                    paradigms_list = list(comp_res["paradigms"].items())
+                    for idx, (p_name, p_val) in enumerate(paradigms_list):
+                        with p_cols[idx % 2]:
+                            with st.container(border=True):
+                                st.markdown(f"**{p_name}** `({p_val['latency_seconds']}s)`")
+                                st.caption(f"System: *\"{p_val['system_prompt'][:80]}...\"*")
+                                st.write(p_val["response"])
 
-        st.markdown("<hr style='border-color:#1f2937; margin:20px 0;'>", unsafe_allow_html=True)
-
-        st.write("#### 2. ReAct Agent Tool Calling Execution")
-        tool_choice = st.selectbox("Select Tool Schema:", ["search_video_transcript", "calculate_scene_boundaries", "generate_hook_score"])
-        arg_val = st.text_input("Argument Value (query / threshold / text):", value="Alpha Centauri")
-        if st.button("Execute Tool Call"):
-            if tool_choice == "search_video_transcript":
-                args = {"query": arg_val}
-            elif tool_choice == "calculate_scene_boundaries":
-                args = {"video_id": "test_vid", "threshold": 0.3}
-            else:
-                args = {"transcript_text": arg_val}
-            t_res = cse473.demonstrate_tool_calling(tool_choice, args)
-            st.json(t_res)
+        with st.container(border=True):
+            st.markdown("<h4 style='margin:0 0 6px 0; color:#f8fafc;'>🛠️ 2. ReAct Agent Tool Calling Execution</h4>", unsafe_allow_html=True)
+            st.caption("Demonstrates structured tool execution with parameter validation and JSON output schema.")
+            tool_choice = st.selectbox("Select Tool Schema:", ["search_video_transcript", "calculate_scene_boundaries", "generate_hook_score"], key="tool_choice_sel")
+            arg_val = st.text_input("Argument Value (query / threshold / text):", value="Alpha Centauri", key="tool_arg_fld")
+            if st.button("Execute Tool Call", use_container_width=True):
+                if tool_choice == "search_video_transcript":
+                    args = {"query": arg_val}
+                elif tool_choice == "calculate_scene_boundaries":
+                    args = {"video_id": "test_vid", "threshold": 0.3}
+                else:
+                    args = {"transcript_text": arg_val}
+                t_res = cse473.demonstrate_tool_calling(tool_choice, args)
+                st.json(t_res)
 
     # UNIT III
     with lab_sub_tabs[2]:
-        st.markdown("### Unit III: Learning & Adaptation (LoRA, Quantization, Q-Learning)")
+        st.markdown("<h3 class='gradient-title' style='margin:8px 0 16px 0;'>Unit III: Learning & Adaptation (LoRA, Quantization, Q-Learning)</h3>", unsafe_allow_html=True)
 
-        # LoRA Adapter demo
-        st.write("#### 1. Low-Rank Adaptation (LoRA) Matrix Decomposition")
-        col_lr1, col_lr2, col_lr3 = st.columns(3)
-        with col_lr1:
-            d_in = st.number_input("d_in (Hidden Dimension):", value=1024, step=256)
-        with col_lr2:
-            d_out = st.number_input("d_out (Output Dimension):", value=1024, step=256)
-        with col_lr3:
-            rank = st.slider("LoRA Rank (r):", 1, 64, 8)
+        with st.container(border=True):
+            st.markdown("<h4 style='margin:0 0 6px 0; color:#f8fafc;'>📉 1. Low-Rank Adaptation (LoRA) Matrix Decomposition</h4>", unsafe_allow_html=True)
+            st.caption("Decomposes weight updates W = W_0 + B*A where rank r << min(d_in, d_out).")
+            col_lr1, col_lr2, col_lr3 = st.columns(3)
+            with col_lr1:
+                d_in = st.number_input("d_in (Hidden Dimension):", value=1024, step=256, key="lora_din")
+            with col_lr2:
+                d_out = st.number_input("d_out (Output Dimension):", value=1024, step=256, key="lora_dout")
+            with col_lr3:
+                rank = st.slider("LoRA Rank (r):", 1, 64, 8, key="lora_rank")
 
-        lora_stats = cse473.lora_adapter_demo(d_in, d_out, rank)
-        st.success(f"🔥 **{lora_stats['parameter_analysis']['parameter_reduction_percent']}% Parameter Reduction!** Trainable params: `{lora_stats['parameter_analysis']['lora_trainable_params']:,}` vs Full fine-tuning: `{lora_stats['parameter_analysis']['full_fine_tune_params']:,}`")
-        st.json(lora_stats["matrix_shapes"])
+            lora_stats = cse473.lora_adapter_demo(d_in, d_out, rank)
+            st.success(f"🔥 **{lora_stats['parameter_analysis']['parameter_reduction_percent']}% Parameter Reduction!** Trainable params: `{lora_stats['parameter_analysis']['lora_trainable_params']:,}` vs Full fine-tuning: `{lora_stats['parameter_analysis']['full_fine_tune_params']:,}`")
+            st.json(lora_stats["matrix_shapes"])
 
-        st.markdown("<hr style='border-color:#1f2937; margin:20px 0;'>", unsafe_allow_html=True)
+        with st.container(border=True):
+            st.markdown("<h4 style='margin:0 0 6px 0; color:#f8fafc;'>💾 2. Model Quantization VRAM & Speedup Benchmarks</h4>", unsafe_allow_html=True)
+            st.caption("Compares memory footprints and inference speedups across FP16, INT8, Q4_K_M, and Q4_0.")
+            model_size = st.selectbox("Model Size (Billion Parameters):", [1.5, 3.0, 7.0, 14.0], index=1, key="quant_msize")
+            q_bench = cse473.quantization_benchmark(model_size)
+            st.table(q_bench["benchmarks"])
 
-        # Quantization benchmark
-        st.write("#### 2. Model Quantization VRAM & Speedup Benchmarks")
-        model_size = st.selectbox("Model Size:", [1.5, 3.0, 7.0, 14.0], index=1)
-        q_bench = cse473.quantization_benchmark(model_size)
-        st.table(q_bench["benchmarks"])
-
-        st.markdown("<hr style='border-color:#1f2937; margin:20px 0;'>", unsafe_allow_html=True)
-
-        # Q-Learning GridWorld
-        st.write("#### 3. Reinforcement Learning: GridWorld Q-Learning Simulation")
-        episodes_n = st.slider("Training Episodes:", 50, 500, 150, step=50)
-        if st.button("Train Q-Learning Agent"):
-            with st.spinner("Simulating Bellman Equation updates across GridWorld..."):
-                ql_res = cse473.simulate_gridworld_q_learning(grid_size=4, episodes=episodes_n)
-                st.write(f"**Final Average Reward:** `{ql_res['final_average_reward']}`")
-                st.write("**Learned Optimal Policy Grid:**")
-                st.table(ql_res["optimal_policy"])
+        with st.container(border=True):
+            st.markdown("<h4 style='margin:0 0 6px 0; color:#f8fafc;'>🤖 3. Reinforcement Learning: GridWorld Q-Learning Simulation</h4>", unsafe_allow_html=True)
+            st.caption("Trains a tabular Q-learning agent on GridWorld using Bellman Equation updates.")
+            episodes_n = st.slider("Training Episodes:", 50, 500, 150, step=50, key="ql_episodes")
+            if st.button("Train Q-Learning Agent", use_container_width=True):
+                with st.spinner("Simulating Bellman Equation updates across GridWorld..."):
+                    ql_res = cse473.simulate_gridworld_q_learning(grid_size=4, episodes=episodes_n)
+                    st.write(f"**Final Average Reward:** `{ql_res['final_average_reward']}`")
+                    st.write("**Learned Optimal Policy Grid:**")
+                    st.table(ql_res["optimal_policy"])
 
     # UNIT VI
     with lab_sub_tabs[3]:
-        st.markdown("### Unit VI: Evaluation, Security & 20-Question Benchmark Suite")
+        st.markdown("<h3 class='gradient-title' style='margin:8px 0 16px 0;'>Unit VI: Evaluation, Security & 20-Question Benchmark Suite</h3>", unsafe_allow_html=True)
 
-        st.write("#### 1. Prompt Injection Isolation Test")
-        if st.button("🛡️ Run Prompt Injection Security Suite"):
-            sec_res = cse473.run_prompt_injection_safety_test()
-            st.success(f"**Security Score:** {sec_res['passed_tests']} / {sec_res['total_tests']} Injections Neutralized (100% Secure)")
-            for r in sec_res["results"]:
-                with st.expander(f"{r['status']} — Payload: \"{r['payload'][:50]}...\""):
-                    st.write(f"**Payload:** `{r['payload']}`")
-                    st.write(f"**Model Response:** {r['model_response']}")
+        with st.container(border=True):
+            st.markdown("<h4 style='margin:0 0 6px 0; color:#f8fafc;'>🛡️ 1. Prompt Injection Isolation Test</h4>", unsafe_allow_html=True)
+            st.caption("Validates multi-layered defense against system prompt leaks, role-play jailbreaks, delimiter hijacking, and harmful instruction overrides.")
+            if st.button("🛡️ Run Prompt Injection Security Suite", use_container_width=True):
+                sec_res = cse473.run_prompt_injection_safety_test()
+                st.success(f"**Security Score:** {sec_res['passed_tests']} / {sec_res['total_tests']} Injections Neutralized (100% Secure)")
+                for r in sec_res["results"]:
+                    with st.expander(f"{r['status']} — Payload: \"{r['payload'][:50]}...\""):
+                        st.write(f"**Payload:** `{r['payload']}`")
+                        st.write(f"**Model Response:** {r['model_response']}")
 
-        st.markdown("<hr style='border-color:#1f2937; margin:20px 0;'>", unsafe_allow_html=True)
+        with st.container(border=True):
+            st.markdown("<h4 style='margin:0 0 6px 0; color:#f8fafc;'>📊 2. Automated 20-Question Video QA Evaluation Suite</h4>", unsafe_allow_html=True)
+            st.caption("Evaluates factual recall, chronological grounding, and edge-case handling across long-form video transcripts.")
+            if not videos:
+                st.info("No videos available to benchmark.")
+            else:
+                vid_options = {v["filename"]: v["id"] for v in videos}
+                bench_vid_title = st.selectbox("Select Video for Evaluation:", list(vid_options.keys()), key="bench_vid_sel")
+                bench_vid_id = vid_options[bench_vid_title]
 
-        st.write("#### 2. Automated 20-Question Video QA Evaluation Suite")
-        if not videos:
-            st.info("No videos available to benchmark.")
-        else:
-            vid_options = {v["filename"]: v["id"] for v in videos}
-            bench_vid_title = st.selectbox("Select Video for Evaluation:", list(vid_options.keys()), key="bench_vid_sel")
-            bench_vid_id = vid_options[bench_vid_title]
-
-            if st.button("🚀 Run 20-Question Benchmark"):
-                with st.spinner(f"Evaluating 20 questions across video '{bench_vid_title}'..."):
-                    eval_results = cse473.run_comprehensive_evaluation_suite(bench_vid_id, active_project["id"])
-                    
-                    st.metric("Benchmark Accuracy Rate", f"{eval_results['accuracy_rate_percent']}%", f"{eval_results['passed_questions']}/{eval_results['total_questions']} Passed")
-                    st.write(f"**Average Query Latency:** `{eval_results['average_latency_seconds']}s`")
-                    st.table(eval_results["detailed_results"])
+                if st.button("🚀 Run 20-Question Benchmark", use_container_width=True):
+                    with st.spinner(f"Evaluating 20 questions across video '{bench_vid_title}'..."):
+                        eval_results = cse473.run_comprehensive_evaluation_suite(bench_vid_id, active_project["id"])
+                        
+                        st.metric("Benchmark Accuracy Rate", f"{eval_results['accuracy_rate_percent']}%", f"{eval_results['passed_questions']}/{eval_results['total_questions']} Passed")
+                        st.write(f"**Average Query Latency:** `{eval_results['average_latency_seconds']}s`")
+                        st.table(eval_results["detailed_results"])
 
 # ============================================================
 # TAB 3: LIBRARY & SETTINGS
