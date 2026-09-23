@@ -203,9 +203,17 @@ async def run_processing_pipeline(video_id: str):
                 transcript = []
                 
         if not transcript:
-            print("No transcription generated. Generating topic-aware transcription fallback.")
-            from clipforge_engine.services.transcribe import generate_mock_transcript
-            transcript = generate_mock_transcript(duration, video_title=clean_title)
+            if os.environ.get("ENABLE_MOCK_DEMO", "0") == "1":
+                print("ENABLE_MOCK_DEMO flag active: generating sandbox mock transcript fallback.")
+                from clipforge_engine.services.transcribe import generate_mock_transcript
+                transcript = generate_mock_transcript(duration, video_title=clean_title)
+            else:
+                err_msg = "Whisper transcription failed or audio was empty/unintelligible. Real video transcription cannot be completed."
+                print(err_msg)
+                update_pipeline_stage(video_id, "Whisper", "failed", 0.0, err_msg)
+                update_video_status(video_id, "failed")
+                return
+
         print(f"Transcription complete. Got {len(transcript)} segments.")
         update_pipeline_stage(video_id, "Whisper", "completed", 6.5, f"Transcribed {len(transcript)} text segments successfully.")
         update_video_status(video_id, "processing", transcript=transcript)
@@ -333,23 +341,12 @@ async def run_processing_pipeline(video_id: str):
             print("Running RAG Chunking and Indexing...")
             transcript_text = " ".join([seg.get("text", "") for seg in transcript])
             chunks = chunk_transcript(video_id, video["project_id"], transcript)
-            print(f"Generated {len(chunks)} semantic chunks.")
-            for idx, chk in enumerate(chunks):
-                cid = create_transcript_chunk(
-                    video_id=video_id,
-                    project_id=video["project_id"],
-                    start_time=chk["start_time"],
-                    end_time=chk["end_time"],
-                    text=chk["text"],
-                    speaker=chk["speaker"],
-                    keywords=chk["keywords"]
-                )
-                chk["id"] = cid
-            update_pipeline_stage(video_id, "Semantic Chunking", "completed", 1.4, f"Chunked {len(chunks)} blocks.")
+            print(f"Generated {len(chunks)} overlapping semantic chunks.")
+            update_pipeline_stage(video_id, "Semantic Chunking", "completed", 1.4, f"Chunked {len(chunks)} overlapping blocks.")
             
             update_pipeline_stage(video_id, "Embedding Generation", "running", 2.0, "Generating embeddings vectors...")
             index_transcript_chunks(video_id, video["project_id"], chunks)
-            print("ChromaDB indexing complete.")
+            print("ChromaDB and SQLite chunk indexing complete.")
             update_pipeline_stage(video_id, "Embedding Generation", "completed", 2.5, "Indexed in ChromaDB collection.")
             
             update_pipeline_stage(video_id, "Knowledge Graph", "running", 4.0, "Running NLP agents...")

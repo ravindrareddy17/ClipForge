@@ -359,6 +359,32 @@ def init_db():
     )
     """)
 
+    # Safe column migrations for existing tables
+    def _add_col(table, col, col_type):
+        try:
+            cursor.execute(f"ALTER TABLE {table} ADD COLUMN {col} {col_type}")
+        except Exception:
+            pass # Column already exists
+            
+    _add_col("transcript_chunks", "chunk_index", "INTEGER DEFAULT 0")
+    _add_col("transcript_chunks", "topic", "TEXT")
+    _add_col("transcript_chunks", "embedding_model", "TEXT")
+    _add_col("transcript_chunks", "embedding_dim", "INTEGER")
+    _add_col("chat_history", "video_id", "TEXT")
+    _add_col("embeddings", "model", "TEXT")
+    _add_col("embeddings", "dim", "INTEGER")
+    _add_col("embeddings", "created_at", "TEXT")
+
+    # Align any inconsistent project_id values between videos and chunks
+    try:
+        cursor.execute("""
+            UPDATE transcript_chunks
+            SET project_id = (SELECT videos.project_id FROM videos WHERE videos.id = transcript_chunks.video_id)
+            WHERE video_id IN (SELECT id FROM videos) AND (project_id IS NULL OR project_id = 'default')
+        """)
+    except Exception:
+        pass
+
     conn.commit()
     conn.close()
 
@@ -636,22 +662,65 @@ def update_editing_profile(project_id, profile_name, enhancements):
     conn.close()
 
 # RAG Knowledge Engine helpers
-def create_transcript_chunk(video_id, project_id, start_time, end_time, text, speaker=None, keywords=None, metadata_json=None):
-    cid = str(uuid.uuid4())
+def create_transcript_chunk(video_id, project_id, start_time, end_time, text, speaker=None, keywords=None, metadata_json=None, chunk_id=None, chunk_index=0, topic=None, embedding_model=None, embedding_dim=None):
+    cid = chunk_id or str(uuid.uuid4())
     conn = get_db_connection()
     meta_str = json.dumps(metadata_json) if metadata_json else None
     conn.execute(
-        """INSERT INTO transcript_chunks (id, video_id, project_id, start_time, end_time, text, speaker, keywords, metadata_json)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-        (cid, video_id, project_id, start_time, end_time, text, speaker, keywords, meta_str)
+        """INSERT OR REPLACE INTO transcript_chunks (id, video_id, project_id, start_time, end_time, text, speaker, keywords, metadata_json, chunk_index, topic, embedding_model, embedding_dim)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+        (cid, video_id, project_id, start_time, end_time, text, speaker, keywords, meta_str, chunk_index, topic, embedding_model, embedding_dim)
     )
     conn.commit()
     conn.close()
     return cid
 
+def upsert_transcript_chunk(video_id, project_id, chunk_index, start_time, end_time, text, speaker=None, keywords=None, metadata_json=None, topic=None, embedding_model=None, embedding_dim=None):
+    cid = f"{video_id}_chunk_{chunk_index}"
+    return create_transcript_chunk(
+        video_id=video_id,
+        project_id=project_id,
+        start_time=start_time,
+        end_time=end_time,
+        text=text,
+        speaker=speaker,
+        keywords=keywords,
+        metadata_json=metadata_json,
+        chunk_id=cid,
+        chunk_index=chunk_index,
+        topic=topic,
+        embedding_model=embedding_model,
+        embedding_dim=embedding_dim
+    )
+
 def get_transcript_chunks(video_id):
     conn = get_db_connection()
     rows = conn.execute("SELECT * FROM transcript_chunks WHERE video_id = ? ORDER BY start_time ASC", (video_id,)).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+def get_video_chunks_lexical(video_id, project_id=None):
+    """
+    Fetch all chunks for a video strictly ordered by timeline start_time.
+    If project_id is given, ensures project integrity.
+    """
+    conn = get_db_connection()
+    if project_id:
+        rows = conn.execute(
+            "SELECT * FROM transcript_chunks WHERE video_id = ? AND project_id = ? ORDER BY start_time ASC",
+            (video_id, project_id)
+        ).fetchall()
+        # Fallback if project_id had legacy mismatch
+        if not rows:
+            rows = conn.execute(
+                "SELECT * FROM transcript_chunks WHERE video_id = ? ORDER BY start_time ASC",
+                (video_id,)
+            ).fetchall()
+    else:
+        rows = conn.execute(
+            "SELECT * FROM transcript_chunks WHERE video_id = ? ORDER BY start_time ASC",
+            (video_id,)
+        ).fetchall()
     conn.close()
     return [dict(r) for r in rows]
 
@@ -661,12 +730,12 @@ def get_all_chunks_for_project(project_id):
     conn.close()
     return [dict(r) for r in rows]
 
-def save_embedding(chunk_id, embedding):
+def save_embedding(chunk_id, embedding, model="nomic-embed-text", dim=768):
     eid = str(uuid.uuid4())
     conn = get_db_connection()
     conn.execute(
-        "INSERT OR REPLACE INTO embeddings (id, chunk_id, embedding_json) VALUES (?, ?, ?)",
-        (eid, chunk_id, json.dumps(embedding))
+        "INSERT OR REPLACE INTO embeddings (id, chunk_id, embedding_json, model, dim, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+        (eid, chunk_id, json.dumps(embedding), model, dim, datetime.utcnow().isoformat())
     )
     conn.commit()
     conn.close()
@@ -763,31 +832,60 @@ def get_knowledge_graph(project_id):
     conn.close()
     return [dict(r) for r in rows]
 
-def add_chat_message(project_id, session_id, role, message):
+def add_chat_message(project_id, session_id, role, message, video_id=None):
     cid = str(uuid.uuid4())
     conn = get_db_connection()
     conn.execute(
-        "INSERT INTO chat_history (id, project_id, session_id, role, message, created_at) VALUES (?, ?, ?, ?, ?, ?)",
-        (cid, project_id, session_id, role, message, datetime.utcnow().isoformat())
+        "INSERT INTO chat_history (id, project_id, session_id, role, message, created_at, video_id) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        (cid, project_id, session_id, role, message, datetime.utcnow().isoformat(), video_id)
     )
     conn.commit()
     conn.close()
     return cid
 
-def get_chat_history(project_id, session_id):
+def get_chat_history(project_id, session_id, video_id=None, limit=20):
     conn = get_db_connection()
-    rows = conn.execute(
-        "SELECT * FROM chat_history WHERE project_id = ? AND session_id = ? ORDER BY created_at ASC",
-        (project_id, session_id)
-    ).fetchall()
+    if video_id:
+        rows = conn.execute(
+            """SELECT * FROM chat_history 
+               WHERE project_id = ? AND session_id = ? AND (video_id = ? OR video_id IS NULL)
+               ORDER BY created_at ASC LIMIT ?""",
+            (project_id, session_id, video_id, limit)
+        ).fetchall()
+    else:
+        rows = conn.execute(
+            "SELECT * FROM chat_history WHERE project_id = ? AND session_id = ? ORDER BY created_at ASC LIMIT ?",
+            (project_id, session_id, limit)
+        ).fetchall()
     conn.close()
     return [dict(r) for r in rows]
 
-def clear_chat_history(project_id, session_id):
+def clear_chat_history(project_id, session_id, video_id=None):
     conn = get_db_connection()
-    conn.execute("DELETE FROM chat_history WHERE project_id = ? AND session_id = ?", (project_id, session_id))
+    if video_id:
+        conn.execute("DELETE FROM chat_history WHERE project_id = ? AND session_id = ? AND (video_id = ? OR video_id IS NULL)", (project_id, session_id, video_id))
+    else:
+        conn.execute("DELETE FROM chat_history WHERE project_id = ? AND session_id = ?", (project_id, session_id))
     conn.commit()
     conn.close()
+
+def migrate_project_id_consistency():
+    """
+    Non-destructive database migration to ensure all chunks and child records
+    share the exact project_id of their parent video.
+    """
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        UPDATE transcript_chunks
+        SET project_id = (SELECT videos.project_id FROM videos WHERE videos.id = transcript_chunks.video_id)
+        WHERE video_id IN (SELECT id FROM videos)
+    """)
+    updated_chunks = cursor.rowcount
+    conn.commit()
+    conn.close()
+    return {"updated_chunks": updated_chunks}
+
 
 def save_summary(video_id, executive_summary, key_topics=None, important_quotes=None, timeline=None, action_items=None, main_ideas=None):
     sid = str(uuid.uuid4())

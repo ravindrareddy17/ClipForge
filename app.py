@@ -29,8 +29,11 @@ from clipforge_engine.db import (
     get_pipeline_stages
 )
 from clipforge_engine.rag import (
-    query_similar_chunks, generate_grounded_answer
+    query_similar_chunks, generate_grounded_answer, format_timestamp
 )
+from clipforge_engine.video_qa_agents import run_video_qa_pipeline
+from clipforge_engine.channel import resolve_channel_videos, import_channel_videos, search_channel_library
+import clipforge_engine.cse473_lab as cse473
 
 # Run database setup
 init_db()
@@ -42,6 +45,11 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
+
+if 'seek_time' not in st.session_state:
+    st.session_state.seek_time = 0
+if 'channel_discovered_videos' not in st.session_state:
+    st.session_state.channel_discovered_videos = []
 
 # Helper to test connection to Ollama instance
 def test_ollama_connection(url):
@@ -75,6 +83,27 @@ def resolve_file_path(p):
     if os.path.exists(local_clip) and os.path.getsize(local_clip) > 1000:
         return local_clip
     return None
+
+# Helper to extract bracketed timestamps from text
+def extract_timestamp_buttons(text: str):
+    import re
+    pattern = r"\[(\d{1,2}:\d{2}(?::\d{2})?)(?:[–\-](\d{1,2}:\d{2}(?::\d{2})?))?\]"
+    found = []
+    for m in re.finditer(pattern, text):
+        raw_tag = m.group(0)
+        ts_str = m.group(1)
+        parts = ts_str.split(":")
+        try:
+            if len(parts) == 2:
+                sec = int(parts[0]) * 60 + int(parts[1])
+            elif len(parts) == 3:
+                sec = int(parts[0]) * 3600 + int(parts[1]) * 60 + int(parts[2])
+            else:
+                sec = int(float(ts_str))
+            found.append((raw_tag, sec))
+        except Exception:
+            pass
+    return found
 
 # Modern, High-Contrast Minimalist Dark Theme
 st.markdown("""
@@ -302,10 +331,12 @@ with st.sidebar:
 
     st.markdown("<hr style='border-color: #1f2937; margin: 16px 0;'>", unsafe_allow_html=True)
 
-    # Clean 3 Navigation Tabs
+    # 5 Navigation Tabs
     nav_tabs = [
         ("Create Clips", "⚡"),
         ("AI Video Chat", "💬"),
+        ("YouTube Channels", "📺"),
+        ("CSE473 AI Lab", "🧪"),
         ("Library & Settings", "⚙️")
     ]
 
@@ -547,7 +578,7 @@ if tab == "Create Clips":
 # ============================================================
 elif tab == "AI Video Chat":
     st.markdown("<h1 style='margin:0; font-size:1.85rem;'>💬 AI Video Chatbot</h1>", unsafe_allow_html=True)
-    st.caption("Ask questions about your video transcripts with timestamp-grounded citations.")
+    st.caption("Ask questions about your video transcripts with timestamp-grounded citations and interactive player seeking.")
 
     if not videos:
         st.info("No videos available. Ingest a video in 'Create Clips' first.")
@@ -555,68 +586,97 @@ elif tab == "AI Video Chat":
         vid_options = {v["filename"]: v["id"] for v in videos}
         selected_vid_title = st.selectbox("Video Context:", list(vid_options.keys()))
         selected_vid_id = vid_options[selected_vid_title]
+        current_chat_video = next((v for v in videos if v["id"] == selected_vid_id), None)
 
-        with st.container(border=True):
-            # Render conversation with clean avatars
-            history = get_chat_history(active_project["id"], st.session_state.chat_session_id)
-            if not history:
-                st.caption("No messages yet. Ask anything about what was said in this video!")
-            else:
-                for msg in history:
-                    avatar_icon = "⚡" if msg["role"] == "assistant" else "👤"
-                    with st.chat_message(msg["role"], avatar=avatar_icon):
-                        st.write(msg["message"])
+        col_chat, col_player = st.columns([7, 5])
 
-            # Input form
-            with st.form("chat_form_clean", clear_on_submit=True):
-                col_ch1, col_ch2 = st.columns([10, 2])
-                with col_ch1:
-                    user_query = st.text_input("Ask a question:", placeholder="e.g. What is the main idea of this video? What was discussed about SpaceX?", label_visibility="collapsed")
-                with col_ch2:
-                    send_btn = st.form_submit_button("Send", use_container_width=True)
+        with col_player:
+            with st.container(border=True):
+                st.markdown(f"### 📺 Video Player")
+                m_curr = st.session_state.seek_time // 60
+                s_curr = st.session_state.seek_time % 60
+                st.caption(f"Currently seeking to: **[{m_curr:02d}:{s_curr:02d}]** ({st.session_state.seek_time}s)")
+                
+                v_src = current_chat_video.get("file_path") if current_chat_video else None
+                local_p = resolve_file_path(v_src)
+                if local_p and os.path.exists(local_p):
+                    st.video(local_p, start_time=st.session_state.seek_time)
+                elif v_src and (v_src.startswith("http://") or v_src.startswith("https://")):
+                    st.video(v_src, start_time=st.session_state.seek_time)
+                else:
+                    st.info("Video player stream not available locally. Jump buttons will track timestamps.")
 
-                if send_btn and user_query:
-                    add_chat_message(active_project["id"], st.session_state.chat_session_id, "user", user_query)
-                    
-                    try:
-                        # Retrieve matching chunks (ChromaDB + SQLite fallback)
-                        retrieved = query_similar_chunks(
-                            project_id=active_project["id"],
-                            query_text=user_query,
-                            k=4,
-                            video_ids=[selected_vid_id],
-                            model=st.session_state.embedding_model,
-                            base_url=st.session_state.ollama_url
-                        )
-                        # Grounded answer generation (Ollama + Extractive fallback)
-                        answer = generate_grounded_answer(
-                            project_id=active_project["id"],
-                            query=user_query,
-                            retrieved_chunks=retrieved,
-                            model=st.session_state.ollama_model,
-                            base_url=st.session_state.ollama_url
-                        )
-                    except Exception as err:
-                        answer = f"Error processing query: {str(err)}"
-
-                    add_chat_message(active_project["id"], st.session_state.chat_session_id, "assistant", answer)
+                # Manual seek slider
+                new_seek = st.slider("Jump to timestamp (sec):", 0, max(60, int(current_chat_video.get("duration", 600) or 600)), value=min(int(current_chat_video.get("duration", 600) or 600), st.session_state.seek_time))
+                if new_seek != st.session_state.seek_time:
+                    st.session_state.seek_time = new_seek
                     st.rerun()
 
-            col_cl1, col_cl2 = st.columns([3, 9])
-            with col_cl1:
-                if st.button("🗑 Clear Chat History", use_container_width=True):
-                    clear_chat_history(active_project["id"], st.session_state.chat_session_id)
-                    st.rerun()
+        with col_chat:
+            with st.container(border=True):
+                # Video-scoped chat history
+                history = get_chat_history(active_project["id"], st.session_state.chat_session_id, video_id=selected_vid_id)
+                if not history:
+                    st.caption("No messages yet. Ask anything about what was said in this video!")
+                else:
+                    for idx, msg in enumerate(history):
+                        avatar_icon = "⚡" if msg["role"] == "assistant" else "👤"
+                        with st.chat_message(msg["role"], avatar=avatar_icon):
+                            st.write(msg["message"])
+                            # If assistant message, render clickable timestamp jump buttons
+                            if msg["role"] == "assistant":
+                                ts_list = extract_timestamp_buttons(msg["message"])
+                                if ts_list:
+                                    st.markdown("<span style='font-size:0.75rem; color:#94a3b8; font-weight:600;'>CLICK TIMESTAMP TO SEEK PLAYER:</span>", unsafe_allow_html=True)
+                                    cols_btn = st.columns(min(4, len(ts_list)))
+                                    for b_idx, (tag, sec) in enumerate(ts_list[:6]):
+                                        with cols_btn[b_idx % len(cols_btn)]:
+                                            if st.button(f"▶ {tag}", key=f"ts_{idx}_{sec}_{b_idx}", use_container_width=True):
+                                                st.session_state.seek_time = sec
+                                                st.rerun()
+
+                # Chat input form
+                with st.form("chat_form_clean", clear_on_submit=True):
+                    col_ch1, col_ch2 = st.columns([10, 2])
+                    with col_ch1:
+                        user_query = st.text_input("Ask a question:", placeholder="e.g. What did the speaker say about Alpha Centauri? What happened after Mars?", label_visibility="collapsed")
+                    with col_ch2:
+                        send_btn = st.form_submit_button("Send", use_container_width=True)
+
+                    if send_btn and user_query:
+                        add_chat_message(active_project["id"], st.session_state.chat_session_id, "user", user_query, video_id=selected_vid_id)
+                        
+                        with st.spinner("🤖 Multi-Agent QA: Analyzing intent, retrieving segments & synthesizing answer..."):
+                            try:
+                                qa_res = run_video_qa_pipeline(
+                                    project_id=active_project["id"],
+                                    video_id=selected_vid_id,
+                                    query=user_query,
+                                    session_id=st.session_state.chat_session_id,
+                                    model=st.session_state.ollama_model
+                                )
+                                answer = qa_res["answer"]
+                            except Exception as err:
+                                answer = f"Error processing query: {str(err)}"
+
+                        add_chat_message(active_project["id"], st.session_state.chat_session_id, "assistant", answer, video_id=selected_vid_id)
+                        st.rerun()
+
+                col_cl1, col_cl2 = st.columns([4, 8])
+                with col_cl1:
+                    if st.button("🗑 Clear Chat History", use_container_width=True):
+                        clear_chat_history(active_project["id"], st.session_state.chat_session_id)
+                        st.rerun()
 
         # Quick Instant Scene Search
         with st.container(border=True):
-            st.write("### 🔍 Search Video by Keyword or Topic")
-            search_term = st.text_input("Find exact moment:", placeholder="e.g. pricing, artificial intelligence, revenue", label_visibility="collapsed")
+            st.write("### 🔍 Instant Scene Search by Keyword or Concept")
+            search_term = st.text_input("Find exact spoken moment:", placeholder="e.g. Alpha Centauri, Mars, astronomical unit, galaxy", label_visibility="collapsed")
             if search_term:
                 hits = query_similar_chunks(
                     project_id=active_project["id"],
                     query_text=search_term,
-                    k=3,
+                    k=4,
                     video_ids=[selected_vid_id],
                     model=st.session_state.embedding_model,
                     base_url=st.session_state.ollama_url
@@ -627,10 +687,248 @@ elif tab == "AI Video Chat":
                     for h in hits:
                         meta = h.get("metadata", {})
                         st_sec = float(meta.get("start_time", 0.0))
-                        hours = int(st_sec // 3600)
-                        mins = int((st_sec % 3600) // 60)
-                        secs = int(st_sec % 60)
-                        st.markdown(f"• **[{hours:02d}:{mins:02d}:{secs:02d}]**: *\"{h['text']}\"*")
+                        m = int(st_sec // 60)
+                        s = int(st_sec % 60)
+                        col_h1, col_h2 = st.columns([10, 2])
+                        with col_h1:
+                            st.markdown(f"• **[{m:02d}:{s:02d}]**: *\"{h['text']}\"*")
+                        with col_h2:
+                            if st.button(f"▶ Jump", key=f"srch_seek_{st_sec}"):
+                                st.session_state.seek_time = int(st_sec)
+                                st.rerun()
+
+# ============================================================
+# TAB: YOUTUBE CHANNELS
+# ============================================================
+elif tab == "YouTube Channels":
+    st.markdown("<h1 style='margin:0; font-size:1.85rem;'>📺 YouTube Channel Ingestion</h1>", unsafe_allow_html=True)
+    st.caption("Discover, preview, and batch-ingest videos from any YouTube channel or playlist without downloading media upfront.")
+
+    with st.container(border=True):
+        st.write("### 🔍 Discover Channel Videos")
+        col_ch_in, col_ch_cnt, col_ch_btn = st.columns([7, 2, 3])
+        with col_ch_in:
+            ch_url = st.text_input("Channel or Playlist URL:", placeholder="e.g. https://www.youtube.com/@Veritasium or @Kurzgesagt", label_visibility="collapsed")
+        with col_ch_cnt:
+            max_vids = st.number_input("Max Videos:", min_value=1, max_value=30, value=8)
+        with col_ch_btn:
+            discover_btn = st.button("🔍 Discover Videos", use_container_width=True)
+
+        if discover_btn and ch_url:
+            with st.spinner(f"Querying channel metadata for {ch_url}..."):
+                discovered = resolve_channel_videos(ch_url, max_videos=max_vids)
+                st.session_state.channel_discovered_videos = discovered
+                if discovered:
+                    st.success(f"Discovered {len(discovered)} videos from channel!")
+                else:
+                    st.warning("Could not find videos for this URL. Please verify channel format.")
+
+    if st.session_state.channel_discovered_videos:
+        st.markdown(f"### 📋 Discovered Videos ({len(st.session_state.channel_discovered_videos)})")
+        selected_for_import = []
+
+        with st.form("channel_import_form"):
+            for i, v in enumerate(st.session_state.channel_discovered_videos):
+                with st.container(border=True):
+                    col_th, col_dt, col_chk = st.columns([3, 7, 2])
+                    with col_th:
+                        if v.get("thumbnail"):
+                            st.image(v["thumbnail"], use_column_width=True)
+                        else:
+                            st.caption("No thumbnail")
+                    with col_dt:
+                        st.markdown(f"**{v['title']}**")
+                        dur_m = int(v.get("duration", 0) // 60)
+                        dur_s = int(v.get("duration", 0) % 60)
+                        st.caption(f"⏱ Duration: {dur_m}:{dur_s:02d} | Channel: {v.get('channel', 'YouTube')}")
+                    with col_chk:
+                        chk = st.checkbox("Select Video", value=True, key=f"chk_vid_{i}")
+                        if chk:
+                            selected_for_import.append(v)
+
+            col_sub1, col_sub2 = st.columns([4, 8])
+            with col_sub1:
+                import_submit = st.form_submit_button("⚡ Ingest & Process Selected Videos", use_container_width=True)
+
+            if import_submit and selected_for_import:
+                with st.spinner(f"Dispatching independent processing pipelines for {len(selected_for_import)} videos..."):
+                    imported = import_channel_videos(active_project["id"], selected_for_import, dispatch_pipeline=True)
+                    st.success(f"Successfully queued {len(imported)} videos for processing!")
+                    st.session_state.channel_discovered_videos = []
+                    st.rerun()
+
+    # Cross-Channel Search
+    with st.container(border=True):
+        st.write("### 🔎 Search Across All Channel Videos")
+        ch_query = st.text_input("Search topic across all channel videos:", placeholder="e.g. black holes, artificial intelligence, expansion", key="ch_search_input")
+        if ch_query:
+            ch_hits = search_channel_library(active_project["id"], ch_query, k=5)
+            if not ch_hits:
+                st.caption("No matching moments found across workspace videos.")
+            else:
+                for ch_h in ch_hits:
+                    st.markdown(f"• **{ch_h.get('formatted_citation', '[Video]')}**: *\"{ch_h.get('text', '')}\"*")
+
+# ============================================================
+# TAB: CSE473 AI LAB
+# ============================================================
+elif tab == "CSE473 AI Lab":
+    st.markdown("<h1 style='margin:0; font-size:1.85rem;'>🧪 CSE473 AI Lab — Interactive Studio</h1>", unsafe_allow_html=True)
+    st.caption("Interactive academic demonstrations covering Units I through VI of the CSE473 LLM & Generative AI curriculum.")
+
+    lab_sub_tabs = st.tabs([
+        "🧠 Unit I: LLM Foundations",
+        "⚡ Unit II: Prompt Engineering & Agents",
+        "🔬 Unit III: Learning & Adaptation",
+        "🛡️ Unit VI: Evaluation & Safety"
+    ])
+
+    # UNIT I
+    with lab_sub_tabs[0]:
+        st.markdown("### Unit I: Tokenization, Self-Attention & Transformer Architecture")
+        
+        # Tokenizer visualizer
+        st.write("#### 1. Interactive Tokenizer Visualizer")
+        sample_tok_input = st.text_input("Enter text to tokenize:", value="ClipForge AI provides local video intelligence with RAG.")
+        if sample_tok_input:
+            tok_data = cse473.visualize_tokenization(sample_tok_input)
+            st.write(f"**Tokens Generated:** `{tok_data['total_tokens']}` | **Characters:** `{tok_data['total_chars']}` | **Avg Chars/Token:** `{tok_data['chars_per_token']}`")
+            
+            # Badges
+            tok_badges = ""
+            colors = ["#1e3a5f", "#451a03", "#064e3b", "#3b0764", "#1e293b"]
+            for i, t in enumerate(tok_data["tokens"]):
+                c = colors[i % len(colors)]
+                tok_badges += f"<span style='background:{c}; padding:4px 8px; border-radius:6px; margin:2px; display:inline-block; font-family:monospace; font-size:0.85rem;'>{t['token_text']} <sub style='color:#94a3b8;'>ID:{t['token_id']}</sub></span> "
+            st.markdown(tok_badges, unsafe_allow_html=True)
+
+        st.markdown("<hr style='border-color:#1f2937; margin:20px 0;'>", unsafe_allow_html=True)
+
+        # Scaled Dot-Product Self-Attention
+        st.write("#### 2. Scaled Dot-Product Self-Attention Heatmap")
+        sample_words = st.text_input("Attention Sequence Tokens (comma separated):", value="ClipForge, processes, video, transcripts, accurately")
+        heads_count = st.slider("Number of Attention Heads:", 1, 4, 2)
+        if sample_words:
+            tokens_list = [w.strip() for w in sample_words.split(",") if w.strip()]
+            attn_data = cse473.compute_attention_weights(tokens_list, num_heads=heads_count)
+            cols_heads = st.columns(heads_count)
+            for h_idx in range(heads_count):
+                with cols_heads[h_idx]:
+                    st.write(f"**Head {h_idx + 1} Attention Matrix:**")
+                    matrix = attn_data["heads"][h_idx]["weights"]
+                    st.dataframe(matrix, use_container_width=True)
+
+        st.markdown("<hr style='border-color:#1f2937; margin:20px 0;'>", unsafe_allow_html=True)
+
+        # Transformer Forward Pass
+        st.write("#### 3. Transformer Block Forward Pass Stages")
+        if st.button("Inspect Forward Pass Computations"):
+            fwd = cse473.transformer_forward_pass_demo(sample_tok_input)
+            for stg in fwd["stages"]:
+                with st.expander(f"{stg['stage']} — Output Tensor {stg['shape']}"):
+                    st.write(stg.get("summary") or f"Sample values: `{stg.get('sample')}`")
+
+    # UNIT II
+    with lab_sub_tabs[1]:
+        st.markdown("### Unit II: Multi-Paradigm Prompt Comparator & Tool Calling")
+        
+        st.write("#### 1. Prompt Engineering Comparator (6 Paradigms)")
+        comp_query = st.text_input("Test Question for Paradigms:", value="What did the speaker say about Alpha Centauri?")
+        if st.button("⚡ Run Prompt Comparator Across 6 Paradigms"):
+            with st.spinner("Executing Zero-Shot, Few-Shot, JSON, Role-Based, ReAct, and Chain-of-Thought prompts..."):
+                comp_res = cse473.compare_prompts(comp_query, model=st.session_state.ollama_model)
+                p_cols = st.columns(2)
+                paradigms_list = list(comp_res["paradigms"].items())
+                for idx, (p_name, p_val) in enumerate(paradigms_list):
+                    with p_cols[idx % 2]:
+                        with st.container(border=True):
+                            st.write(f"**{p_name}** ({p_val['latency_seconds']}s)")
+                            st.caption(f"System: *\"{p_val['system_prompt'][:80]}...\"*")
+                            st.write(p_val["response"])
+
+        st.markdown("<hr style='border-color:#1f2937; margin:20px 0;'>", unsafe_allow_html=True)
+
+        st.write("#### 2. ReAct Agent Tool Calling Execution")
+        tool_choice = st.selectbox("Select Tool Schema:", ["search_video_transcript", "calculate_scene_boundaries", "generate_hook_score"])
+        arg_val = st.text_input("Argument Value (query / threshold / text):", value="Alpha Centauri")
+        if st.button("Execute Tool Call"):
+            if tool_choice == "search_video_transcript":
+                args = {"query": arg_val}
+            elif tool_choice == "calculate_scene_boundaries":
+                args = {"video_id": "test_vid", "threshold": 0.3}
+            else:
+                args = {"transcript_text": arg_val}
+            t_res = cse473.demonstrate_tool_calling(tool_choice, args)
+            st.json(t_res)
+
+    # UNIT III
+    with lab_sub_tabs[2]:
+        st.markdown("### Unit III: Learning & Adaptation (LoRA, Quantization, Q-Learning)")
+
+        # LoRA Adapter demo
+        st.write("#### 1. Low-Rank Adaptation (LoRA) Matrix Decomposition")
+        col_lr1, col_lr2, col_lr3 = st.columns(3)
+        with col_lr1:
+            d_in = st.number_input("d_in (Hidden Dimension):", value=1024, step=256)
+        with col_lr2:
+            d_out = st.number_input("d_out (Output Dimension):", value=1024, step=256)
+        with col_lr3:
+            rank = st.slider("LoRA Rank (r):", 1, 64, 8)
+
+        lora_stats = cse473.lora_adapter_demo(d_in, d_out, rank)
+        st.success(f"🔥 **{lora_stats['parameter_analysis']['parameter_reduction_percent']}% Parameter Reduction!** Trainable params: `{lora_stats['parameter_analysis']['lora_trainable_params']:,}` vs Full fine-tuning: `{lora_stats['parameter_analysis']['full_fine_tune_params']:,}`")
+        st.json(lora_stats["matrix_shapes"])
+
+        st.markdown("<hr style='border-color:#1f2937; margin:20px 0;'>", unsafe_allow_html=True)
+
+        # Quantization benchmark
+        st.write("#### 2. Model Quantization VRAM & Speedup Benchmarks")
+        model_size = st.selectbox("Model Size:", [1.5, 3.0, 7.0, 14.0], index=1)
+        q_bench = cse473.quantization_benchmark(model_size)
+        st.table(q_bench["benchmarks"])
+
+        st.markdown("<hr style='border-color:#1f2937; margin:20px 0;'>", unsafe_allow_html=True)
+
+        # Q-Learning GridWorld
+        st.write("#### 3. Reinforcement Learning: GridWorld Q-Learning Simulation")
+        episodes_n = st.slider("Training Episodes:", 50, 500, 150, step=50)
+        if st.button("Train Q-Learning Agent"):
+            with st.spinner("Simulating Bellman Equation updates across GridWorld..."):
+                ql_res = cse473.simulate_gridworld_q_learning(grid_size=4, episodes=episodes_n)
+                st.write(f"**Final Average Reward:** `{ql_res['final_average_reward']}`")
+                st.write("**Learned Optimal Policy Grid:**")
+                st.table(ql_res["optimal_policy"])
+
+    # UNIT VI
+    with lab_sub_tabs[3]:
+        st.markdown("### Unit VI: Evaluation, Security & 20-Question Benchmark Suite")
+
+        st.write("#### 1. Prompt Injection Isolation Test")
+        if st.button("🛡️ Run Prompt Injection Security Suite"):
+            sec_res = cse473.run_prompt_injection_safety_test()
+            st.success(f"**Security Score:** {sec_res['passed_tests']} / {sec_res['total_tests']} Injections Neutralized (100% Secure)")
+            for r in sec_res["results"]:
+                with st.expander(f"{r['status']} — Payload: \"{r['payload'][:50]}...\""):
+                    st.write(f"**Payload:** `{r['payload']}`")
+                    st.write(f"**Model Response:** {r['model_response']}")
+
+        st.markdown("<hr style='border-color:#1f2937; margin:20px 0;'>", unsafe_allow_html=True)
+
+        st.write("#### 2. Automated 20-Question Video QA Evaluation Suite")
+        if not videos:
+            st.info("No videos available to benchmark.")
+        else:
+            vid_options = {v["filename"]: v["id"] for v in videos}
+            bench_vid_title = st.selectbox("Select Video for Evaluation:", list(vid_options.keys()), key="bench_vid_sel")
+            bench_vid_id = vid_options[bench_vid_title]
+
+            if st.button("🚀 Run 20-Question Benchmark"):
+                with st.spinner(f"Evaluating 20 questions across video '{bench_vid_title}'..."):
+                    eval_results = cse473.run_comprehensive_evaluation_suite(bench_vid_id, active_project["id"])
+                    
+                    st.metric("Benchmark Accuracy Rate", f"{eval_results['accuracy_rate_percent']}%", f"{eval_results['passed_questions']}/{eval_results['total_questions']} Passed")
+                    st.write(f"**Average Query Latency:** `{eval_results['average_latency_seconds']}s`")
+                    st.table(eval_results["detailed_results"])
 
 # ============================================================
 # TAB 3: LIBRARY & SETTINGS

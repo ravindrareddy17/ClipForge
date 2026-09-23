@@ -22,6 +22,9 @@ from clipforge_engine.services.video import render_clip, get_crop_coordinates
 from clipforge_engine.services.subtitles import generate_ass_file
 from clipforge_engine.services.ai import generate_titles, generate_metadata, generate_hooks
 from clipforge_engine.rag import query_similar_chunks, generate_grounded_answer
+from clipforge_engine.video_qa_agents import run_video_qa_pipeline
+from clipforge_engine.channel import resolve_channel_videos, import_channel_videos, search_channel_library
+import clipforge_engine.cse473_lab as cse473
 
 app = FastAPI(title="ClipForge AI API")
 
@@ -451,49 +454,168 @@ def api_chat(req: ChatRequest):
     if not req.query.strip():
         raise HTTPException(status_code=400, detail="Query cannot be empty")
     
-    add_chat_message(req.project_id, req.session_id, "user", req.query)
+    add_chat_message(req.project_id, req.session_id, "user", req.query, video_id=req.video_id)
     
     settings = get_settings()
-    ollama_url = settings.get("ollama_url", "http://localhost:11434")
     ollama_model = settings.get("ollama_model", "qwen2.5:3b")
-    embed_model = settings.get("embedding_model", "nomic-embed-text")
     
-    video_ids = [req.video_id] if req.video_id else None
     try:
-        retrieved = query_similar_chunks(
-            project_id=req.project_id,
-            query_text=req.query,
-            k=4,
-            video_ids=video_ids,
-            model=embed_model,
-            base_url=ollama_url
-        )
-        answer = generate_grounded_answer(
-            project_id=req.project_id,
-            query=req.query,
-            retrieved_chunks=retrieved,
-            model=ollama_model,
-            base_url=ollama_url
-        )
+        if req.video_id:
+            qa_res = run_video_qa_pipeline(
+                project_id=req.project_id,
+                video_id=req.video_id,
+                query=req.query,
+                session_id=req.session_id,
+                model=ollama_model
+            )
+            answer = qa_res["answer"]
+            retrieved = qa_res["retrieved_chunks"]
+            citations = qa_res.get("citations", [])
+            confidence = qa_res.get("confidence", 1.0)
+        else:
+            # Fallback across project videos
+            from clipforge_engine.rag import hybrid_retrieve_chunks, generate_grounded_answer
+            all_vids = get_videos(req.project_id)
+            if all_vids:
+                retrieved = hybrid_retrieve_chunks(req.project_id, all_vids[0]["id"], req.query, k=4)
+                answer = generate_grounded_answer(req.project_id, req.query, retrieved, model=ollama_model)
+                citations = []
+                confidence = 0.8
+            else:
+                answer = "No videos available in this workspace to search."
+                retrieved = []
+                citations = []
+                confidence = 0.0
     except Exception as err:
-        print(f"Chat RAG error: {err}")
+        print(f"Chat Multi-Agent RAG error: {err}")
         answer = f"I encountered an issue querying the video knowledge base: {str(err)}"
         retrieved = []
+        citations = []
+        confidence = 0.0
         
-    add_chat_message(req.project_id, req.session_id, "assistant", answer)
+    add_chat_message(req.project_id, req.session_id, "assistant", answer, video_id=req.video_id)
     return {
         "answer": answer,
-        "retrieved_chunks": retrieved
+        "retrieved_chunks": retrieved,
+        "citations": citations,
+        "confidence": confidence
     }
 
 @app.get("/api/chat/history")
-def api_chat_history(project_id: str, session_id: Optional[str] = "default"):
-    return get_chat_history(project_id, session_id)
+def api_chat_history(project_id: str, session_id: Optional[str] = "default", video_id: Optional[str] = None):
+    return get_chat_history(project_id, session_id, video_id=video_id)
 
 @app.delete("/api/chat/history")
 def api_clear_chat_history(project_id: str, session_id: Optional[str] = "default"):
     clear_chat_history(project_id, session_id)
     return {"status": "cleared"}
+
+# --- YouTube Channel Endpoints ---
+class ChannelResolveRequest(BaseModel):
+    url: str
+    max_videos: Optional[int] = 10
+
+class ChannelImportRequest(BaseModel):
+    project_id: str
+    videos: List[Dict[str, Any]]
+
+class ChannelSearchRequest(BaseModel):
+    project_id: str
+    query: str
+    video_ids: Optional[List[str]] = None
+    k: Optional[int] = 6
+
+@app.post("/api/channels/resolve")
+def api_resolve_channel(req: ChannelResolveRequest):
+    if not req.url.strip():
+        raise HTTPException(status_code=400, detail="Channel URL is required")
+    vids = resolve_channel_videos(req.url, max_videos=req.max_videos or 10)
+    return {"videos": vids, "count": len(vids)}
+
+@app.post("/api/channels/import")
+def api_import_channel(req: ChannelImportRequest):
+    if not req.videos:
+        raise HTTPException(status_code=400, detail="No videos selected for import")
+    res = import_channel_videos(req.project_id, req.videos, dispatch_pipeline=True)
+    return {"imported": res, "count": len(res)}
+
+@app.post("/api/channels/search")
+def api_search_channel(req: ChannelSearchRequest):
+    hits = search_channel_library(req.project_id, req.query, req.video_ids, k=req.k or 6)
+    return hits
+
+# --- CSE473 AI Lab Endpoints ---
+class TokenizeRequest(BaseModel):
+    text: str
+
+class AttentionRequest(BaseModel):
+    tokens: List[str]
+    num_heads: Optional[int] = 2
+
+class PromptCompareRequest(BaseModel):
+    query: str
+    context: Optional[str] = ""
+    model: Optional[str] = "qwen2.5:3b"
+
+class ToolCallRequest(BaseModel):
+    tool_name: str
+    arguments: Dict[str, Any]
+
+class LoRARequest(BaseModel):
+    d_in: Optional[int] = 1024
+    d_out: Optional[int] = 1024
+    rank: Optional[int] = 8
+
+class QuantizationRequest(BaseModel):
+    param_count_billions: Optional[float] = 3.0
+
+class GridWorldRequest(BaseModel):
+    grid_size: Optional[int] = 4
+    episodes: Optional[int] = 150
+
+class EvaluationRequest(BaseModel):
+    video_id: str
+    project_id: str
+
+@app.post("/api/cse473/tokenize")
+def api_cse473_tokenize(req: TokenizeRequest):
+    return cse473.visualize_tokenization(req.text)
+
+@app.post("/api/cse473/attention")
+def api_cse473_attention(req: AttentionRequest):
+    return cse473.compute_attention_weights(req.tokens, num_heads=req.num_heads or 2)
+
+@app.post("/api/cse473/transformer_forward")
+def api_cse473_transformer_forward(req: TokenizeRequest):
+    return cse473.transformer_forward_pass_demo(req.text)
+
+@app.post("/api/cse473/prompt_compare")
+def api_cse473_prompt_compare(req: PromptCompareRequest):
+    return cse473.compare_prompts(req.query, req.context or "", model=req.model or "qwen2.5:3b")
+
+@app.post("/api/cse473/tool_call")
+def api_cse473_tool_call(req: ToolCallRequest):
+    return cse473.demonstrate_tool_calling(req.tool_name, req.arguments)
+
+@app.post("/api/cse473/lora_demo")
+def api_cse473_lora_demo(req: LoRARequest):
+    return cse473.lora_adapter_demo(req.d_in or 1024, req.d_out or 1024, req.rank or 8)
+
+@app.post("/api/cse473/quantization_benchmark")
+def api_cse473_quantization_benchmark(req: QuantizationRequest):
+    return cse473.quantization_benchmark(req.param_count_billions or 3.0)
+
+@app.post("/api/cse473/gridworld_step")
+def api_cse473_gridworld_step(req: GridWorldRequest):
+    return cse473.simulate_gridworld_q_learning(req.grid_size or 4, req.episodes or 150)
+
+@app.post("/api/cse473/prompt_injection_test")
+def api_cse473_prompt_injection_test():
+    return cse473.run_prompt_injection_safety_test()
+
+@app.post("/api/cse473/evaluate_qa")
+def api_cse473_evaluate_qa(req: EvaluationRequest):
+    return cse473.run_comprehensive_evaluation_suite(req.video_id, req.project_id)
 
 # Settings
 @app.get("/api/settings")

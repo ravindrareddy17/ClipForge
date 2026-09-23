@@ -120,6 +120,8 @@ def transcribe_audio(audio_path, duration=0.0):
         return segments
         
     except Exception as e:
-        print(f"Whisper transcription failed or not installed: {e}")
-        print("Falling back to generating mock transcription segments.")
-        return generate_mock_transcript(duration)
+        print(f"Whisper transcription failed or error: {e}")
+        if os.environ.get("ENABLE_MOCK_DEMO", "0") == "1":
+            print("ENABLE_MOCK_DEMO flag active: generating sandbox mock transcript.")
+            return generate_mock_transcript(duration)
+        raise e

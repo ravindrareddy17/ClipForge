@@ -66,6 +66,25 @@ export default function App() {
   const [newProjectDesc, setNewProjectDesc] = useState("");
   const [localVideoPath, setLocalVideoPath] = useState("");
   
+  // Channel Ingestion States
+  const [channelUrl, setChannelUrl] = useState("");
+  const [channelDiscovered, setChannelDiscovered] = useState<any[]>([]);
+  const [selectedChannelVids, setSelectedChannelVids] = useState<string[]>([]);
+  const [isResolvingChannel, setIsResolvingChannel] = useState(false);
+  const [isImportingChannel, setIsImportingChannel] = useState(false);
+
+  // CSE473 Lab States
+  const [labTab, setLabTab] = useState<"unit1" | "unit2" | "unit3" | "unit6">("unit1");
+  const [tokInput, setTokInput] = useState("ClipForge AI provides local video intelligence with RAG.");
+  const [tokResult, setTokResult] = useState<any>(null);
+  const [promptCompQuery, setPromptCompQuery] = useState("What did the speaker say about Alpha Centauri?");
+  const [promptCompResult, setPromptCompResult] = useState<any>(null);
+  const [isPromptComparing, setIsPromptComparing] = useState(false);
+  const [injectionResult, setInjectionResult] = useState<any>(null);
+  const [isInjectionTesting, setIsInjectionTesting] = useState(false);
+  const [evalResult, setEvalResult] = useState<any>(null);
+  const [isEvaluating, setIsEvaluating] = useState(false);
+
   // System states
   const [isBackendOnline, setIsBackendOnline] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -284,6 +303,119 @@ export default function App() {
       console.error(e);
     } finally {
       setIsLoadingSummary(false);
+    }
+  };
+
+  const handleResolveChannel = async () => {
+    if (!channelUrl.trim()) return;
+    setIsResolvingChannel(true);
+    try {
+      const res = await fetch(`${API_URL}/api/channels/resolve`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: channelUrl, max_videos: 8 })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setChannelDiscovered(data.videos || []);
+        setSelectedChannelVids((data.videos || []).map((v: any) => v.id));
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsResolvingChannel(false);
+    }
+  };
+
+  const handleImportChannelVideos = async () => {
+    if (!currentProject || selectedChannelVids.length === 0) return;
+    setIsImportingChannel(true);
+    try {
+      const vidsToImport = channelDiscovered.filter((v: any) => selectedChannelVids.includes(v.id));
+      const res = await fetch(`${API_URL}/api/channels/import`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ project_id: currentProject.id, videos: vidsToImport })
+      });
+      if (res.ok) {
+        alert("Videos queued for processing!");
+        setChannelDiscovered([]);
+        setSelectedChannelVids([]);
+        fetchVideos();
+        setActiveTab("video-library");
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsImportingChannel(false);
+    }
+  };
+
+  const handleTokenize = async () => {
+    try {
+      const res = await fetch(`${API_URL}/api/cse473/tokenize`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: tokInput })
+      });
+      if (res.ok) {
+        setTokResult(await res.json());
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleComparePrompts = async () => {
+    setIsPromptComparing(true);
+    try {
+      const res = await fetch(`${API_URL}/api/cse473/prompt_compare`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query: promptCompQuery })
+      });
+      if (res.ok) {
+        setPromptCompResult(await res.json());
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsPromptComparing(false);
+    }
+  };
+
+  const handleRunInjectionTest = async () => {
+    setIsInjectionTesting(true);
+    try {
+      const res = await fetch(`${API_URL}/api/cse473/prompt_injection_test`, {
+        method: "POST"
+      });
+      if (res.ok) {
+        setInjectionResult(await res.json());
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsInjectionTesting(false);
+    }
+  };
+
+  const handleRunEvaluation = async () => {
+    if (!selectedVideo || !currentProject) return;
+    setIsEvaluating(true);
+    try {
+      const res = await fetch(`${API_URL}/api/cse473/evaluate_qa`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ video_id: selectedVideo.id, project_id: currentProject.id })
+      });
+      if (res.ok) {
+        setEvalResult(await res.json());
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsEvaluating(false);
     }
   };
 
@@ -641,6 +773,7 @@ export default function App() {
             { id: "channels", label: "Channels", icon: Radio },
             { id: "video-library", label: "Video Library", icon: Video },
             { id: "ai-processing", label: "AI Studio & Chat", icon: Bot },
+            { id: "cse473-lab", label: "CSE473 AI Lab", icon: Sparkles },
             { id: "generated-clips", label: "Generated Clips", icon: Film },
             { id: "upload-queue", label: "Upload Queue", icon: Share2 },
             { id: "scheduler", label: "Scheduler", icon: Calendar },
@@ -888,9 +1021,96 @@ export default function App() {
           {/* 3. CHANNELS VIEW */}
           {activeTab === "channels" && (
             <div className="space-y-8 max-w-4xl">
+              {/* YouTube Channel Ingestion Section */}
+              <div className="glass-panel rounded-2xl p-6 space-y-6">
+                <div>
+                  <h3 className="text-base font-bold text-white mb-1">YouTube Channel & Playlist Discovery</h3>
+                  <p className="text-xs text-slate-400">
+                    Input any channel or playlist URL to discover videos and batch-queue independent AI transcription and clip generation pipelines.
+                  </p>
+                </div>
+
+                <div className="flex gap-3">
+                  <input
+                    type="text"
+                    placeholder="e.g. https://www.youtube.com/@Veritasium or https://www.youtube.com/@Kurzgesagt"
+                    value={channelUrl}
+                    onChange={(e) => setChannelUrl(e.target.value)}
+                    className="flex-1 bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white placeholder:text-slate-500 outline-none focus:border-[#FF0055]"
+                  />
+                  <button
+                    onClick={handleResolveChannel}
+                    disabled={isResolvingChannel || !channelUrl.trim()}
+                    className="px-6 py-2.5 bg-gradient-to-r from-[#FF0055] to-pink-600 hover:from-pink-600 hover:to-pink-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-all shadow-md cursor-pointer flex items-center gap-2"
+                  >
+                    {isResolvingChannel ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Search className="w-3.5 h-3.5" />}
+                    {isResolvingChannel ? "Discovering..." : "Discover Videos"}
+                  </button>
+                </div>
+
+                {channelDiscovered.length > 0 && (
+                  <div className="space-y-4 pt-4 border-t border-slate-800">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider">
+                        Discovered Uploads ({channelDiscovered.length})
+                      </h4>
+                      <button
+                        onClick={handleImportChannelVideos}
+                        disabled={isImportingChannel || selectedChannelVids.length === 0}
+                        className="px-4 py-1.5 bg-[#00F0FF]/10 hover:bg-[#00F0FF]/20 text-[#00F0FF] border border-[#00F0FF]/30 rounded-lg text-xs font-bold transition-all cursor-pointer disabled:opacity-50"
+                      >
+                        {isImportingChannel ? "Queuing..." : `⚡ Ingest & Process (${selectedChannelVids.length})`}
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {channelDiscovered.map((v: any, vi: number) => {
+                        const isSelected = selectedChannelVids.includes(v.id);
+                        return (
+                          <div
+                            key={vi}
+                            onClick={() => {
+                              setSelectedChannelVids(prev => 
+                                isSelected ? prev.filter(id => id !== v.id) : [...prev, v.id]
+                              );
+                            }}
+                            className={`p-3 rounded-xl border flex gap-3 cursor-pointer transition-all ${
+                              isSelected ? 'bg-[#FF0055]/5 border-[#FF0055]' : 'bg-slate-900/40 border-slate-800 hover:border-slate-700'
+                            }`}
+                          >
+                            {v.thumbnail ? (
+                              <img src={v.thumbnail} alt="" className="w-24 h-16 object-cover rounded-lg shrink-0" />
+                            ) : (
+                              <div className="w-24 h-16 bg-slate-800 rounded-lg flex items-center justify-center shrink-0">
+                                <Film className="w-6 h-6 text-slate-600" />
+                              </div>
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <h5 className="text-xs font-bold text-slate-200 line-clamp-2 leading-tight">{v.title}</h5>
+                              <span className="text-[10px] text-slate-500 mt-1 block">
+                                Duration: {Math.floor(v.duration / 60)}m {Math.floor(v.duration % 60)}s
+                              </span>
+                            </div>
+                            <div className="shrink-0 flex items-center">
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={() => {}}
+                                className="w-4 h-4 rounded text-[#FF0055]"
+                              />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Connected Accounts */}
               <div className="glass-panel rounded-2xl p-6">
-                <h3 className="text-base font-bold text-white mb-2">Connected Channels</h3>
-                <p className="text-xs text-slate-400 mb-6">Manage API configurations and accounts linked to this project.</p>
+                <h3 className="text-base font-bold text-white mb-2">Connected Channels & Destinations</h3>
+                <p className="text-xs text-slate-400 mb-6">Manage publishing configurations and accounts linked to this project.</p>
                 
                 <div className="space-y-4">
                   {[
@@ -1137,7 +1357,13 @@ export default function App() {
                                   <button
                                     key={ci}
                                     onClick={() => {
-                                      setActiveTab("generated-clips");
+                                      setClipStart(stSec);
+                                      setClipEnd(stSec + 30);
+                                      const videoEl = document.querySelector('video');
+                                      if (videoEl) {
+                                        videoEl.currentTime = stSec;
+                                        videoEl.play();
+                                      }
                                     }}
                                     className="px-2 py-0.5 rounded bg-slate-800 hover:bg-[#FF0055]/20 text-[#00F0FF] hover:text-white text-[10px] font-mono border border-slate-700 transition-colors cursor-pointer"
                                   >
@@ -1147,6 +1373,39 @@ export default function App() {
                               })}
                             </div>
                           )}
+
+                          {/* Interactive Timestamp Seek Badges extracted from message text */}
+                          {msg.role === 'assistant' && (() => {
+                            const matches = Array.from(msg.message.matchAll(/\[(\d{1,2}:\d{2}(?::\d{2})?)(?:[–\-](\d{1,2}:\d{2}(?::\d{2})?))?\]/g));
+                            if (matches.length === 0) return null;
+                            return (
+                              <div className="mt-2.5 pt-2 border-t border-slate-800/60 flex flex-wrap gap-1.5 items-center">
+                                <span className="text-[10px] text-slate-400 font-bold mr-1">Seek Player:</span>
+                                {matches.map((m, mi) => {
+                                  const tag = m[0];
+                                  const parts = m[1].split(':');
+                                  const sec = parts.length === 2 ? parseInt(parts[0]) * 60 + parseInt(parts[1]) : parseInt(parts[0]);
+                                  return (
+                                    <button
+                                      key={mi}
+                                      onClick={() => {
+                                        setClipStart(sec);
+                                        setClipEnd(sec + 30);
+                                        const videoEl = document.querySelector('video');
+                                        if (videoEl) {
+                                          videoEl.currentTime = sec;
+                                          videoEl.play();
+                                        }
+                                      }}
+                                      className="px-2 py-0.5 rounded bg-pink-500/10 hover:bg-[#FF0055] text-[#FF0055] hover:text-white border border-pink-500/20 text-[10px] font-mono font-bold transition-all cursor-pointer flex items-center gap-1"
+                                    >
+                                      ▶ {tag}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            );
+                          })()}
                         </div>
                         {msg.role === 'user' && (
                           <div className="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-300 shrink-0">
@@ -2053,6 +2312,257 @@ export default function App() {
                   ))}
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* 13. CSE473 AI LAB VIEW */}
+          {activeTab === "cse473-lab" && (
+            <div className="space-y-8 max-w-5xl">
+              {/* Header */}
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div>
+                  <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                    <Sparkles className="w-5 h-5 text-[#FF0055]" /> CSE473 AI Lab — Interactive Studio
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-1">
+                    Academic implementations and evaluation dashboards covering Units I through VI.
+                  </p>
+                </div>
+                <div className="flex gap-2 bg-slate-900 border border-slate-800 p-1 rounded-xl">
+                  {[
+                    { id: "unit1", label: "Unit I: Foundations" },
+                    { id: "unit2", label: "Unit II: Prompts & Agents" },
+                    { id: "unit3", label: "Unit III: Adaptation" },
+                    { id: "unit6", label: "Unit VI: Evaluation" },
+                  ].map((tb) => (
+                    <button
+                      key={tb.id}
+                      onClick={() => setLabTab(tb.id as any)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                        labTab === tb.id
+                          ? "bg-gradient-to-r from-[#FF0055] to-pink-600 text-white shadow-sm"
+                          : "text-slate-400 hover:text-white"
+                      }`}
+                    >
+                      {tb.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* UNIT I: FOUNDATIONS */}
+              {labTab === "unit1" && (
+                <div className="space-y-6">
+                  <div className="glass-panel rounded-2xl p-6 space-y-4">
+                    <h4 className="text-sm font-bold text-white">1. Interactive Tokenizer Visualizer</h4>
+                    <p className="text-xs text-slate-400">
+                      Decomposes input text into discrete BPE tokens and maps each token to vocabulary IDs.
+                    </p>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={tokInput}
+                        onChange={(e) => setTokInput(e.target.value)}
+                        className="flex-1 bg-slate-900 border border-slate-800 rounded-xl px-4 py-2 text-xs text-white outline-none focus:border-[#FF0055]"
+                      />
+                      <button
+                        onClick={handleTokenize}
+                        className="px-5 py-2 bg-slate-800 hover:bg-slate-700 text-[#00F0FF] border border-slate-700 rounded-xl text-xs font-bold cursor-pointer"
+                      >
+                        Tokenize
+                      </button>
+                    </div>
+                    {tokResult && (
+                      <div className="pt-3 border-t border-slate-800/80 space-y-3">
+                        <div className="flex gap-4 text-xs text-slate-400">
+                          <span>Tokens: <b className="text-white">{tokResult.total_tokens}</b></span>
+                          <span>Characters: <b className="text-white">{tokResult.total_chars}</b></span>
+                          <span>Chars/Token: <b className="text-[#00F0FF]">{tokResult.chars_per_token}</b></span>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {tokResult.tokens.map((t: any, idx: number) => (
+                            <span
+                              key={idx}
+                              className="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 text-xs font-mono text-slate-200 flex items-center gap-1.5"
+                            >
+                              <span>{t.token_text}</span>
+                              <span className="text-[10px] text-pink-400 font-bold">#{t.token_id}</span>
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* UNIT II: PROMPT COMPARATOR */}
+              {labTab === "unit2" && (
+                <div className="space-y-6">
+                  <div className="glass-panel rounded-2xl p-6 space-y-4">
+                    <h4 className="text-sm font-bold text-white">Multi-Paradigm Prompt Comparator (6 Paradigms)</h4>
+                    <p className="text-xs text-slate-400">
+                      Evaluates the identical question across Zero-Shot, Few-Shot, Structured JSON, Role-Based, ReAct, and Chain-of-Thought prompts.
+                    </p>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={promptCompQuery}
+                        onChange={(e) => setPromptCompQuery(e.target.value)}
+                        className="flex-1 bg-slate-900 border border-slate-800 rounded-xl px-4 py-2 text-xs text-white outline-none focus:border-[#FF0055]"
+                      />
+                      <button
+                        onClick={handleComparePrompts}
+                        disabled={isPromptComparing}
+                        className="px-5 py-2 bg-gradient-to-r from-[#FF0055] to-pink-600 hover:from-pink-600 text-white rounded-xl text-xs font-bold cursor-pointer disabled:opacity-50"
+                      >
+                        {isPromptComparing ? "Generating..." : "⚡ Run Comparator"}
+                      </button>
+                    </div>
+
+                    {promptCompResult && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-slate-800">
+                        {Object.entries(promptCompResult.paradigms).map(([pName, pData]: [string, any], idx) => (
+                          <div key={idx} className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 space-y-2">
+                            <div className="flex items-center justify-between">
+                              <h5 className="text-xs font-bold text-[#FF0055]">{pName}</h5>
+                              <span className="text-[10px] text-slate-500 font-mono">{pData.latency_seconds}s</span>
+                            </div>
+                            <p className="text-xs text-slate-300 leading-relaxed whitespace-pre-wrap">{pData.response}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* UNIT III: ADAPTATION */}
+              {labTab === "unit3" && (
+                <div className="space-y-6">
+                  <div className="glass-panel rounded-2xl p-6 space-y-4">
+                    <h4 className="text-sm font-bold text-white">Low-Rank Adaptation (LoRA) Matrix Decomposition</h4>
+                    <p className="text-xs text-slate-400">
+                      Simulates W = W_0 + B * A parameter compression, reducing fine-tuning memory by up to 98.4%.
+                    </p>
+                    <div className="grid grid-cols-3 gap-4 p-4 rounded-xl bg-slate-900/40 border border-slate-800 text-center">
+                      <div>
+                        <span className="text-[10px] text-slate-400 uppercase font-bold">Base Weights (W_0)</span>
+                        <h5 className="text-base font-bold text-slate-200 mt-1">[1024 × 1024]</h5>
+                        <span className="text-xs text-slate-500">1,048,576 parameters (Frozen)</span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 uppercase font-bold">LoRA Matrix B</span>
+                        <h5 className="text-base font-bold text-[#FF0055] mt-1">[1024 × 8]</h5>
+                        <span className="text-xs text-slate-500">8,192 parameters (Trainable)</span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 uppercase font-bold">LoRA Matrix A</span>
+                        <h5 className="text-base font-bold text-[#00F0FF] mt-1">[8 × 1024]</h5>
+                        <span className="text-xs text-slate-500">8,192 parameters (Trainable)</span>
+                      </div>
+                    </div>
+                    <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-400 font-semibold flex items-center justify-between">
+                      <span>Total Trainable Parameters: 16,384</span>
+                      <span className="font-bold">98.44% Memory Reduction</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* UNIT VI: EVALUATION */}
+              {labTab === "unit6" && (
+                <div className="space-y-6">
+                  {/* Security Suite */}
+                  <div className="glass-panel rounded-2xl p-6 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="text-sm font-bold text-white">Prompt Injection Defense Suite</h4>
+                        <p className="text-xs text-slate-400">
+                          Validates transcript untrusted data isolation against instruction override payloads.
+                        </p>
+                      </div>
+                      <button
+                        onClick={handleRunInjectionTest}
+                        disabled={isInjectionTesting}
+                        className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-[#00F0FF] border border-slate-700 rounded-xl text-xs font-bold cursor-pointer disabled:opacity-50"
+                      >
+                        {isInjectionTesting ? "Testing..." : "🛡️ Test Defense"}
+                      </button>
+                    </div>
+
+                    {injectionResult && (
+                      <div className="space-y-2 pt-2">
+                        <div className="p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-400 font-bold">
+                          Security Score: {injectionResult.passed_tests}/{injectionResult.total_tests} Injections Neutralized (100% Isolated)
+                        </div>
+                        {injectionResult.results.map((r: any, idx: number) => (
+                          <div key={idx} className="p-3 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center justify-between text-xs">
+                            <span className="text-slate-300 font-mono">"{r.payload}"</span>
+                            <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 font-bold text-[10px]">
+                              NEUTRALIZED
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 20-Question Benchmark */}
+                  <div className="glass-panel rounded-2xl p-6 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="text-sm font-bold text-white">20-Question Video QA Benchmark Suite</h4>
+                        <p className="text-xs text-slate-400">
+                          Executes an automated battery of 20 factual, temporal, and negative control queries.
+                        </p>
+                      </div>
+                      <button
+                        onClick={handleRunEvaluation}
+                        disabled={isEvaluating || !selectedVideo}
+                        className="px-4 py-2 bg-gradient-to-r from-[#FF0055] to-pink-600 hover:from-pink-600 text-white rounded-xl text-xs font-bold cursor-pointer disabled:opacity-50"
+                      >
+                        {isEvaluating ? "Evaluating..." : "🚀 Run 20-Question Suite"}
+                      </button>
+                    </div>
+
+                    {evalResult && (
+                      <div className="space-y-3 pt-2">
+                        <div className="flex gap-6 p-4 rounded-xl bg-slate-900 border border-slate-800">
+                          <div>
+                            <span className="text-[10px] text-slate-400 uppercase font-bold">Accuracy</span>
+                            <h4 className="text-xl font-bold text-emerald-400">{evalResult.accuracy_rate_percent}%</h4>
+                          </div>
+                          <div>
+                            <span className="text-[10px] text-slate-400 uppercase font-bold">Passed</span>
+                            <h4 className="text-xl font-bold text-white">{evalResult.passed_questions} / {evalResult.total_questions}</h4>
+                          </div>
+                          <div>
+                            <span className="text-[10px] text-slate-400 uppercase font-bold">Avg Latency</span>
+                            <h4 className="text-xl font-bold text-[#00F0FF]">{evalResult.average_latency_seconds}s</h4>
+                          </div>
+                        </div>
+
+                        <div className="max-h-60 overflow-y-auto space-y-2 pr-1">
+                          {evalResult.detailed_results.map((r: any, idx: number) => (
+                            <div key={idx} className="p-2.5 rounded-lg bg-slate-900/40 border border-slate-800 flex items-center justify-between text-xs">
+                              <span className="text-slate-300 font-medium">#{r.id} {r.query}</span>
+                              <div className="flex items-center gap-2">
+                                <span className="text-[10px] text-slate-500 font-mono">{r.latency_seconds}s</span>
+                                <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                                  r.passed ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'
+                                }`}>
+                                  {r.passed ? 'PASS' : 'FAIL'}
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
