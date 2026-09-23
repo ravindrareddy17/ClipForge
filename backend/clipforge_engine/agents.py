@@ -14,45 +14,26 @@ def get_ollama_base_url():
 
 def call_ollama_completion(prompt, system_instruction=None, model="qwen2.5:3b"):
     """
-    Calls local Ollama API to get simple text completion responses.
+    Calls unified multi-provider LLM client (Groq / Gemini / Ollama) to get text completion responses.
     """
-    payload = {
-        "model": model,
-        "prompt": prompt,
-        "stream": False
-    }
-    if system_instruction:
-        payload["system"] = system_instruction
-        
     try:
-        base_url = get_ollama_base_url()
-        headers = {"ngrok-skip-browser-warning": "1"}
-        resp = requests.post(f"{base_url}/api/generate", json=payload, headers=headers, timeout=30)
-        if resp.status_code == 200:
-            return resp.json().get("response", "").strip()
+        from clipforge_engine.llm_client import call_llm
+        res = call_llm(prompt=prompt, system=system_instruction, model=model)
+        if res and res.strip():
+            return res.strip()
     except Exception as e:
-        print(f"Ollama complete agent call failed: {e}")
+        print(f"Unified LLM completion agent call failed: {e}")
     return ""
 
 def call_ollama_json(prompt, system_instruction=None, model="qwen2.5:3b"):
     """
-    Calls local Ollama requesting JSON outputs.
+    Calls unified multi-provider LLM client (Groq / Gemini / Ollama) requesting JSON outputs.
     """
-    payload = {
-        "model": model,
-        "prompt": prompt,
-        "stream": False,
-        "format": "json"
-    }
-    if system_instruction:
-        payload["system"] = system_instruction
-        
     try:
-        base_url = get_ollama_base_url()
-        headers = {"ngrok-skip-browser-warning": "1"}
-        resp = requests.post(f"{base_url}/api/generate", json=payload, headers=headers, timeout=30)
-        if resp.status_code == 200:
-            raw = resp.json().get("response", "").strip()
+        from clipforge_engine.llm_client import call_llm
+        raw = call_llm(prompt=prompt, system=system_instruction, model=model, json_mode=True)
+        if raw and raw.strip():
+            raw = raw.strip()
             # Clean markdown JSON wrapping if present
             if "```json" in raw:
                 raw = raw.split("```json")[1].split("```")[0]
@@ -62,12 +43,15 @@ def call_ollama_json(prompt, system_instruction=None, model="qwen2.5:3b"):
             try:
                 return json.loads(raw)
             except Exception:
-                # Regex match fallback
                 match = re.search(r"\{.*\}", raw, re.DOTALL)
                 if match:
                     return json.loads(match.group(0))
+                match_arr = re.search(r"\[.*\]", raw, re.DOTALL)
+                if match_arr:
+                    return json.loads(match_arr.group(0))
     except Exception as e:
-        print(f"Ollama JSON agent call failed: {e}")
+        print(f"Unified LLM JSON agent call failed: {e}")
+    return None
     return {}
 
 # 1. SUMMARY AGENT

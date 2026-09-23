@@ -33,6 +33,10 @@ from clipforge_engine.rag import (
 )
 from clipforge_engine.video_qa_agents import run_video_qa_pipeline
 from clipforge_engine.channel import resolve_channel_videos, import_channel_videos, search_channel_library
+from clipforge_engine.llm_client import (
+    get_active_provider, get_groq_api_key, get_gemini_api_key,
+    test_provider_connection, get_active_model, DEFAULT_MODELS
+)
 import clipforge_engine.cse473_lab as cse473
 
 # Run database setup
@@ -279,27 +283,40 @@ if 'active_tab' not in st.session_state:
 if 'chat_session_id' not in st.session_state:
     st.session_state.chat_session_id = str(uuid.uuid4())
 
-# Load settings from DB or Secrets
+# Load settings from DB, Secrets, or Defaults
 db_settings = {}
 try:
     db_settings = get_settings()
 except Exception:
     pass
 
-default_ollama_url = db_settings.get("ollama_url", "http://localhost:11434")
-default_ollama_model = db_settings.get("ollama_model", "qwen2.5:3b")
-default_embedding_model = db_settings.get("embedding_model", "nomic-embed-text")
+def _resolve_setting(key, secret_key, default_val):
+    try:
+        if secret_key in st.secrets:
+            return str(st.secrets[secret_key])
+    except Exception:
+        pass
+    return str(db_settings.get(key, default_val))
 
-try:
-    if "OLLAMA_URL" in st.secrets:
-        default_ollama_url = st.secrets["OLLAMA_URL"]
-    if "OLLAMA_MODEL" in st.secrets:
-        default_ollama_model = st.secrets["OLLAMA_MODEL"]
-    if "OLLAMA_EMBEDDING_MODEL" in st.secrets:
-        default_embedding_model = st.secrets["OLLAMA_EMBEDDING_MODEL"]
-except Exception:
-    pass
+default_llm_provider = _resolve_setting("llm_provider", "LLM_PROVIDER", get_active_provider())
+default_groq_api_key = _resolve_setting("groq_api_key", "GROQ_API_KEY", get_groq_api_key() or "")
+default_groq_model = _resolve_setting("groq_model", "GROQ_MODEL", DEFAULT_MODELS["groq"])
+default_gemini_api_key = _resolve_setting("gemini_api_key", "GEMINI_API_KEY", get_gemini_api_key() or "")
+default_gemini_model = _resolve_setting("gemini_model", "GEMINI_MODEL", DEFAULT_MODELS["gemini"])
+default_ollama_url = _resolve_setting("ollama_url", "OLLAMA_URL", "http://localhost:11434")
+default_ollama_model = _resolve_setting("ollama_model", "OLLAMA_MODEL", DEFAULT_MODELS["ollama"])
+default_embedding_model = _resolve_setting("embedding_model", "OLLAMA_EMBEDDING_MODEL", "nomic-embed-text")
 
+if 'llm_provider' not in st.session_state:
+    st.session_state.llm_provider = default_llm_provider
+if 'groq_api_key' not in st.session_state:
+    st.session_state.groq_api_key = default_groq_api_key
+if 'groq_model' not in st.session_state:
+    st.session_state.groq_model = default_groq_model
+if 'gemini_api_key' not in st.session_state:
+    st.session_state.gemini_api_key = default_gemini_api_key
+if 'gemini_model' not in st.session_state:
+    st.session_state.gemini_model = default_gemini_model
 if 'ollama_url' not in st.session_state:
     st.session_state.ollama_url = default_ollama_url
 if 'ollama_model' not in st.session_state:
@@ -349,12 +366,27 @@ with st.sidebar:
 
     st.markdown("<hr style='border-color: #1f2937; margin: 20px 0;'>", unsafe_allow_html=True)
     
-    # Simple Ollama Status Badge
-    is_online, models_list = test_ollama_connection(st.session_state.ollama_url)
-    if is_online:
-        st.markdown(f"<span class='status-pill pill-green'>● Ollama Online ({len(models_list)} models)</span>", unsafe_allow_html=True)
+    # Dynamic Multi-Provider AI Status Badge
+    active_prov = st.session_state.llm_provider
+    if active_prov == "groq":
+        k = st.session_state.groq_api_key
+        if k and len(k) > 10:
+            m_disp = st.session_state.groq_model.split("/")[-1]
+            st.markdown(f"<span class='status-pill pill-green'>● Groq Online ({m_disp})</span>", unsafe_allow_html=True)
+        else:
+            st.markdown("<span class='status-pill pill-yellow'>● Groq Key Missing</span>", unsafe_allow_html=True)
+    elif active_prov == "gemini":
+        k = st.session_state.gemini_api_key
+        if k and len(k) > 10:
+            st.markdown(f"<span class='status-pill pill-green'>● Gemini Online ({st.session_state.gemini_model})</span>", unsafe_allow_html=True)
+        else:
+            st.markdown("<span class='status-pill pill-yellow'>● Gemini Key Missing</span>", unsafe_allow_html=True)
     else:
-        st.markdown(f"<span class='status-pill pill-yellow'>● Ollama Offline (Local Mode)</span>", unsafe_allow_html=True)
+        is_online, models_list = test_ollama_connection(st.session_state.ollama_url)
+        if is_online:
+            st.markdown(f"<span class='status-pill pill-green'>● Ollama Online ({len(models_list)} models)</span>", unsafe_allow_html=True)
+        else:
+            st.markdown("<span class='status-pill pill-yellow'>● Ollama Offline (Local Mode)</span>", unsafe_allow_html=True)
 
 # Fetch database records for active workspace
 videos = get_videos(active_project["id"])
@@ -646,14 +678,20 @@ elif tab == "AI Video Chat":
                     if send_btn and user_query:
                         add_chat_message(active_project["id"], st.session_state.chat_session_id, "user", user_query, video_id=selected_vid_id)
                         
-                        with st.spinner("🤖 Multi-Agent QA: Analyzing intent, retrieving segments & synthesizing answer..."):
+                        active_p_label = st.session_state.llm_provider.upper()
+                        current_model = (
+                            st.session_state.groq_model if st.session_state.llm_provider == "groq"
+                            else (st.session_state.gemini_model if st.session_state.llm_provider == "gemini"
+                            else st.session_state.ollama_model)
+                        )
+                        with st.spinner(f"🤖 Multi-Agent QA ({active_p_label}): Analyzing intent & synthesizing answer..."):
                             try:
                                 qa_res = run_video_qa_pipeline(
                                     project_id=active_project["id"],
                                     video_id=selected_vid_id,
                                     query=user_query,
                                     session_id=st.session_state.chat_session_id,
-                                    model=st.session_state.ollama_model
+                                    model=current_model
                                 )
                                 answer = qa_res["answer"]
                             except Exception as err:
@@ -961,25 +999,90 @@ elif tab == "Library & Settings":
 
     with col_s2:
         with st.container(border=True):
-            st.write("### 🤖 Local Ollama Connection")
-            st.session_state.ollama_url = st.text_input("Ollama Server URL:", value=st.session_state.ollama_url)
-            st.session_state.ollama_model = st.text_input("LLM Model Name:", value=st.session_state.ollama_model)
-            st.session_state.embedding_model = st.text_input("Embedding Model:", value=st.session_state.embedding_model)
+            st.write("### 🤖 AI Engine & Cloud API Provider")
+            st.caption("Configure Cloud LLM inference (Groq / Gemini) for instant processing on Streamlit Cloud or Local Ollama.")
+
+            prov_display_map = {
+                "groq": "⚡ Groq Cloud (Recommended - Ultra Fast)",
+                "gemini": "✨ Google Gemini (Advanced Multimodal)",
+                "ollama": "🖥️ Local Ollama (Self-Hosted)"
+            }
+            inv_prov_map = {v: k for k, v in prov_display_map.items()}
+
+            curr_disp = prov_display_map.get(st.session_state.llm_provider, prov_display_map["groq"])
+            all_disp = list(prov_display_map.values())
+            sel_idx = all_disp.index(curr_disp) if curr_disp in all_disp else 0
+            selected_disp = st.selectbox(
+                "Active AI Model Provider:",
+                all_disp,
+                index=sel_idx
+            )
+            st.session_state.llm_provider = inv_prov_map[selected_disp]
+
+            if st.session_state.llm_provider == "groq":
+                st.session_state.groq_api_key = st.text_input(
+                    "Groq API Key:",
+                    value=st.session_state.groq_api_key,
+                    type="password",
+                    placeholder="gsk_..."
+                )
+                groq_model_options = ["openai/gpt-oss-20b", "qwen/qwen3.8-27b", "openai/gpt-oss-120b"]
+                if st.session_state.groq_model not in groq_model_options:
+                    groq_model_options.insert(0, st.session_state.groq_model)
+                st.session_state.groq_model = st.selectbox(
+                    "Groq Model:",
+                    groq_model_options,
+                    index=groq_model_options.index(st.session_state.groq_model) if st.session_state.groq_model in groq_model_options else 0
+                )
+                st.caption("⚡ Groq processes 500+ tokens/sec. Free API keys at [console.groq.com/keys](https://console.groq.com/keys).")
+
+            elif st.session_state.llm_provider == "gemini":
+                st.session_state.gemini_api_key = st.text_input(
+                    "Google Gemini API Key:",
+                    value=st.session_state.gemini_api_key,
+                    type="password",
+                    placeholder="AQ..."
+                )
+                gemini_model_options = ["gemini-3.6-flash", "gemini-3.5-flash", "gemini-3.7-flash"]
+                if st.session_state.gemini_model not in gemini_model_options:
+                    gemini_model_options.insert(0, st.session_state.gemini_model)
+                st.session_state.gemini_model = st.selectbox(
+                    "Gemini Model:",
+                    gemini_model_options,
+                    index=gemini_model_options.index(st.session_state.gemini_model) if st.session_state.gemini_model in gemini_model_options else 0
+                )
+                st.caption("✨ Official Google Gemini models. Free API keys at [aistudio.google.com](https://aistudio.google.com/app/apikey).")
+
+            else:
+                st.session_state.ollama_url = st.text_input("Ollama Server URL:", value=st.session_state.ollama_url)
+                st.session_state.ollama_model = st.text_input("LLM Model Name:", value=st.session_state.ollama_model)
+                st.session_state.embedding_model = st.text_input("Embedding Model:", value=st.session_state.embedding_model)
 
             col_tst1, col_tst2 = st.columns(2)
             with col_tst1:
-                if st.button("🔍 Test Connection", use_container_width=True):
-                    ok, m_list = test_ollama_connection(st.session_state.ollama_url)
-                    if ok:
-                        st.success(f"Connected! Models: {', '.join(m_list)}")
-                    else:
-                        st.error(f"Cannot connect to Ollama: {m_list}")
+                if st.button("🔍 Test AI Provider", use_container_width=True):
+                    with st.spinner(f"Testing connectivity to {st.session_state.llm_provider.upper()}..."):
+                        if st.session_state.llm_provider == "groq":
+                            ok, msg = test_provider_connection("groq", api_key=st.session_state.groq_api_key, model=st.session_state.groq_model)
+                        elif st.session_state.llm_provider == "gemini":
+                            ok, msg = test_provider_connection("gemini", api_key=st.session_state.gemini_api_key, model=st.session_state.gemini_model)
+                        else:
+                            ok, msg = test_provider_connection("ollama", url=st.session_state.ollama_url)
+                        if ok:
+                            st.success(msg)
+                        else:
+                            st.error(f"Connection Failed: {msg}")
             with col_tst2:
-                if st.button("💾 Save Settings", use_container_width=True):
+                if st.button("💾 Save AI Settings", use_container_width=True):
+                    update_setting("llm_provider", st.session_state.llm_provider)
+                    update_setting("groq_api_key", st.session_state.groq_api_key)
+                    update_setting("groq_model", st.session_state.groq_model)
+                    update_setting("gemini_api_key", st.session_state.gemini_api_key)
+                    update_setting("gemini_model", st.session_state.gemini_model)
                     update_setting("ollama_url", st.session_state.ollama_url)
                     update_setting("ollama_model", st.session_state.ollama_model)
                     update_setting("embedding_model", st.session_state.embedding_model)
-                    st.success("Settings saved!")
+                    st.success("Settings saved successfully!")
                     st.rerun()
 
         with st.container(border=True):

@@ -643,34 +643,28 @@ def generate_grounded_answer(project_id, query, retrieved_chunks, video_id=None,
 
     messages.append({"role": "user", "content": user_message_content})
 
-    payload = {
-        "model": model,
-        "messages": messages,
-        "options": {
-            "num_predict": num_predict,
-            "temperature": 0.2
-        },
-        "stream": False
-    }
-
+    # Invoke Unified Multi-Provider LLM Client (Groq Cloud / Gemini Cloud / Local Ollama)
     try:
-        headers = {"ngrok-skip-browser-warning": "1"}
-        resp = requests.post(f"{base_url}/api/chat", json=payload, headers=headers, timeout=80)
-        if resp.status_code == 200:
-            content = resp.json().get("message", {}).get("content", "")
-            if content.strip():
-                ans = content.strip()
-                # Ensure citations are present if evidence was provided
-                if "[" not in ans and "]" not in ans and retrieved_chunks:
-                    first_c = retrieved_chunks[0]
-                    f_meta = first_c.get("metadata") or {}
-                    fst = float(f_meta.get("start_time", first_c.get("start_time", 0.0)))
-                    ans += f"\n\n[{format_timestamp(fst)}]"
-                return ans
+        from clipforge_engine.llm_client import call_llm
+        ans = call_llm(
+            messages=messages,
+            model=model,
+            temperature=0.2,
+            max_tokens=num_predict
+        )
+        if ans and ans.strip():
+            ans = ans.strip()
+            # Ensure citations are present if evidence was provided
+            if "[" not in ans and "]" not in ans and retrieved_chunks:
+                first_c = retrieved_chunks[0]
+                f_meta = first_c.get("metadata") or {}
+                fst = float(f_meta.get("start_time", first_c.get("start_time", 0.0)))
+                ans += f"\n\n[{format_timestamp(fst)}]"
+            return ans
     except Exception as e:
-        print(f"Ollama chat error/timeout: {e}")
+        print(f"Unified LLM chat error: {e}")
 
-    # Fallback to direct extraction from retrieved chunks if Ollama times out
+    # Fallback to direct extraction from retrieved chunks if all LLM endpoints time out
     if retrieved_chunks:
         findings = []
         for rc in retrieved_chunks[:4]:
@@ -699,23 +693,15 @@ def format_timestamp(seconds):
     return f"{m:02d}:{s:02d}"
 
 def call_ollama(prompt, system=None, model="qwen2.5:3b", num_predict=250, temperature=0.2, base_url="http://localhost:11434"):
-    """Calls Ollama generate API with optional system prompt."""
-    payload = {
-        "model": model,
-        "prompt": prompt,
-        "options": {
-            "num_predict": num_predict,
-            "temperature": temperature
-        },
-        "stream": False
-    }
-    if system:
-        payload["system"] = system
+    """
+    Calls unified LLM client (Groq Cloud / Gemini / Ollama) with optional system prompt.
+    Maintains exact backwards compatibility.
+    """
     try:
-        headers = {"ngrok-skip-browser-warning": "1"}
-        resp = requests.post(f"{base_url}/api/generate", json=payload, headers=headers, timeout=40)
-        if resp.status_code == 200:
-            return resp.json().get("response", "").strip()
+        from clipforge_engine.llm_client import call_llm
+        res = call_llm(prompt=prompt, system=system, model=model, temperature=temperature, max_tokens=num_predict)
+        if res and res.strip():
+            return res.strip()
     except Exception as e:
-        print(f"Ollama call error: {e}")
+        print(f"LLM call error: {e}")
     return ""

@@ -12,6 +12,9 @@ __pycache__/
 
 # Streamlit secrets & logs
 .streamlit/secrets.toml
+secrets.toml
+.env
+*.env
 *.log
 
 # Database and temporary media files

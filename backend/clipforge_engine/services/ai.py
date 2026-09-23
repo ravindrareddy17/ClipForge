@@ -12,8 +12,17 @@ def get_ollama_url():
 
 async def query_ollama(prompt, model="llama3:latest", system_prompt=None):
     """
-    Query local Ollama instance with dynamic URL and ngrok header.
+    Query multi-provider LLM instance (Groq Cloud / Gemini / Local Ollama).
     """
+    try:
+        from clipforge_engine.llm_client import async_call_llm
+        res = await async_call_llm(prompt=prompt, system=system_prompt, model=model)
+        if res and res.strip():
+            return res.strip()
+    except Exception as e:
+        print(f"Unified LLM query error: {e}")
+
+    # Fallback to local Ollama directly
     base_url = get_ollama_url()
     url = f"{base_url}/api/generate"
     payload = {
