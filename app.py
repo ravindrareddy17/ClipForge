@@ -113,7 +113,7 @@ def extract_timestamp_buttons(text: str):
 # Modern, High-Contrast Minimalist Dark Theme
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap');
     
     /* 1. Base theme & atmospheric background */
     .stApp {
@@ -127,21 +127,112 @@ st.markdown("""
         font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     }
     
-    /* 2. CRITICAL FIX: Protect Material Icons so collapse arrows never render as text like 'keyboard_double_' */
-    [data-testid="stIconMaterial"],
-    .material-symbols-rounded,
-    .material-icons,
-    [class*="material-symbols"],
+    /* 2. SIDEBAR TOGGLE & COLLAPSE ARROW: 100% remove text leak 'keyboard_double_' and render clean SVG chevron in appropriate size */
+    [data-testid="stSidebarCollapseButton"],
+    [data-testid="stSidebarCollapseButton"] button,
+    button[data-testid="stSidebarCollapseButton"],
+    button[data-testid="stExpandSidebarButton"],
+    [data-testid="stSidebarCollapsedControl"],
+    [data-testid="stSidebarCollapsedControl"] button,
+    section[data-testid="stSidebar"] button[data-testid="stBaseButton-headerNoPadding"],
+    div[data-testid="stToolbar"] button[data-testid="stExpandSidebarButton"] {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 32px !important;
+        height: 32px !important;
+        min-width: 32px !important;
+        min-height: 32px !important;
+        max-width: 32px !important;
+        max-height: 32px !important;
+        padding: 0 !important;
+        margin: 4px !important;
+        border-radius: 8px !important;
+        background: rgba(255, 255, 255, 0.05) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        cursor: pointer !important;
+        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+        outline: none !important;
+        box-shadow: none !important;
+        position: relative !important;
+        overflow: hidden !important;
+        font-size: 0 !important;
+        line-height: 0 !important;
+        color: transparent !important;
+    }
+
+    [data-testid="stSidebarCollapseButton"]:hover,
+    [data-testid="stSidebarCollapseButton"] button:hover,
+    button[data-testid="stSidebarCollapseButton"]:hover,
+    button[data-testid="stExpandSidebarButton"]:hover,
+    [data-testid="stSidebarCollapsedControl"]:hover,
+    [data-testid="stSidebarCollapsedControl"] button:hover,
+    section[data-testid="stSidebar"] button[data-testid="stBaseButton-headerNoPadding"]:hover,
+    div[data-testid="stToolbar"] button[data-testid="stExpandSidebarButton"]:hover {
+        background: rgba(99, 102, 241, 0.2) !important;
+        border-color: rgba(129, 140, 248, 0.45) !important;
+        box-shadow: 0 0 12px rgba(99, 102, 241, 0.25) !important;
+    }
+
+    /* 100% remove text leak 'keyboard_double_' by hiding all children elements & text */
+    [data-testid="stSidebarCollapseButton"] *,
+    [data-testid="stSidebarCollapseButton"] button *,
     button[data-testid="stSidebarCollapseButton"] *,
-    button[data-testid="stSidebarCollapseButton"] span,
-    header[data-testid="stHeader"] button *,
-    header[data-testid="stHeader"] span {
-        font-family: 'Material Symbols Rounded', 'Material Icons', sans-serif !important;
-        letter-spacing: normal !important;
-        text-transform: none !important;
-        white-space: nowrap !important;
-        word-wrap: normal !important;
-        direction: ltr !important;
+    button[data-testid="stExpandSidebarButton"] *,
+    [data-testid="stSidebarCollapsedControl"] *,
+    [data-testid="stSidebarCollapsedControl"] button *,
+    section[data-testid="stSidebar"] button[data-testid="stBaseButton-headerNoPadding"] * {
+        font-size: 0 !important;
+        line-height: 0 !important;
+        color: transparent !important;
+        display: none !important;
+        visibility: hidden !important;
+        width: 0 !important;
+        height: 0 !important;
+    }
+
+    /* Left-facing Side Closer Arrow for closing sidebar (Appropriate size: 18x18px) */
+    [data-testid="stSidebarCollapseButton"] button::after,
+    button[data-testid="stSidebarCollapseButton"]::after,
+    section[data-testid="stSidebar"] button[data-testid="stBaseButton-headerNoPadding"]::after {
+        content: '' !important;
+        display: block !important;
+        width: 18px !important;
+        height: 18px !important;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23cbd5e1' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='13 17 8 12 13 7'%3E%3C/polyline%3E%3Cpolyline points='18 17 13 12 18 7'%3E%3C/polyline%3E%3C/svg%3E") !important;
+        background-repeat: no-repeat !important;
+        background-position: center !important;
+        background-size: 18px 18px !important;
+        transition: transform 0.18s ease, filter 0.18s ease !important;
+    }
+
+    [data-testid="stSidebarCollapseButton"] button:hover::after,
+    button[data-testid="stSidebarCollapseButton"]:hover::after,
+    section[data-testid="stSidebar"] button[data-testid="stBaseButton-headerNoPadding"]:hover::after {
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23818cf8' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='13 17 8 12 13 7'%3E%3C/polyline%3E%3Cpolyline points='18 17 13 12 18 7'%3E%3C/polyline%3E%3C/svg%3E") !important;
+        transform: translateX(-1.5px) !important;
+    }
+
+    /* Right-facing Opener Arrow for opening/expanding sidebar (Appropriate size: 18x18px) */
+    button[data-testid="stExpandSidebarButton"]::after,
+    [data-testid="stSidebarCollapsedControl"] button::after,
+    div[data-testid="stToolbar"] button[data-testid="stExpandSidebarButton"]::after {
+        content: '' !important;
+        display: block !important;
+        width: 18px !important;
+        height: 18px !important;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23cbd5e1' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 17 11 12 6 7'%3E%3C/polyline%3E%3Cpolyline points='11 17 16 12 11 7'%3E%3C/polyline%3E%3C/svg%3E") !important;
+        background-repeat: no-repeat !important;
+        background-position: center !important;
+        background-size: 18px 18px !important;
+        transition: transform 0.18s ease, filter 0.18s ease !important;
+    }
+
+    button[data-testid="stExpandSidebarButton"]:hover::after,
+    [data-testid="stSidebarCollapsedControl"] button:hover::after,
+    div[data-testid="stToolbar"] button[data-testid="stExpandSidebarButton"]:hover::after {
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23818cf8' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 17 11 12 6 7'%3E%3C/polyline%3E%3Cpolyline points='11 17 16 12 11 7'%3E%3C/polyline%3E%3C/svg%3E") !important;
+        transform: translateX(1.5px) !important;
     }
     
     /* 3. Header Navbar */
@@ -153,17 +244,6 @@ st.markdown("""
     }
     header[data-testid="stHeader"] * {
         color: #94a3b8 !important;
-    }
-    button[data-testid="stSidebarCollapseButton"] {
-        background: rgba(255, 255, 255, 0.04) !important;
-        border: 1px solid rgba(255, 255, 255, 0.08) !important;
-        border-radius: 8px !important;
-        padding: 4px 6px !important;
-        transition: all 0.15s ease !important;
-    }
-    button[data-testid="stSidebarCollapseButton"]:hover {
-        background: rgba(99, 102, 241, 0.2) !important;
-        border-color: rgba(99, 102, 241, 0.4) !important;
     }
     
     /* 4. Headings & Gradient Titles */
