@@ -29,7 +29,7 @@ async def query_ollama(prompt, model="llama3:latest", system_prompt=None):
         
     try:
         headers = {"ngrok-skip-browser-warning": "1"}
-        async with httpx.AsyncClient(timeout=6.0, headers=headers) as client:
+        async with httpx.AsyncClient(timeout=35.0, headers=headers) as client:
             response = await client.post(url, json=payload)
             if response.status_code == 200:
                 result = response.json()
@@ -43,23 +43,23 @@ async def query_ollama(prompt, model="llama3:latest", system_prompt=None):
 
 async def select_best_model():
     """
-    Select available model from Ollama, default to llama3:latest or qwen2.5:3b.
+    Select available model from Ollama, prioritizing fast and accurate local models (qwen2.5:3b).
     """
     base_url = get_ollama_url()
     try:
         headers = {"ngrok-skip-browser-warning": "1"}
-        async with httpx.AsyncClient(timeout=3.0, headers=headers) as client:
+        async with httpx.AsyncClient(timeout=4.0, headers=headers) as client:
             response = await client.get(f"{base_url}/api/tags")
             if response.status_code == 200:
                 models = [m["name"] for m in response.json().get("models", [])]
-                for preferred in ["llama3:latest", "llama3", "qwen2.5:3b", "qwen3:4b"]:
+                for preferred in ["qwen2.5:3b", "qwen3:4b", "llama3:latest", "llama3"]:
                     if preferred in models:
                         return preferred
                 if models:
                     return models[0]
     except Exception:
         pass
-    return "llama3:latest"
+    return "qwen2.5:3b"
 
 async def detect_viral_moments(transcript_segments, duration_seconds):
     """
@@ -183,18 +183,19 @@ Return ONLY a valid JSON list of objects, with no explanation or conversational 
         # Sort candidates by hook score descending
         candidate_indices.sort(key=lambda x: x[0], reverse=True)
         
-        # 2. Pick top diverse hook anchors (enforce minimum 25s separation)
+        # 2. Pick top diverse hook anchors spread throughout the video
+        min_separation = max(45.0, min(90.0, duration_seconds / 6.0)) if duration_seconds > 60.0 else 20.0
         selected_starts = []
         for cand_score, cand_idx in candidate_indices:
             cand_start = transcript_segments[cand_idx]["start"]
             # Ensure not too close to the end of the video
-            if cand_start + 20.0 > duration_seconds and duration_seconds > 30.0:
+            if cand_start + 18.0 > duration_seconds and duration_seconds > 30.0:
                 continue
             # Ensure no overlapping start with existing clips
-            if not any(abs(cand_start - s) < 25.0 for s in selected_starts):
+            if not any(abs(cand_start - s) < min_separation for s in selected_starts):
                 selected_starts.append(cand_start)
                 
-                # Expand from cand_idx forward until duration is between 25s and 45s
+                # Expand from cand_idx forward until natural pause or duration between 20s and 45s
                 clip_segs = []
                 cur_dur = 0.0
                 j = cand_idx
@@ -203,7 +204,10 @@ Return ONLY a valid JSON list of objects, with no explanation or conversational 
                     s_len = s_item["end"] - s_item["start"]
                     clip_segs.append(s_item)
                     cur_dur += s_len
-                    if cur_dur >= 25.0: # Good short-form clip length
+                    # Natural break on punctuation if reached good duration
+                    if cur_dur >= 22.0 and any(s_item.get("text", "").strip().endswith(p) for p in [".", "?", "!"]):
+                        break
+                    if cur_dur >= 40.0:
                         break
                     j += 1
                     
@@ -228,25 +232,23 @@ Return ONLY a valid JSON list of objects, with no explanation or conversational 
                                 "end": s["start"] + (w_idx + 1) * w_dur
                             })
                             
-                # Generate a clean, descriptive title from the hook sentence
+                # Generate a clean, punchy title from key words
                 hook_sentence = clip_segs[0]["text"].strip()
-                # Clean punctuation for title
-                clean_words = hook_sentence.replace('"', '').replace("'", '').split()[:6]
-                title = " ".join(clean_words)
-                if len(title) > 3:
-                    title = title[0].upper() + title[1:]
+                clean_words = [w for w in re.sub(r'[^\w\s]', '', hook_sentence).split() if len(w) > 2][:6]
+                if clean_words:
+                    title = " ".join(clean_words).title()
                 else:
-                    title = f"Viral Moment at {int(start_t)}s"
+                    title = f"Viral Moment ({int(start_t)}s - {int(end_t)}s)"
                     
-                virality = min(98, max(75, cand_score + 10))
+                virality = min(98, max(78, cand_score + 12))
                 
                 clips.append({
-                    "title": f"Hook: \"{title}...\"",
+                    "title": title,
                     "start_time": start_t,
                     "end_time": end_t,
                     "duration": end_t - start_t,
                     "score": virality,
-                    "explanation": f"High-retention moment anchored by: \"{hook_sentence[:60]}...\" at {int(start_t)}s.",
+                    "explanation": f"High-retention segment: \"{hook_sentence[:70]}...\"",
                     "hook": hook_sentence[:45],
                     "words": words_in_clip
                 })

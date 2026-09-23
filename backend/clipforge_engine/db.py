@@ -423,15 +423,15 @@ def get_video(video_id):
     conn.close()
     return dict(row) if row else None
 
-def create_clip(video_id, title, start_time, end_time, duration, score=0, explanation="", subtitles=None, subtitle_style=None):
+def create_clip(video_id, title, start_time, end_time, duration, score=0, explanation="", subtitles=None, subtitle_style=None, status="completed", file_path=None):
     cid = str(uuid.uuid4())
     conn = get_db_connection()
     sub_str = json.dumps(subtitles) if subtitles else None
     sty_str = json.dumps(subtitle_style) if subtitle_style else None
     conn.execute(
-        """INSERT INTO clips (id, video_id, title, start_time, end_time, duration, score, explanation, status, subtitles, subtitle_style, created_at) 
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-        (cid, video_id, title, start_time, end_time, duration, score, explanation, "rendering", sub_str, sty_str, datetime.utcnow().isoformat())
+        """INSERT INTO clips (id, video_id, title, start_time, end_time, duration, score, explanation, status, file_path, subtitles, subtitle_style, created_at) 
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+        (cid, video_id, title, start_time, end_time, duration, score, explanation, status, file_path, sub_str, sty_str, datetime.utcnow().isoformat())
     )
     conn.commit()
     conn.close()
@@ -482,7 +482,14 @@ def get_settings():
     conn = get_db_connection()
     rows = conn.execute("SELECT * FROM settings").fetchall()
     conn.close()
-    return {r["key"]: json.loads(r["value"]) for r in rows}
+    settings_dict = {r["key"]: json.loads(r["value"]) for r in rows}
+    if "ollama_url" not in settings_dict:
+        settings_dict["ollama_url"] = "http://localhost:11434"
+    if "ollama_model" not in settings_dict:
+        settings_dict["ollama_model"] = "qwen2.5:3b"
+    if "embedding_model" not in settings_dict:
+        settings_dict["embedding_model"] = "nomic-embed-text"
+    return settings_dict
 
 def update_setting(key, value):
     conn = get_db_connection()

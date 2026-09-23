@@ -27,7 +27,7 @@ def call_ollama_completion(prompt, system_instruction=None, model="qwen2.5:3b"):
     try:
         base_url = get_ollama_base_url()
         headers = {"ngrok-skip-browser-warning": "1"}
-        resp = requests.post(f"{base_url}/api/generate", json=payload, headers=headers, timeout=5)
+        resp = requests.post(f"{base_url}/api/generate", json=payload, headers=headers, timeout=30)
         if resp.status_code == 200:
             return resp.json().get("response", "").strip()
     except Exception as e:
@@ -50,7 +50,7 @@ def call_ollama_json(prompt, system_instruction=None, model="qwen2.5:3b"):
     try:
         base_url = get_ollama_base_url()
         headers = {"ngrok-skip-browser-warning": "1"}
-        resp = requests.post(f"{base_url}/api/generate", json=payload, headers=headers, timeout=5)
+        resp = requests.post(f"{base_url}/api/generate", json=payload, headers=headers, timeout=30)
         if resp.status_code == 200:
             raw = resp.json().get("response", "").strip()
             # Clean markdown JSON wrapping if present

@@ -21,14 +21,31 @@ def get_chroma_client():
             _chroma_client = None
     return _chroma_client
 
+_installed_models = None
+
+def get_installed_ollama_models(base_url="http://localhost:11434"):
+    global _installed_models
+    if _installed_models is None:
+        try:
+            headers = {"ngrok-skip-browser-warning": "1"}
+            resp = requests.get(f"{base_url}/api/tags", headers=headers, timeout=2)
+            if resp.status_code == 200:
+                _installed_models = [m["name"] for m in resp.json().get("models", [])]
+        except Exception:
+            _installed_models = []
+    return _installed_models or []
+
 def get_ollama_embedding(text, model="nomic-embed-text", base_url="http://localhost:11434"):
     """
-    Retrieves embeddings from a local Ollama server.
-    Supports both legacy /api/embeddings and standard /api/embed endpoints.
+    Retrieves embeddings from a local Ollama server if the model is installed.
     """
-    # Clean text
     text = text.replace("\n", " ").strip()
     if not text:
+        return [0.0] * 768
+
+    # Skip remote call if embedding model is not present in local Ollama
+    available = get_installed_ollama_models(base_url)
+    if available and model not in available and f"{model}:latest" not in available:
         return [0.0] * 768
 
     headers = {"ngrok-skip-browser-warning": "1"}
@@ -50,10 +67,9 @@ def get_ollama_embedding(text, model="nomic-embed-text", base_url="http://localh
             data = resp.json()
             if "embeddings" in data and data["embeddings"]:
                 return data["embeddings"][0]
-    except Exception as e:
+    except Exception:
         pass
 
-    # Return empty representation matching nomic-embed-text dimensions
     return [0.0] * 768
 
 def chunk_transcript(video_id, project_id, transcript_data):
@@ -365,16 +381,17 @@ def generate_grounded_answer(project_id, query, retrieved_chunks, model="qwen2.5
         f"--- VIDEO TRANSCRIPT SEGMENTS ---\n{context_str}\n"
     )
 
-    # Detect real available models in Ollama
+    # Detect real available models in Ollama, prioritizing fast local models
     target_model = model
     try:
         headers = {"ngrok-skip-browser-warning": "1"}
         tags_resp = requests.get(f"{base_url}/api/tags", headers=headers, timeout=2)
         if tags_resp.status_code == 200:
             available = [m["name"] for m in tags_resp.json().get("models", [])]
-            if target_model not in available and available:
-                # Find best matching model
-                match = next((m for m in available if "qwen" in m.lower() or "llama" in m.lower()), available[0])
+            if "qwen2.5:3b" in available:
+                target_model = "qwen2.5:3b"
+            elif target_model not in available and available:
+                match = next((m for m in available if "qwen" in m.lower()), available[0])
                 target_model = match
     except Exception:
         pass
@@ -385,12 +402,16 @@ def generate_grounded_answer(project_id, query, retrieved_chunks, model="qwen2.5
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": query}
         ],
+        "options": {
+            "num_predict": 220,
+            "temperature": 0.3
+        },
         "stream": False
     }
 
     try:
         headers = {"ngrok-skip-browser-warning": "1"}
-        resp = requests.post(f"{base_url}/api/chat", json=payload, headers=headers, timeout=25)
+        resp = requests.post(f"{base_url}/api/chat", json=payload, headers=headers, timeout=50)
         if resp.status_code == 200:
             content = resp.json().get("message", {}).get("content", "")
             if content.strip():

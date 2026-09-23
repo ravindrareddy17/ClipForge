@@ -60,20 +60,21 @@ def test_ollama_connection(url):
 def resolve_file_path(p):
     if not p:
         return None
+    p_norm = os.path.normpath(p)
+    if os.path.exists(p_norm) and os.path.getsize(p_norm) > 1000:
+        return p_norm
     if p.startswith("/static/"):
         rel = p.replace("/static/", "").replace("/", os.sep)
         full = os.path.join(os.path.dirname(__file__), "backend", "data", rel)
-        if os.path.exists(full):
+        if os.path.exists(full) and os.path.getsize(full) > 1000:
             return full
-    if os.path.isabs(p) and os.path.exists(p):
-        return p
     local_cand = os.path.join(os.path.dirname(__file__), "backend", "data", "temp", os.path.basename(p))
-    if os.path.exists(local_cand):
+    if os.path.exists(local_cand) and os.path.getsize(local_cand) > 1000:
         return local_cand
     local_clip = os.path.join(os.path.dirname(__file__), "backend", "data", "clips", os.path.basename(p))
-    if os.path.exists(local_clip):
+    if os.path.exists(local_clip) and os.path.getsize(local_clip) > 1000:
         return local_clip
-    return p if os.path.exists(p) else None
+    return None
 
 # Modern, High-Contrast Minimalist Dark Theme
 st.markdown("""
@@ -502,11 +503,12 @@ if tab == "Create Clips":
                                         if v_source and os.path.exists(v_source):
                                             try:
                                                 import subprocess
+                                                clip_dur = max(1.0, float(c["end_time"]) - float(c["start_time"]))
                                                 subprocess.run([
                                                     "ffmpeg", "-y",
                                                     "-ss", str(c["start_time"]),
-                                                    "-to", str(c["end_time"]),
                                                     "-i", v_source,
+                                                    "-t", str(clip_dur),
                                                     "-vf", "crop=trunc(ih*9/16/2)*2:trunc(ih/2)*2",
                                                     "-c:v", "libx264",
                                                     "-pix_fmt", "yuv420p",
@@ -517,7 +519,7 @@ if tab == "Create Clips":
                                                 ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                                                 if os.path.exists(out_path):
                                                     conn = get_db_connection()
-                                                    conn.execute("UPDATE clips SET file_path = ? WHERE id = ?", (out_path, c["id"]))
+                                                    conn.execute("UPDATE clips SET file_path = ?, status = 'completed' WHERE id = ?", (out_path, c["id"]))
                                                     conn.commit()
                                                     conn.close()
                                                     st.rerun()

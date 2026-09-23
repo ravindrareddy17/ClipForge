@@ -155,11 +155,11 @@ async def run_processing_pipeline(video_id: str):
             has_audio = True
             update_pipeline_stage(video_id, "Import", "completed", 0.5, "Import complete. Read local video metadata.")
             
-        # Update video record with metadata, preserving original URL if applicable
+        # Update video record with metadata, setting local downloaded file path if available
         conn = get_db_connection()
         clean_title = meta.get("title") or video["filename"]
         video_source_path = meta.get("video_path") or video["file_path"]
-        db_file_path = video["file_path"] if is_url else video_source_path
+        db_file_path = video_source_path if (meta.get("video_path") and os.path.exists(meta["video_path"])) else video["file_path"]
         conn.execute(
             "UPDATE videos SET filename = ?, file_path = ?, duration = ?, width = ?, height = ?, fps = ? WHERE id = ?",
             (clean_title, db_file_path, meta["duration"], meta["width"], meta["height"], meta["fps"], video_id)
@@ -243,11 +243,12 @@ async def run_processing_pipeline(video_id: str):
             
             if os.path.exists(video_source_path):
                 try:
+                    clip_dur = max(1.0, float(clip["end_time"]) - float(clip["start_time"]))
                     subprocess.run([
                         "ffmpeg", "-y",
                         "-ss", str(clip["start_time"]),
-                        "-to", str(clip["end_time"]),
                         "-i", video_source_path,
+                        "-t", str(clip_dur),
                         "-vf", "crop=trunc(ih*9/16/2)*2:trunc(ih/2)*2", # 9:16 vertical crop with guaranteed even dimensions
                         "-c:v", "libx264",
                         "-pix_fmt", "yuv420p",
@@ -299,7 +300,8 @@ async def run_processing_pipeline(video_id: str):
                 except Exception as gen_err:
                     print(f"Clip gen error: {gen_err}")
                     
-            final_clip_path = clip_path if os.path.exists(clip_path) else None
+            final_clip_path = clip_path if (os.path.exists(clip_path) and os.path.getsize(clip_path) > 1000) else None
+            clip_status = "completed" if final_clip_path else "ready"
             
             cid = create_clip(
                 video_id=video_id,
@@ -310,11 +312,13 @@ async def run_processing_pipeline(video_id: str):
                 score=clip["score"],
                 explanation=clip["explanation"],
                 subtitles=clip["words"],
-                subtitle_style=sub_style
+                subtitle_style=sub_style,
+                status=clip_status,
+                file_path=final_clip_path
             )
             
             conn = get_db_connection()
-            conn.execute("UPDATE clips SET file_path = ?, subtitle_style = ? WHERE id = ?", (final_clip_path, json.dumps(sub_style), cid))
+            conn.execute("UPDATE clips SET file_path = ?, subtitle_style = ?, status = ? WHERE id = ?", (final_clip_path, json.dumps(sub_style), clip_status, cid))
             conn.commit()
             conn.close()
             

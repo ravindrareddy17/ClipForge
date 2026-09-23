@@ -1445,8 +1445,10 @@ export default function App() {
                       {/* Video Player or Placeholder */}
                       {c.file_path ? (
                         <video 
-                          src={c.file_path.startsWith("http") ? c.file_path : `${API_URL}/api/clips/${c.id}/stream`}
+                          src={`${API_URL}/api/clips/${c.id}/stream`}
                           controls
+                          playsInline
+                          preload="metadata"
                           className="w-full h-full object-cover"
                         />
                       ) : (
@@ -1574,18 +1576,25 @@ export default function App() {
                     {selectedClip.file_path ? (
                       <video 
                         key={`clip-${selectedClip.id}`}
-                        src={selectedClip.file_path.startsWith("http") ? selectedClip.file_path : `${API_URL}/api/clips/${selectedClip.id}/stream`}
+                        src={`${API_URL}/api/clips/${selectedClip.id}/stream`}
                         controls
                         playsInline
                         className="w-full h-full object-cover"
                       />
-                    ) : selectedVideo?.file_path && isBackendOnline ? (
+                    ) : selectedVideo && isBackendOnline ? (
                       <video 
                         key={`source-${selectedClip.id}`}
-                        src={selectedVideo.file_path.startsWith("http") ? selectedVideo.file_path : `${API_URL}/api/videos/${selectedVideo.id}/stream#t=${clipStart},${clipEnd}`}
+                        src={`${API_URL}/api/videos/${selectedVideo.id}/stream#t=${clipStart},${clipEnd}`}
                         controls
                         playsInline
                         className="w-full h-full object-cover"
+                      />
+                    ) : selectedVideo?.file_path && (selectedVideo.file_path.includes("youtube.com") || selectedVideo.file_path.includes("youtu.be")) ? (
+                      <iframe
+                        title="YouTube Segment Preview"
+                        src={`https://www.youtube-nocookie.com/embed/${selectedVideo.file_path.split("v=")[1]?.split("&")[0] || ""}?start=${Math.floor(clipStart)}&end=${Math.ceil(clipEnd)}`}
+                        className="w-full h-full border-0"
+                        allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
                       />
                     ) : (
                       <div className="text-center p-6 space-y-4">

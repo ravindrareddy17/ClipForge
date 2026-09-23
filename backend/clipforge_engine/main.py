@@ -314,7 +314,9 @@ async def api_generate_clip_metadata(clip_id: str):
 def resolve_clip_file_path(clip: dict, video: dict = None) -> Optional[str]:
     raw_path = clip.get("file_path")
     if raw_path:
-        # Check static paths
+        norm = os.path.normpath(raw_path)
+        if os.path.exists(norm) and os.path.getsize(norm) > 1000:
+            return norm
         if raw_path.startswith("/static/clips/"):
             cand = os.path.join(CLIPS_DIR, os.path.basename(raw_path))
             if os.path.exists(cand):
@@ -323,11 +325,12 @@ def resolve_clip_file_path(clip: dict, video: dict = None) -> Optional[str]:
             cand = os.path.join(TEMP_DIR, os.path.basename(raw_path))
             if os.path.exists(cand):
                 return cand
-        # Check absolute or relative paths
-        if os.path.isabs(raw_path) and os.path.exists(raw_path):
-            return raw_path
-        if os.path.exists(raw_path):
-            return os.path.abspath(raw_path)
+        cand_temp = os.path.join(TEMP_DIR, os.path.basename(raw_path))
+        if os.path.exists(cand_temp):
+            return cand_temp
+        cand_clip = os.path.join(CLIPS_DIR, os.path.basename(raw_path))
+        if os.path.exists(cand_clip):
+            return cand_clip
 
     # Check CLIPS_DIR for {clip_id}.mp4
     cand_clip = os.path.join(CLIPS_DIR, f"{clip['id']}.mp4")
@@ -341,8 +344,10 @@ def resolve_clip_file_path(clip: dict, video: dict = None) -> Optional[str]:
         return cand_temp
 
     # Fallback to source video if available
-    if video and video.get("file_path") and os.path.exists(video["file_path"]):
-        return video["file_path"]
+    if video and video.get("file_path"):
+        v_norm = os.path.normpath(video["file_path"])
+        if os.path.exists(v_norm):
+            return v_norm
 
     return None
 
@@ -380,9 +385,20 @@ def api_stream_video(video_id: str):
     if not video:
         raise HTTPException(status_code=404, detail="Video not found")
     vpath = video.get("file_path")
-    if not vpath or not os.path.exists(vpath):
-        raise HTTPException(status_code=404, detail="Source video file not found on disk")
-    return FileResponse(vpath, media_type="video/mp4")
+    if vpath:
+        norm = os.path.normpath(vpath)
+        if os.path.exists(norm) and not os.path.isdir(norm):
+            return FileResponse(norm, media_type="video/mp4")
+    # Check TEMP_DIR
+    cand_temp = os.path.join(TEMP_DIR, f"{video_id}.mp4")
+    if os.path.exists(cand_temp):
+        return FileResponse(cand_temp, media_type="video/mp4")
+    # Check IMPORTS_DIR
+    for ext in [".mp4", ".mov", ".mkv", ".webm"]:
+        cand_imp = os.path.join(IMPORTS_DIR, f"{video_id}{ext}")
+        if os.path.exists(cand_imp):
+            return FileResponse(cand_imp, media_type="video/mp4")
+    raise HTTPException(status_code=404, detail="Source video file not found on disk")
 
 @app.get("/api/videos/{video_id}/stages")
 def api_get_video_stages(video_id: str):
@@ -439,7 +455,7 @@ def api_chat(req: ChatRequest):
     
     settings = get_settings()
     ollama_url = settings.get("ollama_url", "http://localhost:11434")
-    ollama_model = settings.get("ollama_model", "llama3")
+    ollama_model = settings.get("ollama_model", "qwen2.5:3b")
     embed_model = settings.get("embedding_model", "nomic-embed-text")
     
     video_ids = [req.video_id] if req.video_id else None
