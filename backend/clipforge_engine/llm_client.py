@@ -214,14 +214,19 @@ def call_groq_chat(
     headers = {
         "Authorization": f"Bearer {key}",
         "Content-Type": "application/json",
-        "User-Agent": "ClipForge/2.0"
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
     }
+
+    # Reasoning models (like gpt-oss-20b, qwen-27b) need higher token limits for reasoning traces
+    base_max_tokens = max_tokens
+    if any(k in model.lower() for k in ["gpt-oss", "qwen", "deepseek", "r1", "reasoning"]):
+        base_max_tokens = max(max_tokens, 1500)
 
     payload: Dict[str, Any] = {
         "model": model,
         "messages": messages,
         "temperature": temperature,
-        "max_tokens": max_tokens
+        "max_tokens": base_max_tokens
     }
 
     if json_mode:
@@ -232,22 +237,38 @@ def call_groq_chat(
     last_err = None
 
     for m in models_to_try:
+        m_tokens = max(base_max_tokens, 1500) if any(k in m.lower() for k in ["gpt-oss", "qwen", "deepseek", "r1"]) else max_tokens
         payload["model"] = m
+        payload["max_tokens"] = m_tokens
         try:
-            req = urllib.request.Request(
-                "https://api.groq.com/openai/v1/chat/completions",
-                headers=headers,
-                data=json.dumps(payload).encode("utf-8")
-            )
-            with urllib.request.urlopen(req, timeout=timeout) as resp:
-                data = json.loads(resp.read().decode("utf-8"))
-                choices = data.get("choices", [])
-                if choices:
-                    return choices[0].get("message", {}).get("content", "").strip()
+            with httpx.Client(timeout=timeout) as client:
+                r = client.post(
+                    "https://api.groq.com/openai/v1/chat/completions",
+                    headers=headers,
+                    json=payload
+                )
+                if r.status_code == 200:
+                    data = r.json()
+                    choices = data.get("choices", [])
+                    if choices:
+                        msg = choices[0].get("message", {})
+                        content = (msg.get("content") or "").strip()
+                        if content:
+                            return content
+                        # If reasoning trace present and content was truncated
+                        if msg.get("reasoning"):
+                            reas = msg.get("reasoning", "").strip()
+                            if reas:
+                                return reas
+                elif r.status_code in [404, 400]:
+                    last_err = f"HTTP {r.status_code}: {r.text}"
+                    continue
+                else:
+                    last_err = f"HTTP {r.status_code}: {r.text}"
+                    raise RuntimeError(scrub_sensitive_info(last_err))
         except urllib.error.HTTPError as e:
             err_body = e.read().decode("utf-8", errors="ignore")
             last_err = f"HTTP {e.code}: {err_body}"
-            # If model not found or forbidden, try next fallback
             if e.code in [404, 400]:
                 continue
             raise RuntimeError(scrub_sensitive_info(last_err))
