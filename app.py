@@ -674,14 +674,20 @@ with st.sidebar:
 
     st.markdown("<hr style='border-color: rgba(255,255,255,0.06); margin: 14px 0;'>", unsafe_allow_html=True)
 
-    # 5 Navigation Tabs
+    # Check for hidden dev parameter to reveal CSE473 AI Lab only if explicitly requested
+    show_lab = st.query_params.get("lab") in ["1", "true", "True"]
+    if not show_lab and st.session_state.get("active_tab") == "CSE473 AI Lab":
+        st.session_state.active_tab = "Create Clips"
+
+    # Core Navigation Tabs (CSE473 AI Lab hidden from platform)
     nav_tabs = [
         ("Create Clips", "⚡"),
         ("AI Video Chat", "💬"),
         ("YouTube Channels", "📺"),
-        ("CSE473 AI Lab", "🧪"),
         ("Library & Settings", "⚙️")
     ]
+    if show_lab:
+        nav_tabs.insert(3, ("CSE473 AI Lab", "🧪"))
 
     for tab_name, icon in nav_tabs:
         is_active = st.session_state.active_tab == tab_name

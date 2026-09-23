@@ -773,7 +773,7 @@ export default function App() {
             { id: "channels", label: "Channels", icon: Radio },
             { id: "video-library", label: "Video Library", icon: Video },
             { id: "ai-processing", label: "AI Studio & Chat", icon: Bot },
-            { id: "cse473-lab", label: "CSE473 AI Lab", icon: Sparkles },
+            // { id: "cse473-lab", label: "CSE473 AI Lab", icon: Sparkles },
             { id: "generated-clips", label: "Generated Clips", icon: Film },
             { id: "upload-queue", label: "Upload Queue", icon: Share2 },
             { id: "scheduler", label: "Scheduler", icon: Calendar },
