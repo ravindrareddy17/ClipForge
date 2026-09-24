@@ -1,0 +1,140 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 620" width="960" height="620">
+  <defs>
+    <linearGradient id="cardBg" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1E1B4B" stop-opacity="0.6" />
+      <stop offset="100%" stop-color="#0F172A" stop-opacity="0.8" />
+    </linearGradient>
+    <linearGradient id="violetGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#8B5CF6" />
+      <stop offset="100%" stop-color="#6366F1" />
+    </linearGradient>
+    <linearGradient id="cyanGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#06B6D4" />
+      <stop offset="100%" stop-color="#3B82F6" />
+    </linearGradient>
+    <linearGradient id="amberGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#F59E0B" />
+      <stop offset="100%" stop-color="#EF4444" />
+    </linearGradient>
+    <filter id="cardShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000000" flood-opacity="0.5" />
+    </filter>
+  </defs>
+
+  <style>
+    text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    .title { font-size: 13px; font-weight: 700; fill: #E2E8F0; letter-spacing: 0.5px; }
+    .badge { font-size: 10px; font-weight: 600; fill: #A78BFA; }
+    .item { font-size: 11px; fill: #94A3B8; }
+    .item-bold { font-size: 11px; font-weight: 600; fill: #F1F5F9; }
+    .layer-tag { font-size: 11px; font-weight: 700; letter-spacing: 1.5px; fill: #64748B; }
+  </style>
+
+  <!-- Background -->
+  <rect width="960" height="620" rx="16" fill="#0B0F19" />
+  <rect x="1" y="1" width="958" height="618" rx="15" fill="none" stroke="#1E293B" stroke-width="1.5" />
+
+  <!-- HEADER -->
+  <text x="40" y="44" font-size="20" font-weight="800" fill="#FFFFFF">ClipForge AI V2 <tspan fill="#8B5CF6">Architecture</tspan></text>
+  <text x="40" y="64" font-size="12" fill="#64748B">Enterprise-Grade Local-First Video Intelligence, Repurposing &amp; Multi-Agent RAG</text>
+
+  <!-- LAYER 1: CLIENTS -->
+  <text x="40" y="105" class="layer-tag">PRESENTATION LAYER</text>
+  
+  <!-- Streamlit Box -->
+  <g transform="translate(40, 115)">
+    <rect width="425" height="60" rx="10" fill="url(#cardBg)" stroke="#334155" stroke-width="1.2" filter="url(#cardShadow)" />
+    <circle cx="25" cy="30" r="10" fill="#EF4444" opacity="0.2" />
+    <circle cx="25" cy="30" r="4" fill="#EF4444" />
+    <text x="45" y="27" class="title">Streamlit Studio Dashboard <tspan fill="#EF4444" font-size="10">PORT 8501</tspan></text>
+    <text x="45" y="44" class="item">Interactive Video Ingestion • Player Seeking • Clip Repurposing • AI Lab</text>
+  </g>
+
+  <!-- React Box -->
+  <g transform="translate(495, 115)">
+    <rect width="425" height="60" rx="10" fill="url(#cardBg)" stroke="#334155" stroke-width="1.2" filter="url(#cardShadow)" />
+    <circle cx="25" cy="30" r="10" fill="#06B6D4" opacity="0.2" />
+    <circle cx="25" cy="30" r="4" fill="#06B6D4" />
+    <text x="45" y="27" class="title">React 19 + Vite Web Application <tspan fill="#06B6D4" font-size="10">PORT 5173</tspan></text>
+    <text x="45" y="44" class="item">Glassmorphic UI • Real-time Chat • Timeline Jump Badges • Channel Explorer</text>
+  </g>
+
+  <!-- LAYER 2: API ENGINE -->
+  <text x="40" y="210" class="layer-tag">APPLICATION &amp; ORCHESTRATION GATEWAY</text>
+  <g transform="translate(40, 220)">
+    <rect width="880" height="48" rx="10" fill="#131B2E" stroke="#2563EB" stroke-width="1.2" filter="url(#cardShadow)" />
+    <circle cx="25" cy="24" r="10" fill="#2563EB" opacity="0.2" />
+    <circle cx="25" cy="24" r="4" fill="#3B82F6" />
+    <text x="45" y="22" class="title">FastAPI Backend Engine <tspan fill="#3B82F6" font-size="10">PORT 8000</tspan></text>
+    <text x="45" y="38" class="item">RESTful Endpoints • SSE Streaming • Project Management • Channel Resolvers • Lab Benchmarks</text>
+  </g>
+
+  <!-- LAYER 3: CORE CAPABILITIES (3 COLUMNS) -->
+  <text x="40" y="302" class="layer-tag">INTELLIGENCE &amp; REPURPOSING ENGINES</text>
+
+  <!-- Col 1: Video Repurposing -->
+  <g transform="translate(40, 312)">
+    <rect width="275" height="150" rx="10" fill="url(#cardBg)" stroke="#334155" stroke-width="1.2" filter="url(#cardShadow)" />
+    <path d="M 0 10 Q 0 0 10 0 L 265 0 Q 275 0 275 10 L 275 28 L 0 28 Z" fill="url(#amberGrad)" opacity="0.2" />
+    <text x="16" y="20" class="title" fill="#F59E0B">Video Repurposing</text>
+    <text x="16" y="48" class="item-bold">yt-dlp Video Ingestion</text>
+    <text x="16" y="64" class="item">Audio extraction (16kHz mono WAV)</text>
+    <text x="16" y="84" class="item-bold">OpenAI Whisper ASR</text>
+    <text x="16" y="100" class="item">Word-level timestamped transcripts</text>
+    <text x="16" y="120" class="item-bold">9:16 Vertical Cropping</text>
+    <text x="16" y="136" class="item">OpenCV Face Detection + ASS Subtitles</text>
+  </g>
+
+  <!-- Col 2: Multi-Agent QA -->
+  <g transform="translate(342, 312)">
+    <rect width="275" height="150" rx="10" fill="url(#cardBg)" stroke="#334155" stroke-width="1.2" filter="url(#cardShadow)" />
+    <path d="M 0 10 Q 0 0 10 0 L 265 0 Q 275 0 275 10 L 275 28 L 0 28 Z" fill="url(#violetGrad)" opacity="0.2" />
+    <text x="16" y="20" class="title" fill="#A78BFA">Multi-Agent Video QA</text>
+    <text x="16" y="48" class="item-bold">6-Agent ReAct Workflow (≤ 3 iter)</text>
+    <text x="16" y="64" class="item">QueryPlanner • Timeline • Synthesis</text>
+    <text x="16" y="84" class="item-bold">Whole-Video Summary Routing</text>
+    <text x="16" y="100" class="item">Balanced timeline chronological sampling</text>
+    <text x="16" y="120" class="item-bold">Evidence Verification</text>
+    <text x="16" y="136" class="item">Fact checking &amp; Prompt Injection Defense</text>
+  </g>
+
+  <!-- Col 3: Hybrid RAG -->
+  <g transform="translate(645, 312)">
+    <rect width="275" height="150" rx="10" fill="url(#cardBg)" stroke="#334155" stroke-width="1.2" filter="url(#cardShadow)" />
+    <path d="M 0 10 Q 0 0 10 0 L 265 0 Q 275 0 275 10 L 275 28 L 0 28 Z" fill="url(#cyanGrad)" opacity="0.2" />
+    <text x="16" y="20" class="title" fill="#38BDF8">Hybrid RAG Engine</text>
+    <text x="16" y="48" class="item-bold">Segment-Aware Overlap Chunking</text>
+    <text x="16" y="64" class="item">120-180 words, 15-20% sliding overlap</text>
+    <text x="16" y="84" class="item-bold">Reciprocal Rank Fusion (RRF)</text>
+    <text x="16" y="100" class="item">BM25 Lexical + nomic-embed-text (768d)</text>
+    <text x="16" y="120" class="item-bold">Chronological Expansion</text>
+    <text x="16" y="136" class="item">±1 adjacent chunk context window</text>
+  </g>
+
+  <!-- LAYER 4: STORAGE & RUNTIMES (BOTTOM 2 BOXES) -->
+  <text x="40" y="492" class="layer-tag">PERSISTENCE &amp; INFERENCE PROVIDERS</text>
+
+  <!-- Data Stores -->
+  <g transform="translate(40, 502)">
+    <rect width="425" height="85" rx="10" fill="url(#cardBg)" stroke="#334155" stroke-width="1.2" filter="url(#cardShadow)" />
+    <text x="16" y="24" class="title">Storage &amp; Vector Database</text>
+    <text x="16" y="46" class="item"><tspan class="item-bold">SQLite (`clipforge.db`):</tspan> Projects, video metadata, transcript chunks, chat memory</text>
+    <text x="16" y="68" class="item"><tspan class="item-bold">ChromaDB:</tspan> Isolated collections per project, persistent dense vector storage</text>
+  </g>
+
+  <!-- LLM Providers -->
+  <g transform="translate(495, 502)">
+    <rect width="425" height="85" rx="10" fill="url(#cardBg)" stroke="#334155" stroke-width="1.2" filter="url(#cardShadow)" />
+    <text x="16" y="24" class="title">Unified Multi-LLM Runtime</text>
+    <text x="16" y="46" class="item"><tspan class="item-bold">Groq Cloud:</tspan> `gpt-oss-20b` (1500+ token reasoning allocation) • `qwen3.8-27b`</text>
+    <text x="16" y="68" class="item"><tspan class="item-bold">Google Gemini:</tspan> `gemini-2.5-flash` • <tspan class="item-bold">Local Ollama:</tspan> `qwen2.5:3b` (100% offline)</text>
+  </g>
+
+  <!-- Arrows connecting layers -->
+  <path d="M 252 175 L 252 220" stroke="#475569" stroke-width="1.5" stroke-dasharray="3 3" />
+  <path d="M 707 175 L 707 220" stroke="#475569" stroke-width="1.5" stroke-dasharray="3 3" />
+  <path d="M 177 268 L 177 312" stroke="#475569" stroke-width="1.5" stroke-dasharray="3 3" />
+  <path d="M 480 268 L 480 312" stroke="#475569" stroke-width="1.5" stroke-dasharray="3 3" />
+  <path d="M 782 268 L 782 312" stroke="#475569" stroke-width="1.5" stroke-dasharray="3 3" />
+  <path d="M 480 462 L 480 502" stroke="#475569" stroke-width="1.5" stroke-dasharray="3 3" />
+</svg>

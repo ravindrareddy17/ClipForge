@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#9333EA" />
+      <stop offset="50%" stop-color="#7C3AED" />
+      <stop offset="100%" stop-color="#4F46E5" />
+    </linearGradient>
+
+    <!-- Inner Border Gradient -->
+    <linearGradient id="borderGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#C084FC" stop-opacity="0.8" />
+      <stop offset="100%" stop-color="#818CF8" stop-opacity="0.3" />
+    </linearGradient>
+
+    <!-- Lightning Core Gradient -->
+    <linearGradient id="boltGrad" x1="20%" y1="0%" x2="80%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="60%" stop-color="#F5F3FF" />
+      <stop offset="100%" stop-color="#DDD6FE" />
+    </linearGradient>
+
+    <!-- Ambient Glow Filter -->
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="6" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+
+    <!-- Drop Shadow -->
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#7C3AED" flood-opacity="0.45" />
+    </filter>
+  </defs>
+
+  <!-- Base Icon Shape with Drop Shadow -->
+  <rect x="14" y="14" width="100" height="100" rx="26" fill="url(#bgGrad)" filter="url(#shadow)" />
+  <rect x="14" y="14" width="100" height="100" rx="26" fill="none" stroke="url(#borderGrad)" stroke-width="2" />
+
+  <!-- Core Glow Accent -->
+  <circle cx="64" cy="62" r="28" fill="#A855F7" opacity="0.35" filter="url(#glow)" />
+
+  <!-- Modern Precision Lightning / Energy Symbol -->
+  <path d="M68.5 28L40 64H62L58 100L88 56H66L72 28H68.5Z" 
+        fill="url(#boltGrad)" 
+        stroke="#FFFFFF" 
+        stroke-width="1.5" 
+        stroke-linejoin="round"
+        filter="url(#glow)" />
+        
+  <!-- Subtle Cyan Energy Core Spark -->
+  <circle cx="70" cy="46" r="3" fill="#38BDF8" opacity="0.85" />
+</svg>

@@ -1,0 +1,123 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="960" height="480">
+  <defs>
+    <linearGradient id="agentCardBg" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1E1B4B" stop-opacity="0.7" />
+      <stop offset="100%" stop-color="#0F172A" stop-opacity="0.9" />
+    </linearGradient>
+    <linearGradient id="agentHeader" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#8B5CF6" />
+      <stop offset="100%" stop-color="#EC4899" />
+    </linearGradient>
+    <marker id="agentArrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#8B5CF6" />
+    </marker>
+    <filter id="agentShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000000" flood-opacity="0.5" />
+    </filter>
+  </defs>
+
+  <style>
+    text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    .agent-title { font-size: 13px; font-weight: 700; fill: #F8FAFC; }
+    .agent-num { font-size: 10px; font-weight: 800; fill: #C084FC; letter-spacing: 1px; }
+    .agent-desc { font-size: 10px; fill: #94A3B8; }
+    .loop-text { font-size: 10px; font-weight: 700; fill: #F59E0B; }
+  </style>
+
+  <!-- Background -->
+  <rect width="960" height="480" rx="16" fill="#0B0F19" />
+  <rect x="1" y="1" width="958" height="478" rx="15" fill="none" stroke="#1E293B" stroke-width="1.5" />
+
+  <!-- Title -->
+  <text x="40" y="44" font-size="18" font-weight="800" fill="#FFFFFF">Multi-Agent Video QA <tspan fill="#A855F7">ReAct Orchestration</tspan></text>
+  <text x="40" y="64" font-size="12" fill="#64748B">Bounded (≤ 3 iterations) collaborative multi-agent loop with evidence verification and safety boundaries</text>
+
+  <!-- Input User Question -->
+  <g transform="translate(40, 95)">
+    <rect width="880" height="42" rx="8" fill="#131B2E" stroke="#334155" stroke-width="1.2" filter="url(#agentShadow)" />
+    <circle cx="20" cy="21" r="5" fill="#38BDF8" />
+    <text x="35" y="25" font-size="12" font-weight="600" fill="#E2E8F0">User Video Query: <tspan font-style="italic" fill="#94A3B8">"what video about" / "What did the speaker say about Alpha Centauri?"</tspan></text>
+  </g>
+
+  <!-- ROW 1: Agents 1, 2, 3 -->
+  <!-- Agent 1: Query Planner -->
+  <g transform="translate(40, 160)">
+    <rect width="270" height="110" rx="10" fill="url(#agentCardBg)" stroke="#8B5CF6" stroke-width="1.5" filter="url(#agentShadow)" />
+    <text x="14" y="24" class="agent-num">AGENT 01</text>
+    <text x="14" y="44" class="agent-title">QueryPlannerAgent</text>
+    <text x="14" y="64" class="agent-desc">• Query normalization (informal → canonical)</text>
+    <text x="14" y="80" class="agent-desc">• Intent: summary, lookup, comparison, timeline</text>
+    <text x="14" y="96" class="agent-desc">• Sub-query formulation &amp; timecode extraction</text>
+  </g>
+
+  <!-- Agent 2: Retrieval Agent -->
+  <g transform="translate(345, 160)">
+    <rect width="270" height="110" rx="10" fill="url(#agentCardBg)" stroke="#8B5CF6" stroke-width="1.5" filter="url(#agentShadow)" />
+    <text x="14" y="24" class="agent-num">AGENT 02</text>
+    <text x="14" y="44" class="agent-title">RetrievalAgent</text>
+    <text x="14" y="64" class="agent-desc">• Hybrid BM25 lexical + dense vector search</text>
+    <text x="14" y="80" class="agent-desc">• Reciprocal Rank Fusion (RRF k=60)</text>
+    <text x="14" y="96" class="agent-desc">• Whole-video balanced timeline anchors</text>
+  </g>
+
+  <!-- Agent 3: Timeline Agent -->
+  <g transform="translate(650, 160)">
+    <rect width="270" height="110" rx="10" fill="url(#agentCardBg)" stroke="#8B5CF6" stroke-width="1.5" filter="url(#agentShadow)" />
+    <text x="14" y="24" class="agent-num">AGENT 03</text>
+    <text x="14" y="44" class="agent-title">TimelineAgent</text>
+    <text x="14" y="64" class="agent-desc">• Chronological order validation</text>
+    <text x="14" y="80" class="agent-desc">• Forward scan for "after X" temporal questions</text>
+    <text x="14" y="96" class="agent-desc">• ±1 adjacent chunk context window expansion</text>
+  </g>
+
+  <!-- Row 1 arrows -->
+  <path d="M 310 215 L 340 215" stroke="#8B5CF6" stroke-width="2" marker-end="url(#agentArrow)" />
+  <path d="M 615 215 L 645 215" stroke="#8B5CF6" stroke-width="2" marker-end="url(#agentArrow)" />
+
+  <!-- ROW 2: Agents 4, 5, 6 -->
+  <!-- Agent 4: Evidence Verification -->
+  <g transform="translate(40, 300)">
+    <rect width="270" height="110" rx="10" fill="url(#agentCardBg)" stroke="#EC4899" stroke-width="1.5" filter="url(#agentShadow)" />
+    <text x="14" y="24" class="agent-num" fill="#F472B6">AGENT 04</text>
+    <text x="14" y="44" class="agent-title">EvidenceVerificationAgent</text>
+    <text x="14" y="64" class="agent-desc">• Semantic keyword overlap check</text>
+    <text x="14" y="80" class="agent-desc">• Evidence confidence score (0.0 to 1.0)</text>
+    <text x="14" y="96" class="agent-desc">• Rejection of ungrounded / unsupported queries</text>
+  </g>
+
+  <!-- Agent 5: Answer Synthesis -->
+  <g transform="translate(345, 300)">
+    <rect width="270" height="110" rx="10" fill="url(#agentCardBg)" stroke="#8B5CF6" stroke-width="1.5" filter="url(#agentShadow)" />
+    <text x="14" y="24" class="agent-num">AGENT 05</text>
+    <text x="14" y="44" class="agent-title">AnswerSynthesisAgent</text>
+    <text x="14" y="64" class="agent-desc">• Structured, grounded answer generation</text>
+    <text x="14" y="80" class="agent-desc">• Strict bracketed citations: [MM:SS]</text>
+    <text x="14" y="96" class="agent-desc">• Multi-provider LLM (Groq / Gemini / Ollama)</text>
+  </g>
+
+  <!-- Agent 6: Safety Guardrail -->
+  <g transform="translate(650, 300)">
+    <rect width="270" height="110" rx="10" fill="url(#agentCardBg)" stroke="#10B981" stroke-width="1.5" filter="url(#agentShadow)" />
+    <text x="14" y="24" class="agent-num" fill="#34D399">AGENT 06</text>
+    <text x="14" y="44" class="agent-title">SafetyGuardrailAgent</text>
+    <text x="14" y="64" class="agent-desc">• Adversarial prompt injection neutralization</text>
+    <text x="14" y="80" class="agent-desc">• Hallucination &amp; boundary enforcement</text>
+    <text x="14" y="96" class="agent-desc">• Informative indexing diagnostics passthrough</text>
+  </g>
+
+  <!-- Flow between Row 1 and Row 2 -->
+  <path d="M 785 270 L 785 285 L 175 285 L 175 300" stroke="#8B5CF6" stroke-width="1.5" stroke-dasharray="3 3" />
+  <path d="M 310 355 L 340 355" stroke="#8B5CF6" stroke-width="2" marker-end="url(#agentArrow)" />
+  <path d="M 615 355 L 645 355" stroke="#8B5CF6" stroke-width="2" marker-end="url(#agentArrow)" />
+
+  <!-- Bounded ReAct Feedback Loop -->
+  <path d="M 175 410 L 175 435 L 480 435 L 480 270" fill="none" stroke="#F59E0B" stroke-width="1.5" stroke-dasharray="3 3" />
+  <rect x="250" y="423" width="160" height="20" rx="4" fill="#1E1B4B" stroke="#F59E0B" stroke-width="1" />
+  <text x="258" y="437" class="loop-text">ReAct Loop (Iteration ≤ 3)</text>
+
+  <!-- Grounded Output Pill -->
+  <g transform="translate(650, 420)">
+    <rect width="270" height="34" rx="8" fill="#131B2E" stroke="#10B981" stroke-width="1.2" />
+    <text x="15" y="22" font-size="11" font-weight="700" fill="#34D399">✓ Grounded Answer + Jump Timestamps</text>
+  </g>
+</svg>

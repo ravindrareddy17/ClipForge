@@ -1,0 +1,106 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" width="960" height="480">
+  <defs>
+    <linearGradient id="ragCardBg" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1E1B4B" stop-opacity="0.7" />
+      <stop offset="100%" stop-color="#0F172A" stop-opacity="0.9" />
+    </linearGradient>
+    <linearGradient id="denseGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#8B5CF6" />
+      <stop offset="100%" stop-color="#6366F1" />
+    </linearGradient>
+    <linearGradient id="bm25Grad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#06B6D4" />
+      <stop offset="100%" stop-color="#3B82F6" />
+    </linearGradient>
+    <marker id="ragArrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#8B5CF6" />
+    </marker>
+    <filter id="ragShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000000" flood-opacity="0.5" />
+    </filter>
+  </defs>
+
+  <style>
+    text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    .title { font-size: 13px; font-weight: 700; fill: #F1F5F9; }
+    .sub { font-size: 11px; fill: #94A3B8; }
+    .math { font-family: "Courier New", monospace; font-size: 12px; font-weight: 700; fill: #38BDF8; }
+  </style>
+
+  <!-- Background -->
+  <rect width="960" height="480" rx="16" fill="#0B0F19" />
+  <rect x="1" y="1" width="958" height="478" rx="15" fill="none" stroke="#1E293B" stroke-width="1.5" />
+
+  <!-- Title -->
+  <text x="40" y="44" font-size="18" font-weight="800" fill="#FFFFFF">Segment-Aware <tspan fill="#38BDF8">Hybrid RAG Architecture</tspan></text>
+  <text x="40" y="64" font-size="12" fill="#64748B">Combining dense semantic embeddings with BM25 lexical precision via Reciprocal Rank Fusion (RRF)</text>
+
+  <!-- Top: Input Video & Whisper -->
+  <g transform="translate(40, 95)">
+    <rect width="420" height="60" rx="10" fill="url(#ragCardBg)" stroke="#334155" stroke-width="1.2" filter="url(#ragShadow)" />
+    <text x="18" y="26" class="title">1. Raw Video &amp; Whisper Transcription</text>
+    <text x="18" y="44" class="sub">OpenAI Whisper extracts word-level start/end timestamps and raw speech text</text>
+  </g>
+
+  <!-- Top Right: Chunking -->
+  <g transform="translate(500, 95)">
+    <rect width="420" height="60" rx="10" fill="url(#ragCardBg)" stroke="#334155" stroke-width="1.2" filter="url(#ragShadow)" />
+    <text x="18" y="26" class="title">2. Overlap-Aware Semantic Chunking</text>
+    <text x="18" y="44" class="sub">120–180 words per chunk with 15–20% sliding overlap • preserves timestamp bounds</text>
+  </g>
+  <path d="M 460 125 L 495 125" stroke="#8B5CF6" stroke-width="2" marker-end="url(#ragArrow)" />
+
+  <!-- Middle: Two Parallel Branches -->
+  <!-- Branch A: Dense Vector Embeddings -->
+  <g transform="translate(40, 185)">
+    <rect width="420" height="85" rx="10" fill="url(#ragCardBg)" stroke="#8B5CF6" stroke-width="1.5" filter="url(#ragShadow)" />
+    <path d="M 0 8 Q 0 0 8 0 L 412 0 Q 420 0 420 8 L 420 22 L 0 22 Z" fill="url(#denseGrad)" opacity="0.3" />
+    <text x="18" y="16" font-size="11" font-weight="700" fill="#C4B5FD">BRANCH A: DENSE SEMANTIC RETRIEVAL</text>
+    <text x="18" y="42" class="title">ChromaDB Vector Store (768-Dim)</text>
+    <text x="18" y="60" class="sub">Embedded via `nomic-embed-text` • Cosine similarity search</text>
+    <text x="18" y="74" class="sub">Project-isolated collections: `cf_project_{id}`</text>
+  </g>
+
+  <!-- Branch B: BM25 Lexical Search -->
+  <g transform="translate(500, 185)">
+    <rect width="420" height="85" rx="10" fill="url(#ragCardBg)" stroke="#06B6D4" stroke-width="1.5" filter="url(#ragShadow)" />
+    <path d="M 0 8 Q 0 0 8 0 L 412 0 Q 420 0 420 8 L 420 22 L 0 22 Z" fill="url(#bm25Grad)" opacity="0.3" />
+    <text x="18" y="16" font-size="11" font-weight="700" fill="#67E8F9">BRANCH B: LEXICAL FULL-TEXT RETRIEVAL</text>
+    <text x="18" y="42" class="title">SQLite BM25 Lexical Index</text>
+    <text x="18" y="60" class="sub">Exact keyword matching, terminology, acronyms &amp; proper nouns</text>
+    <text x="18" y="74" class="sub">Full-text tokenization over SQLite `video_chunks` table</text>
+  </g>
+
+  <!-- Flow to Parallel branches -->
+  <path d="M 710 155 L 710 170 L 250 170 L 250 185" stroke="#8B5CF6" stroke-width="1.5" stroke-dasharray="3 3" />
+  <path d="M 710 155 L 710 185" stroke="#8B5CF6" stroke-width="1.5" stroke-dasharray="3 3" />
+
+  <!-- Bottom Box 1: RRF Fusion -->
+  <g transform="translate(40, 300)">
+    <rect width="420" height="75" rx="10" fill="url(#ragCardBg)" stroke="#334155" stroke-width="1.2" filter="url(#ragShadow)" />
+    <text x="18" y="24" class="title">3. Reciprocal Rank Fusion (RRF)</text>
+    <text x="18" y="44" class="math">RRF(d) = Σ [ 1 / (60 + rank_m(d)) ]</text>
+    <text x="18" y="62" class="sub">Normalizes and unifies dense &amp; sparse ranks (k = 60)</text>
+  </g>
+
+  <!-- Bottom Box 2: Chronological Expansion -->
+  <g transform="translate(500, 300)">
+    <rect width="420" height="75" rx="10" fill="url(#ragCardBg)" stroke="#334155" stroke-width="1.2" filter="url(#ragShadow)" />
+    <text x="18" y="24" class="title">4. Chronological Context Expansion</text>
+    <text x="18" y="44" class="sub">Automatically fetches adjacent (±1) chunk window across timeline</text>
+    <text x="18" y="62" class="sub">Eliminates fragmented answers; provides full narrative context</text>
+  </g>
+
+  <!-- Connecting to Bottom -->
+  <path d="M 250 270 L 250 300" stroke="#8B5CF6" stroke-width="2" marker-end="url(#ragArrow)" />
+  <path d="M 710 270 L 710 300" stroke="#8B5CF6" stroke-width="2" marker-end="url(#ragArrow)" />
+  <path d="M 460 338 L 495 338" stroke="#8B5CF6" stroke-width="2" marker-end="url(#ragArrow)" />
+
+  <!-- Final Output Banner -->
+  <g transform="translate(40, 400)">
+    <rect width="880" height="52" rx="10" fill="#131B2E" stroke="#8B5CF6" stroke-width="1.5" filter="url(#ragShadow)" />
+    <text x="24" y="25" class="title">5. Grounded Synthesis &amp; Clickable Timestamp Seeker</text>
+    <text x="24" y="42" class="sub">Synthesizes evidence-grounded answer with [MM:SS] citations • Directly triggers synchronized video player seeking</text>
+  </g>
+  <path d="M 710 375 L 710 400" stroke="#8B5CF6" stroke-width="2" marker-end="url(#ragArrow)" />
+</svg>

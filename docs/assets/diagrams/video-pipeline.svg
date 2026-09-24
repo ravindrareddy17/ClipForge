@@ -1,0 +1,111 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 380" width="960" height="380">
+  <defs>
+    <linearGradient id="vpCardBg" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1E1B4B" stop-opacity="0.7" />
+      <stop offset="100%" stop-color="#0F172A" stop-opacity="0.9" />
+    </linearGradient>
+    <linearGradient id="vpAccent" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#F59E0B" />
+      <stop offset="100%" stop-color="#EC4899" />
+    </linearGradient>
+    <marker id="vpArrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#8B5CF6" />
+    </marker>
+    <filter id="vpShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000000" flood-opacity="0.5" />
+    </filter>
+  </defs>
+
+  <style>
+    text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    .stage-title { font-size: 12px; font-weight: 700; fill: #F1F5F9; }
+    .stage-tech { font-size: 10px; font-weight: 600; fill: #A78BFA; }
+    .stage-desc { font-size: 10px; fill: #94A3B8; }
+    .step-num { font-size: 10px; font-weight: 800; fill: #38BDF8; }
+  </style>
+
+  <!-- Background -->
+  <rect width="960" height="380" rx="16" fill="#0B0F19" />
+  <rect x="1" y="1" width="958" height="378" rx="15" fill="none" stroke="#1E293B" stroke-width="1.5" />
+
+  <!-- Title -->
+  <text x="40" y="44" font-size="18" font-weight="800" fill="#FFFFFF">Video → Viral Shorts <tspan fill="#F59E0B">Automated Pipeline</tspan></text>
+  <text x="40" y="64" font-size="12" fill="#64748B">From long-form multi-hour video to 9:16 vertical shorts with face-centered tracking and animated subtitles</text>
+
+  <!-- ROW 1: Stages 1 to 4 -->
+  <!-- Step 1 -->
+  <g transform="translate(40, 100)">
+    <rect width="190" height="95" rx="10" fill="url(#vpCardBg)" stroke="#334155" stroke-width="1.2" filter="url(#vpShadow)" />
+    <text x="14" y="24" class="step-num">STAGE 01</text>
+    <text x="14" y="44" class="stage-title">Video Ingestion</text>
+    <text x="14" y="60" class="stage-tech">yt-dlp / Upload</text>
+    <text x="14" y="78" class="stage-desc">Streams &amp; validates source MP4</text>
+  </g>
+
+  <!-- Step 2 -->
+  <g transform="translate(270, 100)">
+    <rect width="190" height="95" rx="10" fill="url(#vpCardBg)" stroke="#334155" stroke-width="1.2" filter="url(#vpShadow)" />
+    <text x="14" y="24" class="step-num">STAGE 02</text>
+    <text x="14" y="44" class="stage-title">Audio Demuxing</text>
+    <text x="14" y="60" class="stage-tech">FFmpeg Engine</text>
+    <text x="14" y="78" class="stage-desc">16kHz 16-bit mono WAV extract</text>
+  </g>
+
+  <!-- Step 3 -->
+  <g transform="translate(500, 100)">
+    <rect width="190" height="95" rx="10" fill="url(#vpCardBg)" stroke="#334155" stroke-width="1.2" filter="url(#vpShadow)" />
+    <text x="14" y="24" class="step-num">STAGE 03</text>
+    <text x="14" y="44" class="stage-title">Whisper ASR</text>
+    <text x="14" y="60" class="stage-tech">OpenAI Whisper</text>
+    <text x="14" y="78" class="stage-desc">Word-level timestamps &amp; text</text>
+  </g>
+
+  <!-- Step 4 -->
+  <g transform="translate(730, 100)">
+    <rect width="190" height="95" rx="10" fill="url(#vpCardBg)" stroke="#334155" stroke-width="1.2" filter="url(#vpShadow)" />
+    <text x="14" y="24" class="step-num">STAGE 04</text>
+    <text x="14" y="44" class="stage-title">Moment Detection</text>
+    <text x="14" y="60" class="stage-tech">Audio Peak + Energy</text>
+    <text x="14" y="78" class="stage-desc">Identifies high-impact hooks</text>
+  </g>
+
+  <!-- Connecting arrows Row 1 -->
+  <path d="M 230 148 L 265 148" stroke="#8B5CF6" stroke-width="2" marker-end="url(#vpArrow)" />
+  <path d="M 460 148 L 495 148" stroke="#8B5CF6" stroke-width="2" marker-end="url(#vpArrow)" />
+  <path d="M 690 148 L 725 148" stroke="#8B5CF6" stroke-width="2" marker-end="url(#vpArrow)" />
+
+  <!-- Turn from Step 4 to Step 5 (Row 1 to Row 2) -->
+  <path d="M 825 195 L 825 240 L 730 285" fill="none" stroke="#8B5CF6" stroke-width="1.5" stroke-dasharray="3 3" />
+
+  <!-- ROW 2: Stages 5 to 7 -->
+  <!-- Step 5 -->
+  <g transform="translate(155, 240)">
+    <rect width="190" height="95" rx="10" fill="url(#vpCardBg)" stroke="#334155" stroke-width="1.2" filter="url(#vpShadow)" />
+    <text x="14" y="24" class="step-num">STAGE 05</text>
+    <text x="14" y="44" class="stage-title">Face Tracking</text>
+    <text x="14" y="60" class="stage-tech">OpenCV Haar Cascade</text>
+    <text x="14" y="78" class="stage-desc">Centers speaker dynamically</text>
+  </g>
+
+  <!-- Step 6 -->
+  <g transform="translate(385, 240)">
+    <rect width="190" height="95" rx="10" fill="url(#vpCardBg)" stroke="#334155" stroke-width="1.2" filter="url(#vpShadow)" />
+    <text x="14" y="24" class="step-num">STAGE 06</text>
+    <text x="14" y="44" class="stage-title">9:16 Vertical Crop</text>
+    <text x="14" y="60" class="stage-tech">Crop &amp; Scale Engine</text>
+    <text x="14" y="78" class="stage-desc">Converts 16:9 to mobile vertical</text>
+  </g>
+
+  <!-- Step 7 -->
+  <g transform="translate(615, 240)">
+    <rect width="200" height="95" rx="10" fill="url(#vpCardBg)" stroke="#8B5CF6" stroke-width="1.8" filter="url(#vpShadow)" />
+    <text x="14" y="24" class="step-num" fill="#F59E0B">STAGE 07 (OUTPUT)</text>
+    <text x="14" y="44" class="stage-title">Subtitle Burn &amp; Export</text>
+    <text x="14" y="60" class="stage-tech">FFmpeg + ASS Subtitles</text>
+    <text x="14" y="78" class="stage-desc">Ready for Shorts / TikTok / Reels</text>
+  </g>
+
+  <!-- Connecting arrows Row 2 -->
+  <path d="M 345 288 L 380 288" stroke="#8B5CF6" stroke-width="2" marker-end="url(#vpArrow)" />
+  <path d="M 575 288 L 610 288" stroke="#8B5CF6" stroke-width="2" marker-end="url(#vpArrow)" />
+</svg>

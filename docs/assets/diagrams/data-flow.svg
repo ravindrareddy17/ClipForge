@@ -1,0 +1,140 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 360" width="960" height="360">
+  <defs>
+    <linearGradient id="dfCard" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1E1B4B" stop-opacity="0.8" />
+      <stop offset="100%" stop-color="#0F172A" stop-opacity="0.9" />
+    </linearGradient>
+    <linearGradient id="dfGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#8B5CF6" />
+      <stop offset="100%" stop-color="#06B6D4" />
+    </linearGradient>
+    <marker id="dfArrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#38BDF8" />
+    </marker>
+    <filter id="dfShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000000" flood-opacity="0.5" />
+    </filter>
+  </defs>
+
+  <style>
+    text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    .node-title { font-size: 11px; font-weight: 700; fill: #F1F5F9; }
+    .node-sub { font-size: 9px; fill: #94A3B8; }
+    .pill-step { font-size: 9px; font-weight: 800; fill: #38BDF8; }
+  </style>
+
+  <!-- Background -->
+  <rect width="960" height="360" rx="16" fill="#0B0F19" />
+  <rect x="1" y="1" width="958" height="358" rx="15" fill="none" stroke="#1E293B" stroke-width="1.5" />
+
+  <!-- Title -->
+  <text x="40" y="44" font-size="18" font-weight="800" fill="#FFFFFF">End-to-End <tspan fill="#38BDF8">Data Lifecycle &amp; Flow</tspan></text>
+  <text x="40" y="64" font-size="12" fill="#64748B">From ingestion through multi-layer representation, vectorization, hybrid scoring, grounded reasoning, and UI seeking</text>
+
+  <!-- ROW 1: Stages 1 to 5 -->
+  <!-- 1. Video -->
+  <g transform="translate(40, 100)">
+    <rect width="160" height="80" rx="8" fill="url(#dfCard)" stroke="#334155" stroke-width="1.2" filter="url(#dfShadow)" />
+    <text x="12" y="22" class="pill-step">01. INGESTION</text>
+    <text x="12" y="42" class="node-title">Raw Video File</text>
+    <text x="12" y="58" class="node-sub">YouTube URL / Local MP4</text>
+    <text x="12" y="70" class="node-sub">SQLite video metadata</text>
+  </g>
+
+  <!-- 2. Audio -->
+  <g transform="translate(225, 100)">
+    <rect width="160" height="80" rx="8" fill="url(#dfCard)" stroke="#334155" stroke-width="1.2" filter="url(#dfShadow)" />
+    <text x="12" y="22" class="pill-step">02. EXTRACTION</text>
+    <text x="12" y="42" class="node-title">16kHz Mono Audio</text>
+    <text x="12" y="58" class="node-sub">FFmpeg demuxing</text>
+    <text x="12" y="70" class="node-sub">Clean acoustic stream</text>
+  </g>
+
+  <!-- 3. Whisper -->
+  <g transform="translate(410, 100)">
+    <rect width="160" height="80" rx="8" fill="url(#dfCard)" stroke="#334155" stroke-width="1.2" filter="url(#dfShadow)" />
+    <text x="12" y="22" class="pill-step">03. ASR SPEECH</text>
+    <text x="12" y="42" class="node-title">Whisper Transcript</text>
+    <text x="12" y="58" class="node-sub">Word-level timestamps</text>
+    <text x="12" y="70" class="node-sub">Full narrative string</text>
+  </g>
+
+  <!-- 4. Chunks -->
+  <g transform="translate(595, 100)">
+    <rect width="160" height="80" rx="8" fill="url(#dfCard)" stroke="#334155" stroke-width="1.2" filter="url(#dfShadow)" />
+    <text x="12" y="22" class="pill-step">04. SEGMENTATION</text>
+    <text x="12" y="42" class="node-title">Overlapping Chunks</text>
+    <text x="12" y="58" class="node-sub">120-180 words, 18% overlap</text>
+    <text x="12" y="70" class="node-sub">Start/end time bounds</text>
+  </g>
+
+  <!-- 5. Vectors -->
+  <g transform="translate(780, 100)">
+    <rect width="140" height="80" rx="8" fill="url(#dfCard)" stroke="#334155" stroke-width="1.2" filter="url(#dfShadow)" />
+    <text x="12" y="22" class="pill-step">05. VECTORIZE</text>
+    <text x="12" y="42" class="node-title">768-Dim Vectors</text>
+    <text x="12" y="58" class="node-sub">nomic-embed-text</text>
+    <text x="12" y="70" class="node-sub">ChromaDB index</text>
+  </g>
+
+  <!-- Arrows Row 1 -->
+  <path d="M 200 140 L 220 140" stroke="#38BDF8" stroke-width="1.8" marker-end="url(#dfArrow)" />
+  <path d="M 385 140 L 405 140" stroke="#38BDF8" stroke-width="1.8" marker-end="url(#dfArrow)" />
+  <path d="M 570 140 L 590 140" stroke="#38BDF8" stroke-width="1.8" marker-end="url(#dfArrow)" />
+  <path d="M 755 140 L 775 140" stroke="#38BDF8" stroke-width="1.8" marker-end="url(#dfArrow)" />
+
+  <!-- Turn down to Row 2 -->
+  <path d="M 850 180 L 850 205 L 120 205 L 120 230" fill="none" stroke="#38BDF8" stroke-width="1.5" stroke-dasharray="3 3" />
+
+  <!-- ROW 2: Stages 6 to 10 -->
+  <!-- 6. Hybrid RRF -->
+  <g transform="translate(40, 230)">
+    <rect width="160" height="80" rx="8" fill="url(#dfCard)" stroke="#334155" stroke-width="1.2" filter="url(#dfShadow)" />
+    <text x="12" y="22" class="pill-step">06. HYBRID SEARCH</text>
+    <text x="12" y="42" class="node-title">RRF Fusion Ranking</text>
+    <text x="12" y="58" class="node-sub">ChromaDB + BM25</text>
+    <text x="12" y="70" class="node-sub">±1 Context Expansion</text>
+  </g>
+
+  <!-- 7. Agent Reasoning -->
+  <g transform="translate(225, 230)">
+    <rect width="160" height="80" rx="8" fill="url(#dfCard)" stroke="#334155" stroke-width="1.2" filter="url(#dfShadow)" />
+    <text x="12" y="22" class="pill-step">07. AGENT TOOLS</text>
+    <text x="12" y="42" class="node-title">Evidence Verify</text>
+    <text x="12" y="58" class="node-sub">Timeline alignment</text>
+    <text x="12" y="70" class="node-sub">Claim confidence check</text>
+  </g>
+
+  <!-- 8. LLM Synthesis -->
+  <g transform="translate(410, 230)">
+    <rect width="160" height="80" rx="8" fill="url(#dfCard)" stroke="#334155" stroke-width="1.2" filter="url(#dfShadow)" />
+    <text x="12" y="22" class="pill-step">08. SYNTHESIS</text>
+    <text x="12" y="42" class="node-title">LLM Grounding</text>
+    <text x="12" y="58" class="node-sub">Groq / Gemini / Ollama</text>
+    <text x="12" y="70" class="node-sub">1500+ token buffer</text>
+  </g>
+
+  <!-- 9. Citations -->
+  <g transform="translate(595, 230)">
+    <rect width="160" height="80" rx="8" fill="url(#dfCard)" stroke="#334155" stroke-width="1.2" filter="url(#dfShadow)" />
+    <text x="12" y="22" class="pill-step">09. CITATIONS</text>
+    <text x="12" y="42" class="node-title">Timecode Badges</text>
+    <text x="12" y="58" class="node-sub">Bracketed [MM:SS]</text>
+    <text x="12" y="70" class="node-sub">Verified against audio</text>
+  </g>
+
+  <!-- 10. Player Seek -->
+  <g transform="translate(780, 230)">
+    <rect width="140" height="80" rx="8" fill="url(#dfCard)" stroke="#38BDF8" stroke-width="1.8" filter="url(#dfShadow)" />
+    <text x="12" y="22" class="pill-step" fill="#34D399">10. SYNC SEEK</text>
+    <text x="12" y="42" class="node-title" fill="#38BDF8">Player Seeking</text>
+    <text x="12" y="58" class="node-sub">Interactive jump button</text>
+    <text x="12" y="70" class="node-sub">Plays cited second</text>
+  </g>
+
+  <!-- Arrows Row 2 -->
+  <path d="M 200 270 L 220 270" stroke="#38BDF8" stroke-width="1.8" marker-end="url(#dfArrow)" />
+  <path d="M 385 270 L 405 270" stroke="#38BDF8" stroke-width="1.8" marker-end="url(#dfArrow)" />
+  <path d="M 570 270 L 590 270" stroke="#38BDF8" stroke-width="1.8" marker-end="url(#dfArrow)" />
+  <path d="M 755 270 L 775 270" stroke="#38BDF8" stroke-width="1.8" marker-end="url(#dfArrow)" />
+</svg>
