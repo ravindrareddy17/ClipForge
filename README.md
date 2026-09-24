@@ -33,10 +33,10 @@
 
 ---
 
-## 📽️ Product Overview
+## 📽️ Product Showcase
 
 <p align="center">
-  <img src="docs/assets/hero/hero-demo.gif" width="100%" alt="ClipForge AI V2 Interactive Product Workflow" style="border-radius: 12px; border: 1px solid #1E293B;">
+  <img src="docs/assets/hero/hero-banner.svg" width="100%" alt="ClipForge AI V2 Platform Architecture and Overview">
 </p>
 
 ---
@@ -116,10 +116,12 @@ A single video ingested into ClipForge simultaneously produces:
 Ask natural-language questions about indexed videos and receive concise, grounded answers with interactive timestamp buttons that seek the video player to the exact second.
 
 <p align="center">
-  <img src="docs/assets/screenshots/video-chat.png" width="100%" alt="ClipForge AI Video Chatbot UI" style="border-radius: 10px; border: 1px solid #1E293B;">
-  <br>
-  <em>Figure 1: AI Video Chatbot with Groq Cloud inference, active video context, evidence-grounded Q&amp;A, and synchronized video player seeking.</em>
+  <img src="docs/assets/screenshots/video-chat.png" width="90%" alt="ClipForge AI Video Chatbot UI" style="border-radius: 10px; border: 1px solid #1E293B;">
 </p>
+
+| Context | User Question | Verified Response Preview | Interactive Timecodes |
+|---|---|---|---|
+| *"How Japan Became a SUPERPOWER?"* | `"what video about"` | Explores Japan's post-war reconstruction and rise into a global industrial and technological leader. | `[00:00]` `[01:28]` `[07:49]` `[13:55]` `[21:44]` `[27:57]` |
 
 ---
 
@@ -127,10 +129,12 @@ Ask natural-language questions about indexed videos and receive concise, grounde
 Identifies viral moments, assigns viral potential scores, provides speech-aligned hook rationales, and generates 9:16 vertical cuts ready for export.
 
 <p align="center">
-  <img src="docs/assets/screenshots/automated-shorts.png" width="100%" alt="Automated Short Generation" style="border-radius: 10px; border: 1px solid #1E293B;">
-  <br>
-  <em>Figure 2: Extracted viral moments with hook rationales, duration boundaries, viral percentage scoring, and one-click render actions.</em>
+  <img src="docs/assets/screenshots/automated-shorts.png" width="90%" alt="Automated Short Generation" style="border-radius: 10px; border: 1px solid #1E293B;">
 </p>
+
+| Extracted Hook | Viral Potential | Duration | Processing Details |
+|---|---|---|---|
+| *"Welcome to ClipForge AI,..."* | **90% Viral Score** | `42s (00:00 - 00:42)` | Audio peak aligned • Speaker face-centered • ASS subtitles burned |
 
 ---
 
@@ -138,9 +142,7 @@ Identifies viral moments, assigns viral potential scores, provides speech-aligne
 Search transcripts by keyword or semantic topic to inspect exact chronological time bounds and speech content.
 
 <p align="center">
-  <img src="docs/assets/screenshots/rag-grounding.png" width="100%" alt="Transcript Highlights and RAG Grounding" style="border-radius: 10px; border: 1px solid #1E293B;">
-  <br>
-  <em>Figure 3: Semantic transcript highlight matching displaying millisecond-precise time offsets and speech segments.</em>
+  <img src="docs/assets/screenshots/rag-grounding.png" width="90%" alt="Transcript Highlights and RAG Grounding" style="border-radius: 10px; border: 1px solid #1E293B;">
 </p>
 
 ---
@@ -149,9 +151,7 @@ Search transcripts by keyword or semantic topic to inspect exact chronological t
 Visual simulator for testing transformer attention mechanisms, prompt engineering paradigms, LoRA rank decomposition, quantization trade-offs, adversarial injection neutralization, and automated 20-question QA benchmarks.
 
 <p align="center">
-  <img src="docs/assets/screenshots/evaluation.png" width="100%" alt="AI Engineering Lab and Evaluation Suite" style="border-radius: 10px; border: 1px solid #1E293B;">
-  <br>
-  <em>Figure 4: Automated 20-question evaluation benchmark runner and 4-vector prompt injection safety test suite.</em>
+  <img src="docs/assets/screenshots/evaluation.png" width="90%" alt="AI Engineering Lab and Evaluation Suite" style="border-radius: 10px; border: 1px solid #1E293B;">
 </p>
 
 ---
@@ -161,8 +161,26 @@ Visual simulator for testing transformer attention mechanisms, prompt engineerin
 ClipForge AI V2 automates the complete lifecycle from long-form video download to platform-ready vertical shorts:
 
 <p align="center">
-  <img src="docs/assets/diagrams/video-pipeline.svg" width="100%" alt="Video to Shorts Automated Pipeline" style="border-radius: 10px;">
+  <img src="docs/assets/diagrams/video-pipeline.svg" width="100%" alt="Video to Shorts Automated Pipeline">
 </p>
+
+```mermaid
+flowchart LR
+    A["Raw Video (MP4)"] --> B["FFmpeg Audio Extract (16kHz WAV)"]
+    B --> C["OpenAI Whisper ASR (Word-Level Timestamps)"]
+    C --> D["Audio Energy Peak & Hook Detection"]
+    D --> E["OpenCV Face Tracking & Centering"]
+    E --> F["9:16 Vertical Video Reframing"]
+    F --> G["Burn ASS Subtitles & Export Short"]
+    
+    style A fill:#1E1B4B,stroke:#8B5CF6,color:#FFFFFF
+    style B fill:#1E1B4B,stroke:#8B5CF6,color:#FFFFFF
+    style C fill:#1E1B4B,stroke:#8B5CF6,color:#FFFFFF
+    style D fill:#1E1B4B,stroke:#F59E0B,color:#FFFFFF
+    style E fill:#1E1B4B,stroke:#38BDF8,color:#FFFFFF
+    style F fill:#1E1B4B,stroke:#38BDF8,color:#FFFFFF
+    style G fill:#131B2E,stroke:#10B981,stroke-width:2px,color:#34D399
+```
 
 ### Pipeline Execution Stages:
 1. **Video Ingestion (`video_processor.py`)**: Accepts YouTube URLs or local video uploads (`.mp4`, `.mov`, `.mkv`). Validates metadata, frame rate, and dimensions.
@@ -180,8 +198,29 @@ ClipForge AI V2 automates the complete lifecycle from long-form video download t
 Standard vector search fails on long-form video because broad queries (e.g., *"summarize this"*, *"what is the video about"*) lack isolated lexical keywords. ClipForge AI V2 deploys a **Segment-Aware Hybrid RAG Engine**:
 
 <p align="center">
-  <img src="docs/assets/diagrams/rag-pipeline.svg" width="100%" alt="Hybrid RAG Architecture" style="border-radius: 10px;">
+  <img src="docs/assets/diagrams/rag-pipeline.svg" width="100%" alt="Hybrid RAG Architecture">
 </p>
+
+```mermaid
+flowchart TD
+    V["Source Video Transcript"] --> C["Segment-Aware Chunking (120-180 words, 15-20% overlap)"]
+    C --> D["Dense Vector Retrieval (nomic-embed-text / ChromaDB 768-dim)"]
+    C --> B["Lexical Retrieval (SQLite BM25 Full-Text Index)"]
+    D --> RRF["Reciprocal Rank Fusion: RRF(d) = Σ 1 / (60 + rank(d))"]
+    B --> RRF
+    RRF --> EXP["Chronological Context Expansion (±1 adjacent chunks)"]
+    EXP --> LLM["LLM Grounding (Groq / Gemini / Ollama with 1500+ token buffer)"]
+    LLM --> SEEK["Grounded Answer + [MM:SS] Player Seeking"]
+    
+    style V fill:#0F172A,stroke:#38BDF8,color:#FFFFFF
+    style C fill:#1E1B4B,stroke:#8B5CF6,color:#FFFFFF
+    style D fill:#1E1B4B,stroke:#8B5CF6,color:#FFFFFF
+    style B fill:#1E1B4B,stroke:#06B6D4,color:#FFFFFF
+    style RRF fill:#1E1B4B,stroke:#FBBF24,color:#FFFFFF
+    style EXP fill:#1E1B4B,stroke:#34D399,color:#FFFFFF
+    style LLM fill:#1E1B4B,stroke:#8B5CF6,color:#FFFFFF
+    style SEEK fill:#131B2E,stroke:#38BDF8,stroke-width:2px,color:#38BDF8
+```
 
 ### Technical Formulation:
 1. **Overlap-Aware Chunking**:
@@ -207,8 +246,33 @@ Standard vector search fails on long-form video because broad queries (e.g., *"s
 Video question answering is governed by a **bounded ReAct loop** ($\le 3$ iterations) coordinated across 6 specialized agent personas:
 
 <p align="center">
-  <img src="docs/assets/diagrams/agent-architecture.svg" width="100%" alt="Multi-Agent Video QA Architecture" style="border-radius: 10px;">
+  <img src="docs/assets/diagrams/agent-architecture.svg" width="100%" alt="Multi-Agent Video QA Architecture">
 </p>
+
+```mermaid
+flowchart TD
+    Q["User Query ('what video about')"] --> P["Agent 1: QueryPlannerAgent (Normalization & Intent)"]
+    P --> R["Agent 2: RetrievalAgent (Hybrid RRF & Anchors)"]
+    R --> T["Agent 3: TimelineAgent (Chronological Ordering & Context)"]
+    T --> V["Agent 4: EvidenceVerificationAgent (Claim Check & Confidence)"]
+    
+    V -->|Confidence >= 0.15| S["Agent 5: AnswerSynthesisAgent (Grounding & Citations)"]
+    V -->|Confidence < 0.15 & iter < 3| P
+    V -->|Ungrounded Claim| G["Agent 6: SafetyGuardrailAgent (Safe Refusal)"]
+    
+    S --> G2["Agent 6: SafetyGuardrailAgent (Inspection)"]
+    G2 --> Out["Verified Answer + [MM:SS] Clickable Jump Links"]
+    
+    style Q fill:#0F172A,stroke:#38BDF8,color:#FFFFFF
+    style P fill:#1E1B4B,stroke:#8B5CF6,color:#FFFFFF
+    style R fill:#1E1B4B,stroke:#8B5CF6,color:#FFFFFF
+    style T fill:#1E1B4B,stroke:#8B5CF6,color:#FFFFFF
+    style V fill:#1E1B4B,stroke:#EC4899,color:#FFFFFF
+    style S fill:#1E1B4B,stroke:#38BDF8,color:#FFFFFF
+    style G fill:#1E1B4B,stroke:#EF4444,color:#FFFFFF
+    style G2 fill:#1E1B4B,stroke:#10B981,color:#FFFFFF
+    style Out fill:#131B2E,stroke:#34D399,stroke-width:2px,color:#34D399
+```
 
 ### Agent Personas & Execution Flow:
 1. **`QueryPlannerAgent`**:
@@ -331,7 +395,7 @@ ClipForge AI V2 demonstrates real-world implementation of advanced engineering d
 ## 🏛️ System Architecture
 
 <p align="center">
-  <img src="docs/assets/diagrams/system-architecture.svg" width="100%" alt="ClipForge AI V2 System Architecture" style="border-radius: 10px;">
+  <img src="docs/assets/diagrams/system-architecture.svg" width="100%" alt="ClipForge AI V2 System Architecture">
 </p>
 
 ### Architecture Layer Descriptions:
@@ -346,7 +410,7 @@ ClipForge AI V2 demonstrates real-world implementation of advanced engineering d
 ## 🔄 End-to-End Data Flow
 
 <p align="center">
-  <img src="docs/assets/diagrams/data-flow.svg" width="100%" alt="End-to-End Data Flow" style="border-radius: 10px;">
+  <img src="docs/assets/diagrams/data-flow.svg" width="100%" alt="End-to-End Data Flow">
 </p>
 
 ---
