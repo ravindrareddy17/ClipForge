@@ -36,6 +36,7 @@ ClipForge AI V2 operates seamlessly in both **offline local compute** (via Ollam
 - [Security & Secrets Management](#-security--secrets-management)
 - [Technical Documentation](#-technical-documentation)
 - [License](#-license)
+- [Project Status & Ongoing Improvements](#-project-status--ongoing-improvements)
 
 ---
 
@@ -378,3 +379,37 @@ For in-depth architectural and mathematical specifications, refer to the `docs/`
 ## 📄 License
 
 This project is licensed under the **MIT License**. Developed for high-performance video intelligence, multimodal RAG research, and enterprise repurposing.
+
+---
+
+## 🚧 Project Status & Ongoing Improvements
+
+> [!NOTE]
+> **Active Development & Evolution**: ClipForge AI V2 is under active, continuous development. While core functionalities—including Multi-Agent Video QA, whole-video summarization, hybrid RAG retrieval, YouTube channel ingestion, and the CSE473 AI Lab Studio—are operational and rigorously tested, this project is continually evolving and still undergoing improvements.
+
+### 🔮 Planned Enhancements & Changes Needed
+
+1. **Multimodal Visual & OCR RAG**:
+   - Integrating vision-language models (e.g., CLIP, VideoLLaMA, Qwen2-VL) to index visual frames, slides, charts, on-screen text/code, and scene transitions alongside spoken audio transcripts.
+
+2. **Animated Subtitles & Automated B-Roll Insertion**:
+   - Implementing word-by-word karaoke-style animated captions and automated semantic stock B-roll insertion for generated 9:16 vertical shorts.
+
+3. **Asynchronous Distributed Processing**:
+   - Adding background task queues (Celery / Redis / RQ) for high-throughput batch video ingestion, distributed Whisper GPU transcription, and background clip rendering.
+
+4. **UI/UX Polish & Responsive Theming**:
+   - Refining component color schemes, improving accessibility and contrast ratios, adding mobile-responsive layouts, and integrating custom waveform audio scrubbers.
+
+5. **Direct Social Media Export**:
+   - One-click publishing and scheduled export to YouTube Shorts, Instagram Reels, and TikTok via official developer APIs.
+
+6. **Expanded Multilingual Translation & Synchronized Dubbing**:
+   - Cross-lingual transcript translation and AI voice dubbing to repurpose video content across multiple languages seamlessly.
+
+7. **Collaborative Multi-User Workspaces**:
+   - Introducing team projects, role-based access control (RBAC), and shared video knowledge bases.
+
+---
+Contributions, feedback, and issue reports are welcome as we actively shape and expand ClipForge AI!
+
