@@ -14,12 +14,24 @@ __pycache__/
 .streamlit/secrets.toml
 secrets.toml
 .env
+.env.*
 *.env
 *.log
 
-# Database and temporary media files
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+clipforge.db
 backend/data/*
 !backend/data/.gitkeep
+
+# Distribution & build archives
+dist/
+build/
+*.egg-info/
+*.zip
+*.tar.gz
 
 # Editor files
 .vscode/

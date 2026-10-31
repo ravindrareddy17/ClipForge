@@ -1,0 +1,51 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "VideoTranscriptRAGInput",
+  "description": "Input payload for the Video Transcript Temporal RAG skill.",
+  "type": "object",
+  "required": ["transcript", "query"],
+  "properties": {
+    "transcript": {
+      "description": "Standard Whisper JSON object, segments array, flat word list, or SRT/VTT formatted string.",
+      "type": ["object", "array", "string"]
+    },
+    "query": {
+      "description": "User question, search query, or summary command (e.g., 'what video about', 'When was X mentioned?').",
+      "type": "string"
+    },
+    "video_title": {
+      "description": "Optional title or topic label of the video for contextual grounding.",
+      "type": "string"
+    },
+    "video_id": {
+      "description": "Optional unique identifier for the video.",
+      "type": "string"
+    },
+    "llm_config": {
+      "description": "Optional LLM configuration parameters.",
+      "type": "object",
+      "properties": {
+        "provider": {
+          "type": "string",
+          "enum": ["groq", "gemini", "ollama", "openai", "bedrock", "mock"],
+          "default": "groq"
+        },
+        "model": {
+          "type": "string"
+        },
+        "api_key": {
+          "type": "string"
+        },
+        "temperature": {
+          "type": "number",
+          "default": 0.2
+        },
+        "allow_mock": {
+          "type": "boolean",
+          "default": false,
+          "description": "Explicitly authorize MockProvider for offline testing. Default false."
+        }
+      }
+    }
+  }
+}

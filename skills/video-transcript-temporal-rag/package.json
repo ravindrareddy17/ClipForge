@@ -1,0 +1,42 @@
+{
+  "name": "video-transcript-temporal-rag",
+  "version": "1.0.0",
+  "description": "High-precision 6-agent video Q&A and whole-video summarization engine with exact timestamp citations.",
+  "author": "ClipForge AI",
+  "license": "Apache-2.0",
+  "main": "runner.py",
+  "engines": {
+    "python": ">=3.10"
+  },
+  "keywords": [
+    "agensi-skill",
+    "video-intelligence",
+    "temporal-rag",
+    "whisper",
+    "transcripts",
+    "timestamps",
+    "multi-agent",
+    "react-loop",
+    "groq",
+    "anti-hallucination"
+  ],
+  "agensi": {
+    "manifestVersion": "1.0",
+    "category": "video-intelligence",
+    "entrypoint": "runner.py",
+    "inputSchema": "schemas/input.schema.json",
+    "outputSchema": "schemas/output.schema.json",
+    "runtime": "python3.10+",
+    "pricing": {
+      "model": "per-call",
+      "tier": "standard"
+    },
+    "requirements": {
+      "python": ">=3.10",
+      "dependencies": [
+        "pydantic>=2.0.0",
+        "requests>=2.28.0"
+      ]
+    }
+  }
+}

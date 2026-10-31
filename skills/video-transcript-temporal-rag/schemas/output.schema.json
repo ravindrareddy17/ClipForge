@@ -1,0 +1,68 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "VideoTranscriptRAGOutput",
+  "description": "Structured output payload returned by the 6-agent Video QA engine.",
+  "type": "object",
+  "required": ["answer", "confidence", "classified_intent", "citations"],
+  "properties": {
+    "answer": {
+      "description": "Grounded Markdown response with inline timestamp citations in [MM:SS] format.",
+      "type": "string"
+    },
+    "confidence": {
+      "description": "Evidence verification confidence score from 0.0 to 1.0.",
+      "type": "number",
+      "minimum": 0.0,
+      "maximum": 1.0
+    },
+    "classified_intent": {
+      "description": "Classified intent of the user query.",
+      "type": "string",
+      "enum": [
+        "WHOLE_VIDEO_SUMMARY",
+        "FACTUAL_LOOKUP",
+        "TIMELINE_RECONSTRUCTION",
+        "THEMATIC_EXPLORATION",
+        "COMPARATIVE_ANALYSIS",
+        "TIMESTAMP_SEARCH"
+      ]
+    },
+    "normalized_query": {
+      "description": "Normalized form of the original user query.",
+      "type": "string"
+    },
+    "citations": {
+      "description": "List of evidence chunks cited and verified in the response.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["timestamp", "start_seconds", "end_seconds", "text_excerpt"],
+        "properties": {
+          "timestamp": {
+            "type": "string",
+            "description": "Display timestamp string, e.g. '[01:45–02:30]'."
+          },
+          "start_seconds": {
+            "type": "number"
+          },
+          "end_seconds": {
+            "type": "number"
+          },
+          "text_excerpt": {
+            "type": "string"
+          },
+          "relevance_score": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "audit_trail": {
+      "description": "Execution traces and status logs recorded by each of the 6 agents.",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

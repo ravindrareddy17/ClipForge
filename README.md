@@ -11,8 +11,9 @@
 </p>
 
 <p align="center">
-  <a href="https://clipforgee.streamlit.app"><img src="https://img.shields.io/badge/🚀_Live_Demo-Streamlit_Cloud-FF4B4B.svg?style=for-the-badge" alt="Live Demo"></a>
   <a href="https://github.com/ravindrareddy17/ClipForge"><img src="https://img.shields.io/badge/💻_GitHub-Repository-181717.svg?style=for-the-badge&logo=github" alt="GitHub"></a>
+  <a href="skills/video-transcript-temporal-rag"><img src="https://img.shields.io/badge/📦_Developer_SDK-Apache_2.0-blue.svg?style=for-the-badge" alt="Developer SDK"></a>
+  <a href="docs/PROJECT_STRUCTURE.md"><img src="https://img.shields.io/badge/📁_Docs-Project_Structure-10B981.svg?style=for-the-badge" alt="Project Structure"></a>
   <a href="docs/ARCHITECTURE.md"><img src="https://img.shields.io/badge/📖_Docs-Architecture-8B5CF6.svg?style=for-the-badge" alt="Documentation"></a>
   <a href="docs/EVALUATION.md"><img src="https://img.shields.io/badge/🧪_Evaluation-20--Point_Suite-06B6D4.svg?style=for-the-badge" alt="Evaluation"></a>
 </p>
@@ -44,11 +45,13 @@
 ## 📑 Table of Contents
 
 - [What is ClipForge AI V2?](#-what-is-clipforge-ai-v2)
+- [ClipForge AI Skill Ecosystem](#-clipforge-ai-skill-ecosystem)
 - [Feature Showcase](#-feature-showcase)
 - [Product Showcase](#-product-showcase)
 - [Video → Shorts Pipeline](#-video--shorts-pipeline)
 - [Video Intelligence Engine (Hybrid RAG)](#-video-intelligence-engine-hybrid-rag)
 - [Multi-Agent Video QA Engine](#-multi-agent-video-qa-engine)
+- [Public Developer SDK (Video Intelligence Engine)](#-public-developer-sdk-video-intelligence-engine)
 - [Grounded Video QA Live Example](#-grounded-video-qa-live-example)
 - [Interactive AI Engineering Lab](#-interactive-ai-engineering-lab)
 - [Technical Concepts & Engineering](#-technical-concepts--engineering)
@@ -93,6 +96,23 @@ A single video ingested into ClipForge simultaneously produces:
      │ • Viral potential ranker      │                 │ • Clickable [MM:SS] jump seek │
      └───────────────────────────────┘                 └───────────────────────────────┘
 ```
+
+---
+
+### 🌐 ClipForge AI Skill Ecosystem
+
+Beyond the all-in-one web application, ClipForge is evolving into a broader ecosystem of modular, decoupled AI skills engineered for autonomous developer workflows, pipeline automation, and agentic integrations:
+
+| Skill / Capability | Development Status | Distribution & Scope | Description |
+| :--- | :--- | :--- | :--- |
+| **Video Transcript Intelligence** | 🟢 **Completed & Tested (v1.0.0)** | Public Developer SDK ([`skills/video-transcript-temporal-rag`](skills/video-transcript-temporal-rag)) & Standalone Commercial Package | Deterministic temporal Q&A engine with `[MM:SS]` timestamp citations and timeline summarization (orchestrated via 6-agent ReAct loop in SDK; 6-stage cognitive workflow in Agensi edition). |
+| **Viral Moment Detector** | 🟡 *Planned (Roadmap)* | Standalone Agent Skill | Audio energy RMS peak detection, speech sentiment shifts, and visual cut boundaries to score clip virality. |
+| **Face-Centric Video Reframer** | 🟡 *Planned (Roadmap)* | Standalone Agent Skill | Dynamic OpenCV / MediaPipe face tracking and smart bounding-box interpolation from 16:9 to 9:16 vertical shorts. |
+| **Animated Subtitle Generator** | 🟡 *Planned (Roadmap)* | Standalone Agent Skill | Word-synchronized Advanced SubStation Alpha (`.ass`) karaoke subtitles with custom kinetic typography presets. |
+| **YouTube Channel Content Intelligence** | 🟡 *Planned (Roadmap)* | Standalone Agent Skill | Flat channel metadata ingestion, cross-video topical indexing, and multi-video semantic comparison. |
+
+> [!NOTE]
+> **Ecosystem Architecture & Packaging**: While the core web application (MIT) and Developer SDK (Apache-2.0) are open-source, specialized standalone commercial editions tailored for autonomous AI agent marketplaces (such as Agensi.io) are maintained in separate commercial repositories with specialized zero-dependency execution runtimes and marketplace-specific packaging. For full structural details, consult [docs/PROJECT_STRUCTURE.md](docs/PROJECT_STRUCTURE.md).
 
 ---
 
@@ -172,7 +192,7 @@ flowchart LR
     D --> E["OpenCV Face Tracking & Centering"]
     E --> F["9:16 Vertical Video Reframing"]
     F --> G["Burn ASS Subtitles & Export Short"]
-    
+
     style A fill:#1E1B4B,stroke:#8B5CF6,color:#FFFFFF
     style B fill:#1E1B4B,stroke:#8B5CF6,color:#FFFFFF
     style C fill:#1E1B4B,stroke:#8B5CF6,color:#FFFFFF
@@ -211,7 +231,7 @@ flowchart TD
     RRF --> EXP["Chronological Context Expansion (±1 adjacent chunks)"]
     EXP --> LLM["LLM Grounding (Groq / Gemini / Ollama with 1500+ token buffer)"]
     LLM --> SEEK["Grounded Answer + [MM:SS] Player Seeking"]
-    
+
     style V fill:#0F172A,stroke:#38BDF8,color:#FFFFFF
     style C fill:#1E1B4B,stroke:#8B5CF6,color:#FFFFFF
     style D fill:#1E1B4B,stroke:#8B5CF6,color:#FFFFFF
@@ -255,14 +275,14 @@ flowchart TD
     P --> R["Agent 2: RetrievalAgent (Hybrid RRF & Anchors)"]
     R --> T["Agent 3: TimelineAgent (Chronological Ordering & Context)"]
     T --> V["Agent 4: EvidenceVerificationAgent (Claim Check & Confidence)"]
-    
+
     V -->|Confidence >= 0.15| S["Agent 5: AnswerSynthesisAgent (Grounding & Citations)"]
     V -->|Confidence < 0.15 & iter < 3| P
     V -->|Ungrounded Claim| G["Agent 6: SafetyGuardrailAgent (Safe Refusal)"]
-    
+
     S --> G2["Agent 6: SafetyGuardrailAgent (Inspection)"]
     G2 --> Out["Verified Answer + [MM:SS] Clickable Jump Links"]
-    
+
     style Q fill:#0F172A,stroke:#38BDF8,color:#FFFFFF
     style P fill:#1E1B4B,stroke:#8B5CF6,color:#FFFFFF
     style R fill:#1E1B4B,stroke:#8B5CF6,color:#FFFFFF
@@ -297,9 +317,74 @@ flowchart TD
 
 ---
 
+## 📦 Public Developer SDK (Video Intelligence Engine)
+
+For software developers, AI engineers, and autonomous agent builders who need video transcript question answering **without** running the full ClipForge media stack (OpenCV, FFmpeg, Torch, ChromaDB), the project provides the standalone **ClipForge Video Intelligence Developer SDK** ([`skills/video-transcript-temporal-rag`](skills/video-transcript-temporal-rag/)):
+
+<p align="center">
+  <a href="skills/video-transcript-temporal-rag"><img src="https://img.shields.io/badge/SDK-Apache_2.0-green.svg?style=flat-square" alt="Apache 2.0"></a>
+  <a href="skills/video-transcript-temporal-rag"><img src="https://img.shields.io/badge/Python-3.10+-blue.svg?style=flat-square" alt="Python 3.10+"></a>
+  <a href="skills/video-transcript-temporal-rag"><img src="https://img.shields.io/badge/Zero_Heavy_Deps-pydantic_%7C_requests-orange.svg?style=flat-square" alt="Dependencies"></a>
+  <a href="skills/video-transcript-temporal-rag"><img src="https://img.shields.io/badge/Tests-46_Passed-success.svg?style=flat-square" alt="Tests"></a>
+</p>
+
+### SDK Architecture Highlights:
+- **Zero Heavy Media Dependencies**: Requires only `pydantic` and `requests`. No PyTorch, no OpenCV, no FFmpeg, and no local GPU required.
+- **Universal Transcript Ingestion**: Built-in `TranscriptNormalizer` auto-detects and ingests OpenAI Whisper JSON, YouTube Transcript API, SRT, WebVTT, flat word arrays (AssemblyAI/Deepgram), and timestamped show notes.
+- **6-Agent Cognitive ReAct Loop**: Query planning, hierarchical context vs. BM25 retrieval, chronological sorting, claim verification ($0.0-1.0$), structured synthesis, and safety guardrail refusal.
+- **Multi-Provider LLM Routing**: Native support for Groq Cloud (`openai/gpt-oss-20b`), Google Gemini (`gemini-2.5-flash`), OpenAI (`gpt-4o-mini`), local Ollama (`qwen2.5:3b`), and deterministic offline `MockProvider`.
+
+```mermaid
+flowchart LR
+    Transcript["Raw Transcript<br/>(Whisper / YouTube / SRT)"] --> Normalizer["TranscriptNormalizer<br/>(Auto-format detection)"]
+    Normalizer --> Engine["VideoIntelligenceEngine<br/>(6-Agent ReAct Loop)"]
+    Engine --> Provider["LLM Provider<br/>(Groq / Gemini / Ollama)"]
+    Provider --> Output["Grounded JSON Answer<br/>+ Exact [MM:SS] Citations"]
+
+    style Transcript fill:#0F172A,stroke:#38BDF8,color:#FFFFFF
+    style Normalizer fill:#1E1B4B,stroke:#8B5CF6,color:#FFFFFF
+    style Engine fill:#1E1B4B,stroke:#F59E0B,color:#FFFFFF
+    style Provider fill:#1E1B4B,stroke:#34D399,color:#FFFFFF
+    style Output fill:#131B2E,stroke:#10B981,stroke-width:2px,color:#34D399
+```
+
+### SDK Quickstart (Python API):
+```python
+from src.skill import VideoIntelligenceSkill
+
+# Initialize skill with high-speed Groq Cloud provider
+skill = VideoIntelligenceSkill(provider="groq")
+
+# Ingest transcript
+transcript = skill.load_transcript("examples/sample_whisper.json")
+
+# 1. Whole-video summary
+summary = skill.ask("what is this video about?")
+print(summary.answer)
+
+# 2. Fact retrieval with verified [MM:SS] citation
+result = skill.ask("When was the Shinkansen bullet train launched?")
+print(result.answer)
+for citation in result.citations:
+    print(f"[{citation.timestamp}] {citation.text_excerpt}")
+```
+
+### CLI Execution:
+```bash
+# Direct query execution
+python runner.py --transcript examples/sample_whisper.json --query "What caused the Lost Decades?" --provider groq
+
+# Pipeline execution via STDIN
+cat transcript.json | python runner.py --query "Summarize the key events" > output.json
+```
+
+For full setup instructions, provider credentials, and schema specifications, visit [`skills/video-transcript-temporal-rag/README.md`](skills/video-transcript-temporal-rag/README.md).
+
+---
+
 ## 💬 Grounded Video QA Live Example
 
-Below is a live, verified execution run on the indexed video:  
+Below is a live, verified execution run on the indexed video:
 **`"How Japan Became a SUPERPOWER? | World's Greatest Comeback | Dhruv Rathee"`**
 
 <details open>
@@ -310,18 +395,18 @@ Below is a live, verified execution run on the indexed video:
 > what video about
 
 **ClipForge AI** *(Powered by Groq Cloud `openai/gpt-oss-20b`)*:
-> **Overview**:  
+> **Overview**:
 > This video explores the historical transformation of Japan from a devastated nation following World War II into a global economic and technological superpower.
 >
-> **Main Points**:  
-> 1. **The Devastation of Post-War Japan**: The video describes the catastrophic state of Japan after the atomic bombings and war, highlighting widespread destruction, starvation, and the collapse of infrastructure and society `[00:00–01:40]`.  
-> 2. **The Impact of the Atomic Bombings**: It details the specific events of the bombings on Hiroshima and Nagasaki, noting the immense loss of life and the physical destruction that left the country in ruins `[01:28–03:04]`.  
-> 3. **American Aid and Reconstruction**: The narrative covers how the United States provided significant financial aid, uniforms, and industrial parts to help rebuild Japan's economy and infrastructure in the immediate post-war years `[07:49–08:55]`.  
-> 4. **Economic Growth and Industrialization**: The video discusses Japan's rapid industrial recovery, mentioning the rise of major corporations and the strategic use of capital to rebuild the manufacturing sector `[13:55–15:04]`.  
-> 5. **The Role of Savings and Banking**: It highlights the cultural shift towards saving, explaining how people deposited money in banks and post offices, which provided the capital necessary for factories to restart and grow `[21:44–23:46]`.  
-> 6. **Resilience and Hope**: The video concludes by emphasizing the Japanese people's determination to rise from the ashes, using the image of survivors striving for normal life as a symbol of hope and resilience `[26:59–27:57]`.  
+> **Main Points**:
+> 1. **The Devastation of Post-War Japan**: The video describes the catastrophic state of Japan after the atomic bombings and war, highlighting widespread destruction, starvation, and the collapse of infrastructure and society `[00:00–01:40]`.
+> 2. **The Impact of the Atomic Bombings**: It details the specific events of the bombings on Hiroshima and Nagasaki, noting the immense loss of life and the physical destruction that left the country in ruins `[01:28–03:04]`.
+> 3. **American Aid and Reconstruction**: The narrative covers how the United States provided significant financial aid, uniforms, and industrial parts to help rebuild Japan's economy and infrastructure in the immediate post-war years `[07:49–08:55]`.
+> 4. **Economic Growth and Industrialization**: The video discusses Japan's rapid industrial recovery, mentioning the rise of major corporations and the strategic use of capital to rebuild the manufacturing sector `[13:55–15:04]`.
+> 5. **The Role of Savings and Banking**: It highlights the cultural shift towards saving, explaining how people deposited money in banks and post offices, which provided the capital necessary for factories to restart and grow `[21:44–23:46]`.
+> 6. **Resilience and Hope**: The video concludes by emphasizing the Japanese people's determination to rise from the ashes, using the image of survivors striving for normal life as a symbol of hope and resilience `[26:59–27:57]`.
 >
-> **Conclusion**:  
+> **Conclusion**:
 > The video concludes that Japan's greatest strength lies in its people's resilience and their ability to rise after falling, investing in education and hard work to rebuild their nation `[27:57]`.
 
 <p align="left">
@@ -453,11 +538,20 @@ ai forge/
 │   │   └── main.tsx                   # Vite entry point
 │   ├── package.json                   # Node.js dependencies
 │   └── vite.config.ts                 # Vite bundler configuration
+├── skills/
+│   └── video-transcript-temporal-rag/ # Public Developer SDK (Apache 2.0 Standalone Engine)
+│       ├── runner.py                  # CLI runner (direct args & STDIN piping)
+│       ├── src/                       # 6-agent loop, BM25 ranker, normalizers, providers
+│       ├── schemas/                   # Pydantic input/output validation contracts
+│       ├── examples/                  # Sample transcripts (Whisper, SRT, YouTube JSON)
+│       ├── tests/                     # 46-point unit & integration test battery
+│       └── README.md                  # Comprehensive Developer SDK documentation
 ├── tests/
 │   ├── test_clipforge_v2.py           # 20-Point Regression & Safety Test Suite
 │   └── test_video_summary_intent.py   # Video summary intent & routing test battery
 └── docs/                              # Technical Specifications & Documentation Assets
     ├── assets/                        # SVGs, screenshots, logos, and hero demo GIF
+    ├── PROJECT_STRUCTURE.md           # Repository architecture, module map & SDK relationship
     ├── ARCHITECTURE.md                # System layers & data pipelines
     ├── RAG.md                         # Hybrid retrieval & RRF mathematical formulation
     ├── AGENTS.md                      # ReAct agent specifications & tool definitions
@@ -640,9 +734,15 @@ For in-depth architectural and mathematical specifications, refer to the `docs/`
 
 ---
 
-## 📄 License
+## 📄 License & Distribution
 
-This project is licensed under the **MIT License**. Developed for high-performance video intelligence, multimodal RAG research, and enterprise video repurposing.
+ClipForge AI maintains a dual open-source licensing structure:
+
+- **Core Web Application & Engine**: The ClipForge AI V2 platform (`app.py`, `backend/`, `frontend/`, `tests/`) is licensed under the permissive [MIT License](LICENSE).
+- **Public Developer SDK**: The standalone Video Intelligence engine located in [`skills/video-transcript-temporal-rag/`](skills/video-transcript-temporal-rag/) is licensed under the [Apache License, Version 2.0](skills/video-transcript-temporal-rag/LICENSE).
+
+> [!NOTE]
+> **Commercial Ecosystem Editions**: Commercial standalone marketplace editions (such as the Agensi.io commercial skill distribution) are maintained separately under proprietary commercial terms with appropriate open-source attribution notices. See [docs/PROJECT_STRUCTURE.md](docs/PROJECT_STRUCTURE.md) for full licensing architecture.
 
 ---
 
