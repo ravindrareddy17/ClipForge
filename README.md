@@ -42,17 +42,6 @@ Features are categorized based on their current implementation and verification 
 
 ---
 
-## Product Showcase
-
-### Automated Short Generation
-The repurposing pipeline extracts high-energy moments, assigns virality scores, tracks the active speaker, and renders vertical 9:16 cuts ready for short-form platforms.
-
-<p align="center">
-  <img src="docs/assets/screenshots/automated-shorts.png" width="92%" alt="ClipForge AI Automated Short Generation">
-</p>
-
----
-
 ## How ClipForge Works
 
 ClipForge processes video media through two parallel processing tracks:
