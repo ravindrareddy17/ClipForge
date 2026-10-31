@@ -1,759 +1,302 @@
+# ClipForge AI
+
+ClipForge AI is an AI-powered video intelligence and repurposing platform that transforms long-form videos into short-form content and searchable knowledge.
+
+The platform provides two primary capabilities:
+
+- **Video Repurposing**: Ingests long-form video content, analyzes audio energy and visual scene transitions to identify engaging moments, tracks active speakers using facial detection, and exports 9:16 vertical shorts with burned animated subtitles.
+- **Video Transcript Intelligence**: Chunks and indexes complete video transcripts into a hybrid retrieval store (dense vector embeddings combined with BM25 lexical ranking) and executes a multi-agent reasoning loop to answer questions grounded in the video timeline with exact, clickable `[MM:SS]` timestamp citations.
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Developer SDK: Apache 2.0](https://img.shields.io/badge/Developer_SDK-Apache_2.0-green.svg)](skills/video-transcript-temporal-rag/LICENSE)
+[![Python: 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
+
+---
+
+## Core Features
+
+Features are categorized based on their current implementation and verification status in the codebase:
+
+### Implemented and Tested
+
+- **Video Ingestion**: Downloads YouTube videos via `yt-dlp` or accepts local file uploads (`.mp4`, `.mov`, `.mkv`), extracting container parameters and metadata.
+- **Audio Extraction**: Extracts normalized 16kHz mono WAV audio tracks from ingested videos using FFmpeg for acoustic transcription.
+- **Speech Transcription**: Generates word-level timestamped transcripts using OpenAI Whisper models (`base`, `small`, `medium`) with fallback handling.
+- **Viral Moment Detection**: Analyzes rolling audio energy (RMS) and visual scene transitions, combining acoustic cues with language models to score clip virality and identify hooks.
+- **Face-Aware Vertical Reframing**: Detects and tracks primary speaker coordinates across video frames using OpenCV Haar Cascades to crop 16:9 widescreen video into 9:16 vertical shorts.
+- **Animated Subtitle Generation**: Compiles word-level timestamps into Advanced SubStation Alpha (`.ass`) subtitle files and burns synchronized subtitles into exported video clips using FFmpeg.
+- **Transcript Indexing & Hybrid Retrieval**: Chunks transcripts into overlap-aware segments (120–180 words, 15–20% overlap), generating dense embeddings via ChromaDB and indexing lexical terms in SQLite BM25, fused using Reciprocal Rank Fusion (RRF).
+- **Video Question Answering**: Coordinates a bounded 6-agent ReAct reasoning loop (Query Planner, Retrieval, Timeline, Verification, Synthesis, Safety Guardrail) that synthesizes answers citing millisecond-exact `[MM:SS]` timestamps.
+- **Interactive Streamlit Studio**: Web interface supporting video upload, timeline video player with interactive timestamp jumping, short-form clip generation, and the integrated AI Engineering Lab.
+- **FastAPI REST API**: High-performance backend gateway providing endpoints for chat QA, YouTube channel exploration, video processing, and laboratory benchmarks.
+
+### Partially Implemented
+
+- **React Frontend**: Modern web client built with React 19, Vite, and Tailwind CSS (`frontend/`). Core components and styling are implemented, while primary interactive playback and pipeline execution are currently hosted in the Streamlit application.
+
+### Planned
+
+- **Multimodal Visual RAG**: Indexing on-screen text (OCR), slide presentations, and visual scene embeddings alongside spoken transcripts.
+- **Decoupled Standalone Agent Skills**: Packaging individual pipeline components (face reframing, viral detection, subtitle generation) into autonomous agent marketplace skills.
+- **Social Media Publishing**: Direct export and scheduling to YouTube Shorts, Instagram Reels, and TikTok via official platform APIs.
+
+---
+
+## Product Showcase
+
+### Conversational Video Intelligence
+Users can ask natural-language questions about an indexed video and receive timeline-grounded responses with clickable `[MM:SS]` timestamp badges that seek the video player to the exact moment.
+
 <p align="center">
-  <img src="docs/assets/logo/clipforge-logo.svg" width="460" alt="ClipForge AI V2 Logo">
+  <img src="docs/assets/screenshots/video-chat.png" width="92%" alt="ClipForge AI Video Chatbot Interface">
 </p>
 
-<h3 align="center">
-  Local-First AI Video Intelligence &amp; Agentic RAG Platform
-</h3>
+### Automated Short Generation
+The repurposing pipeline extracts high-energy moments, assigns virality scores, tracks the active speaker, and renders vertical 9:16 cuts ready for short-form platforms.
 
 <p align="center">
-  <em>Transform long-form video into viral short-form content, searchable knowledge bases, grounded answers, and deep timeline intelligence.</em>
-</p>
-
-<p align="center">
-  <a href="https://github.com/ravindrareddy17/ClipForge"><img src="https://img.shields.io/badge/💻_GitHub-Repository-181717.svg?style=for-the-badge&logo=github" alt="GitHub"></a>
-  <a href="skills/video-transcript-temporal-rag"><img src="https://img.shields.io/badge/📦_Developer_SDK-Apache_2.0-blue.svg?style=for-the-badge" alt="Developer SDK"></a>
-  <a href="docs/PROJECT_STRUCTURE.md"><img src="https://img.shields.io/badge/📁_Docs-Project_Structure-10B981.svg?style=for-the-badge" alt="Project Structure"></a>
-  <a href="docs/ARCHITECTURE.md"><img src="https://img.shields.io/badge/📖_Docs-Architecture-8B5CF6.svg?style=for-the-badge" alt="Documentation"></a>
-  <a href="docs/EVALUATION.md"><img src="https://img.shields.io/badge/🧪_Evaluation-20--Point_Suite-06B6D4.svg?style=for-the-badge" alt="Evaluation"></a>
-</p>
-
-<p align="center">
-  <img src="https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-3776AB.svg?logo=python&logoColor=white" alt="Python">
-  <img src="https://img.shields.io/badge/FastAPI-0.115+-009688.svg?logo=fastapi&logoColor=white" alt="FastAPI">
-  <img src="https://img.shields.io/badge/Streamlit-1.42+-FF4B4B.svg?logo=streamlit&logoColor=white" alt="Streamlit">
-  <img src="https://img.shields.io/badge/React-19.0-61DAFB.svg?logo=react&logoColor=black" alt="React 19">
-  <img src="https://img.shields.io/badge/ChromaDB-Dense_Vectors-FFA116.svg?logo=databricks&logoColor=white" alt="ChromaDB">
-  <img src="https://img.shields.io/badge/OpenAI-Whisper_ASR-00A67E.svg?logo=openai&logoColor=white" alt="Whisper">
-  <img src="https://img.shields.io/badge/Ollama-Offline_Inference-FFFFFF.svg?logo=ollama&logoColor=black" alt="Ollama">
-  <img src="https://img.shields.io/badge/Groq-Cloud_Inference-F55036.svg" alt="Groq">
-  <img src="https://img.shields.io/badge/OpenCV-Computer_Vision-5C3EE8.svg?logo=opencv&logoColor=white" alt="OpenCV">
-  <img src="https://img.shields.io/badge/FFmpeg-Audio%2FVideo_Demux-007808.svg?logo=ffmpeg&logoColor=white" alt="FFmpeg">
-  <img src="https://img.shields.io/badge/license-MIT-green.svg" alt="License MIT">
-</p>
-
-<p align="center">
-  <img src="docs/assets/hero/hero-banner.svg" width="100%" alt="ClipForge AI V2 Platform Architecture and Overview">
+  <img src="docs/assets/screenshots/automated-shorts.png" width="92%" alt="ClipForge AI Automated Short Generation">
 </p>
 
 ---
 
-## 📑 Table of Contents
+## How ClipForge Works
 
-- [💡 What is ClipForge AI V2?](#what-is-clipforge-ai-v2)
-- [⚡ Feature Highlights](#feature-highlights)
-- [🖥️ UI & Product Showcase](#ui--product-showcase)
-- [🎬 Video → Shorts Repurposing Pipeline](#video--shorts-repurposing-pipeline)
-- [🧠 Hybrid Video RAG Engine](#hybrid-video-rag-engine)
-- [🤖 Multi-Agent Video QA Engine](#multi-agent-video-qa-engine)
-- [📦 Public Developer SDK](#public-developer-sdk)
-- [🌐 Modular Skill Ecosystem Roadmap](#modular-skill-ecosystem-roadmap)
-- [💬 Grounded Video QA Live Example](#grounded-video-qa-live-example)
-- [🧪 Interactive AI Engineering Lab](#interactive-ai-engineering-lab)
-- [🔬 Technical Concepts & Engineering Disciplines](#technical-concepts--engineering-disciplines)
-- [🏛️ System Architecture](#system-architecture)
-- [🔄 End-to-End Data Flow](#end-to-end-data-flow)
-- [🌐 Supported LLM Backends](#supported-llm-backends)
-- [📂 Repository Directory Structure](#repository-directory-structure)
-- [🛠️ Prerequisites & Installation](#prerequisites--installation)
-- [🚀 Quick Start Guide](#quick-start-guide)
-- [📡 FastAPI REST API Reference](#fastapi-rest-api-reference)
-- [🧪 Automated Testing & Verification](#automated-testing--verification)
-- [🔐 Security & Secrets Protection](#security--secrets-protection)
-- [📚 Technical Documentation](#technical-documentation)
-- [📄 License & Distribution](#license--distribution)
-- [🚧 Project Status & Roadmap](#project-status--roadmap)
-
----
-
-## 💡 What is ClipForge AI V2?
-
-**ClipForge AI V2** bridges the gap between raw video media and actionable intelligence. Rather than treating video as an inert binary file, ClipForge ingests hours of long-form audio/video content and converts it into a structured, searchable knowledge layer.
-
-A single video ingested into ClipForge simultaneously produces:
-1. **Vertical Repurposed Shorts (9:16)**: AI-detected high-energy hooks with facial centering and burned animated captions.
-2. **Searchable Semantic Knowledge**: Overlap-aware transcript chunks vectorized into project-isolated ChromaDB collections.
-3. **Conversational Video Intelligence**: A 6-agent collaborative ReAct loop that answers user queries with millisecond-exact `[MM:SS]` clickable video timestamps.
-
-```
-                      ┌───────────────────────────────────────────────┐
-                      │              ONE SOURCE VIDEO                 │
-                      │         (YouTube URL or Local Upload)         │
-                      └───────────────────────┬───────────────────────┘
-                                              │
-                     ┌────────────────────────┴────────────────────────┐
-                     ▼                                                 ▼
-     ┌───────────────────────────────┐                 ┌───────────────────────────────┐
-     │     🎬 VIDEO REPURPOSING      │                 │    🧠 VIDEO INTELLIGENCE      │
-     ├───────────────────────────────┤                 ├───────────────────────────────┤
-     │ • Audio energy peak detection │                 │ • Segment-aware hybrid RAG    │
-     │ • Facial tracking & 9:16 crop │                 │ • Dense ChromaDB + BM25 Lex   │
-     │ • Word-level ASS subtitles    │                 │ • 6-Agent ReAct reasoning     │
-     │ • Viral potential ranker      │                 │ • Clickable [MM:SS] jump seek │
-     └───────────────────────────────┘                 └───────────────────────────────┘
-```
-
----
-
-## ⚡ Feature Highlights
-
-| 🎬 Smart Repurposing | 🧠 Video Intelligence | 🔎 Hybrid Grounded RAG |
-|---|---|---|
-| **AI Hook Detection**: Detects audio RMS peaks & visual scene changes to isolate compelling viral hooks. | **Whole-Video Summarization**: Balanced timeline sampling across opening, middle, and conclusion. | **Dense + Lexical RRF**: Reciprocal Rank Fusion unifies 768-dim `nomic-embed-text` with BM25 keyword precision. |
-| **Speaker-Centered Crop**: OpenCV Haar Cascade centers speakers when converting 16:9 to 9:16 vertical video. | **Clickable Timestamp Seeker**: Regex-extracted `[MM:SS]` links directly jump the embedded video player. | **Context Expansion**: Automatically pulls adjacent $\pm 1$ neighbor chunks to preserve narrative flow. |
-
-| 🤖 Multi-Agent ReAct QA | 📚 YouTube Channel Search | 🛡️ Security & Guardrails |
-|---|---|---|
-| **6 Specialized Agents**: QueryPlanner, Retrieval, Timeline, Verification, Synthesis, and Safety Guardrail. | **Batch Library Discovery**: Flat metadata ingestion of complete YouTube channels via `yt-dlp`. | **Adversarial Audio Defense**: Sanitizes indirect prompt injections hidden within spoken transcript audio. |
-| **Informal Query Normalization**: Gracefully maps slang & incomplete inputs (e.g. *"what video about"*). | **Cross-Video Retrieval**: Queries across an entire channel catalog with `[Video Title \| MM:SS]` citations. | **API Key Masking**: Zero secrets exposed across logs, exceptions, or user interfaces (`••••••••`). |
-
----
-
-## 🖥️ UI & Product Showcase
-
-### 1. Multi-Agent AI Video Chatbot
-Ask natural-language questions about indexed videos and receive concise, grounded answers with interactive timestamp buttons that seek the video player to the exact second.
-
-<p align="center">
-  <img src="docs/assets/screenshots/video-chat.png" width="90%" alt="ClipForge AI Video Chatbot UI" style="border-radius: 10px; border: 1px solid #1E293B;">
-</p>
-
-| Context | User Question | Verified Response Preview | Interactive Timecodes |
-|---|---|---|---|
-| *"How Japan Became a SUPERPOWER?"* | `"what video about"` | Explores Japan's post-war reconstruction and rise into a global industrial and technological leader. | `[00:00]` `[01:28]` `[07:49]` `[13:55]` `[21:44]` `[27:57]` |
-
----
-
-### 2. Automated Viral Short Generation
-Identifies viral moments, assigns viral potential scores, provides speech-aligned hook rationales, and generates 9:16 vertical cuts ready for export.
-
-<p align="center">
-  <img src="docs/assets/screenshots/automated-shorts.png" width="90%" alt="Automated Short Generation" style="border-radius: 10px; border: 1px solid #1E293B;">
-</p>
-
-| Extracted Hook | Viral Potential | Duration | Processing Details |
-|---|---|---|---|
-| *"Welcome to ClipForge AI,..."* | **90% Viral Score** | `42s (00:00 - 00:42)` | Audio peak aligned • Speaker face-centered • ASS subtitles burned |
-
----
-
-### 3. Transcript Grounding & Highlight Search
-Search transcripts by keyword or semantic topic to inspect exact chronological time bounds and speech content.
-
-<p align="center">
-  <img src="docs/assets/screenshots/rag-grounding.png" width="90%" alt="Transcript Highlights and RAG Grounding" style="border-radius: 10px; border: 1px solid #1E293B;">
-</p>
-
----
-
-### 4. Interactive AI Engineering Lab & Evaluation Suite
-Visual simulator for testing transformer attention mechanisms, prompt engineering paradigms, LoRA rank decomposition, quantization trade-offs, adversarial injection neutralization, and automated 20-question QA benchmarks.
-
-<p align="center">
-  <img src="docs/assets/screenshots/evaluation.png" width="90%" alt="AI Engineering Lab and Evaluation Suite" style="border-radius: 10px; border: 1px solid #1E293B;">
-</p>
-
----
-
-## 🎬 Video → Shorts Repurposing Pipeline
-
-ClipForge AI V2 automates the complete lifecycle from long-form video download to platform-ready vertical shorts:
-
-<p align="center">
-  <img src="docs/assets/diagrams/video-pipeline.svg" width="100%" alt="Video to Shorts Automated Pipeline">
-</p>
-
-```mermaid
-flowchart LR
-    A["Raw Video (MP4)"] --> B["FFmpeg Audio Extract (16kHz WAV)"]
-    B --> C["OpenAI Whisper ASR (Word-Level Timestamps)"]
-    C --> D["Audio Energy Peak & Hook Detection"]
-    D --> E["OpenCV Face Tracking & Centering"]
-    E --> F["9:16 Vertical Video Reframing"]
-    F --> G["Burn ASS Subtitles & Export Short"]
-
-    style A fill:#1E1B4B,stroke:#8B5CF6,color:#FFFFFF
-    style B fill:#1E1B4B,stroke:#8B5CF6,color:#FFFFFF
-    style C fill:#1E1B4B,stroke:#8B5CF6,color:#FFFFFF
-    style D fill:#1E1B4B,stroke:#F59E0B,color:#FFFFFF
-    style E fill:#1E1B4B,stroke:#38BDF8,color:#FFFFFF
-    style F fill:#1E1B4B,stroke:#38BDF8,color:#FFFFFF
-    style G fill:#131B2E,stroke:#10B981,stroke-width:2px,color:#34D399
-```
-
-### Pipeline Execution Stages:
-1. **Video Ingestion (`video_processor.py`)**: Accepts YouTube URLs or local video uploads (`.mp4`, `.mov`, `.mkv`). Validates metadata, frame rate, and dimensions.
-2. **Audio Demuxing (`FFmpeg`)**: Extracts clean 16kHz mono WAV audio stream optimized for acoustic speech recognition.
-3. **Speech Transcription (`whisper_transcriber.py`)**: Transcribes audio using `openai-whisper` (`base`, `small`, or `medium`), generating word-level start/end timestamps and segments.
-4. **Moment Detection**: Computes rolling audio energy RMS and visual scene transitions via OpenCV to detect high-interest hooks.
-5. **Face Detection & Speaker Tracking (`OpenCV`)**: Employs Haar Cascade facial detection to locate and track the primary speaker across candidate short frames.
-6. **9:16 Vertical Reframing**: Crops 16:9 widescreen video into 9:16 mobile vertical aspect ratio centered dynamically on the speaker.
-7. **Burned Animated Subtitles**: Compiles word-level timestamps into styled Advanced SubStation Alpha (`.ass`) subtitles and hard-subtitles the output video.
-
----
-
-## 🧠 Hybrid Video RAG Engine
-
-Standard vector search fails on long-form video because broad queries (e.g., *"summarize this"*, *"what is the video about"*) lack isolated lexical keywords. ClipForge AI V2 deploys a **Segment-Aware Hybrid RAG Engine**:
-
-<p align="center">
-  <img src="docs/assets/diagrams/rag-pipeline.svg" width="100%" alt="Hybrid RAG Architecture">
-</p>
+ClipForge processes video media through two parallel processing tracks:
 
 ```mermaid
 flowchart TD
-    V["Source Video Transcript"] --> C["Segment-Aware Chunking (120-180 words, 15-20% overlap)"]
-    C --> D["Dense Vector Retrieval (nomic-embed-text / ChromaDB 768-dim)"]
-    C --> B["Lexical Retrieval (SQLite BM25 Full-Text Index)"]
-    D --> RRF["Reciprocal Rank Fusion: RRF(d) = Σ 1 / (60 + rank(d))"]
-    B --> RRF
-    RRF --> EXP["Chronological Context Expansion (±1 adjacent chunks)"]
-    EXP --> LLM["LLM Grounding (Groq / Gemini / Ollama with 1500+ token buffer)"]
-    LLM --> SEEK["Grounded Answer + [MM:SS] Player Seeking"]
+    Video["Source Video (YouTube URL or Local Upload)"] --> Audio["Audio Demux (FFmpeg 16kHz WAV)"]
+    Audio --> Whisper["Whisper ASR (Word-Level Timestamps)"]
 
-    style V fill:#0F172A,stroke:#38BDF8,color:#FFFFFF
-    style C fill:#1E1B4B,stroke:#8B5CF6,color:#FFFFFF
-    style D fill:#1E1B4B,stroke:#8B5CF6,color:#FFFFFF
-    style B fill:#1E1B4B,stroke:#06B6D4,color:#FFFFFF
-    style RRF fill:#1E1B4B,stroke:#FBBF24,color:#FFFFFF
-    style EXP fill:#1E1B4B,stroke:#34D399,color:#FFFFFF
-    style LLM fill:#1E1B4B,stroke:#8B5CF6,color:#FFFFFF
-    style SEEK fill:#131B2E,stroke:#38BDF8,stroke-width:2px,color:#38BDF8
+    Whisper --> Repurposing["Track 1: Video Repurposing"]
+    Whisper --> Intelligence["Track 2: Video Intelligence"]
+
+    Repurposing --> Moments["Hook Detection (Audio RMS + Scene Cuts)"]
+    Moments --> Tracking["Speaker Centering (OpenCV Face Tracking)"]
+    Tracking --> Export["9:16 Vertical Video + Burned Subtitles"]
+
+    Intelligence --> HybridRAG["Segment-Aware Hybrid RAG (ChromaDB + BM25)"]
+    HybridRAG --> MultiAgent["6-Agent ReAct Reasoning Loop"]
+    MultiAgent --> Answer["Grounded Answer + [MM:SS] Player Seeking"]
 ```
 
-### Technical Formulation:
-1. **Overlap-Aware Chunking**:
-   - Chunks target **120–180 words** with a **15–20% sliding overlap**.
-   - Preserves exact word-level start and end timestamps (`start_time`, `end_time`) on every chunk.
-2. **Dense Vector Retrieval**:
-   - Chunks are vectorized using `nomic-embed-text` into 768-dimensional float embeddings.
-   - Stored in project-isolated collections within **ChromaDB** (`cf_project_{id}`).
-3. **Lexical BM25 Ranking**:
-   - SQLite full-text index tokenizes transcript chunks to capture exact terminology, numbers, acronyms, and proper nouns.
-4. **Reciprocal Rank Fusion (RRF)**:
-   - Combines dense semantic recall with lexical precision:
-   $$\text{RRF}(d) = \sum_{m \in \{\text{Dense}, \text{BM25}\}} \frac{1}{k + \text{rank}_m(d)} \quad (k = 60)$$
-5. **Chronological Context Expansion**:
-   - High-scoring hits automatically pull their preceding and succeeding adjacent chunks ($\pm 1$), providing the LLM with surrounding context to avoid fragmented answers.
-6. **Whole-Video Balanced Anchors**:
-   - When whole-video summaries are requested, `tool_assemble_video_summary_context` deterministically samples the precomputed executive summary, opening thesis chunks (0:00–2:00), uniformly spaced middle anchors (25%, 50%, 75%), and concluding chunks.
+1. **Ingestion & Transcription**: The input video is ingested, converted to a standardized 16kHz mono WAV audio file, and transcribed using Whisper to produce word-level timestamps.
+2. **Track 1 (Repurposing)**: Audio energy spikes and visual scene boundaries identify high-retention segments. OpenCV face tracking dynamically calculates horizontal offsets to keep speakers centered during 9:16 cropping, followed by burning styled `.ass` subtitles.
+3. **Track 2 (Intelligence)**: Transcripts are partitioned into overlapping chunks, vectorized into ChromaDB, and indexed into SQLite BM25. A 6-agent ReAct loop processes incoming questions, retrieves balanced timeline context, verifies claims against source text, and returns structured answers with clickable timestamps.
 
 ---
 
-## 🤖 Multi-Agent Video QA Engine
+## Technology Stack
 
-Video question answering is governed by a **bounded ReAct loop** ($\le 3$ iterations) coordinated across 6 specialized agent personas:
+The project relies on the following verified technologies:
 
-<p align="center">
-  <img src="docs/assets/diagrams/agent-architecture.svg" width="100%" alt="Multi-Agent Video QA Architecture">
-</p>
-
-```mermaid
-flowchart TD
-    Q["User Query ('what video about')"] --> P["Agent 1: QueryPlannerAgent (Normalization & Intent)"]
-    P --> R["Agent 2: RetrievalAgent (Hybrid RRF & Anchors)"]
-    R --> T["Agent 3: TimelineAgent (Chronological Ordering & Context)"]
-    T --> V["Agent 4: EvidenceVerificationAgent (Claim Check & Confidence)"]
-
-    V -->|Confidence >= 0.15| S["Agent 5: AnswerSynthesisAgent (Grounding & Citations)"]
-    V -->|Confidence < 0.15 & iter < 3| P
-    V -->|Ungrounded Claim| G["Agent 6: SafetyGuardrailAgent (Safe Refusal)"]
-
-    S --> G2["Agent 6: SafetyGuardrailAgent (Inspection)"]
-    G2 --> Out["Verified Answer + [MM:SS] Clickable Jump Links"]
-
-    style Q fill:#0F172A,stroke:#38BDF8,color:#FFFFFF
-    style P fill:#1E1B4B,stroke:#8B5CF6,color:#FFFFFF
-    style R fill:#1E1B4B,stroke:#8B5CF6,color:#FFFFFF
-    style T fill:#1E1B4B,stroke:#8B5CF6,color:#FFFFFF
-    style V fill:#1E1B4B,stroke:#EC4899,color:#FFFFFF
-    style S fill:#1E1B4B,stroke:#38BDF8,color:#FFFFFF
-    style G fill:#1E1B4B,stroke:#EF4444,color:#FFFFFF
-    style G2 fill:#1E1B4B,stroke:#10B981,color:#FFFFFF
-    style Out fill:#131B2E,stroke:#34D399,stroke-width:2px,color:#34D399
-```
-
-### Agent Personas & Execution Flow:
-1. **`QueryPlannerAgent`**:
-   - Normalizes informal queries (`"what video about"` $\to$ `"What is this video about?"`).
-   - Classifies query intent: `video_summary`, `factual_lookup`, `chronology`, `comparison`, or `timestamp_search`.
-   - Extracts explicit timecodes (e.g., *"at 14:20"*) and formulates targeted search sub-queries.
-2. **`RetrievalAgent`**:
-   - Executes hybrid RAG (ChromaDB + BM25 + RRF) or timeline anchor assembly.
-   - Enforces video isolation (guaranteeing chunks only originate from the active video).
-3. **`TimelineAgent`**:
-   - Validates chronological ordering and resolves relative temporal queries (*"what happened after the announcement?"*).
-   - Manages $\pm 1$ neighbor chunk expansion windows.
-4. **`EvidenceVerificationAgent`**:
-   - Checks semantic overlap and keyword presence between question and retrieved chunks.
-   - Calculates evidence confidence ($0.0 - 1.0$). If evidence is lacking, rejects the claim before hallucination can occur.
-5. **`AnswerSynthesisAgent`**:
-   - Synthesizes clear, objective answers citing bracketed timestamps (`[MM:SS]` or `[MM:SS–MM:SS]`).
-   - Allocates a 1500+ token buffer when querying reasoning LLMs to avoid thinking-token cutoffs.
-6. **`SafetyGuardrailAgent`**:
-   - Sanitizes prompt injection payloads embedded in audio transcripts.
-   - Enforces refusal on ungrounded out-of-domain questions while passing through clear diagnostics for unindexed videos.
+| Category | Technologies | Description |
+| :--- | :--- | :--- |
+| **Backend & API** | Python 3.10–3.12, FastAPI, Uvicorn, SQLite | High-performance asynchronous REST API and local relational storage. |
+| **Frontend & UI** | Streamlit, React 19, TypeScript, Vite, Tailwind CSS | Dual interface: primary Streamlit analytical studio and modern React web UI. |
+| **AI & Machine Learning** | OpenAI Whisper, ChromaDB, Groq API, Gemini API, Ollama | Local speech recognition, dense vector indexing, cloud LLMs, and local offline inference. |
+| **Video & Media Processing** | FFmpeg, FFprobe, OpenCV, yt-dlp | Container demuxing, video transcoding, Haar Cascade face detection, and YouTube ingestion. |
+| **Storage & Retrieval** | SQLite (BM25 FTS5), ChromaDB | Project-partitioned vector embeddings and relational metadata persistence. |
+| **Testing & Verification** | Python `unittest`, Pydantic | Rigorous offline test batteries and strict schema enforcement. |
 
 ---
 
-## 📦 Public Developer SDK
+## Developer SDK
 
-For software developers, AI engineers, and autonomous agent builders who need video transcript question answering **without** running the full ClipForge media stack (OpenCV, FFmpeg, Torch, ChromaDB), the project provides the standalone **ClipForge Video Intelligence Developer SDK** ([`skills/video-transcript-temporal-rag`](skills/video-transcript-temporal-rag/)):
+For developers who require video transcript question answering without running the complete media processing stack (OpenCV, FFmpeg, PyTorch), ClipForge includes a standalone **Video Intelligence Developer SDK** in [`skills/video-transcript-temporal-rag/`](skills/video-transcript-temporal-rag/).
 
-<p align="center">
-  <a href="skills/video-transcript-temporal-rag"><img src="https://img.shields.io/badge/SDK-Apache_2.0-green.svg?style=flat-square" alt="Apache 2.0"></a>
-  <a href="skills/video-transcript-temporal-rag"><img src="https://img.shields.io/badge/Python-3.10+-blue.svg?style=flat-square" alt="Python 3.10+"></a>
-  <a href="skills/video-transcript-temporal-rag"><img src="https://img.shields.io/badge/Zero_Heavy_Deps-pydantic_%7C_requests-orange.svg?style=flat-square" alt="Dependencies"></a>
-  <a href="skills/video-transcript-temporal-rag"><img src="https://img.shields.io/badge/Tests-46_Passed-success.svg?style=flat-square" alt="Tests"></a>
-</p>
+### SDK Overview
 
-### SDK Architecture Highlights:
-- **Zero Heavy Media Dependencies**: Requires only `pydantic` and `requests`. No PyTorch, OpenCV, FFmpeg, or local GPU required.
-- **Universal Transcript Ingestion**: Built-in `TranscriptNormalizer` auto-detects and ingests OpenAI Whisper JSON, YouTube Transcript API, SRT, WebVTT, flat word arrays (AssemblyAI/Deepgram), and timestamped show notes.
-- **6-Agent Cognitive ReAct Loop**: Query planning, hierarchical context vs. BM25 retrieval, chronological sorting, claim verification ($0.0-1.0$), structured synthesis, and safety guardrail refusal.
-- **Multi-Provider LLM Routing**: Native support for Groq Cloud (`openai/gpt-oss-20b`), Google Gemini (`gemini-2.5-flash`), OpenAI (`gpt-4o-mini`), local Ollama (`qwen2.5:3b`), and deterministic offline `MockProvider`.
+- **Universal Transcript Ingestion**: Built-in normalizer supports OpenAI Whisper JSON, YouTube Transcript API outputs, SRT, WebVTT, and plain timestamped text.
+- **Timestamped Evidence Retrieval**: Extracts precise chronological segments with `[MM:SS]` start and end timecodes.
+- **Hybrid Search**: Combines BM25 lexical ranking and Reciprocal Rank Fusion (RRF) for balanced semantic and keyword search.
+- **6-Agent Cognitive ReAct Loop**: Coordinates Query Planning, Retrieval, Timeline Sorting, Claim Verification ($0.0–1.0$), Synthesis, and Safety Guardrails.
+- **Zero Heavy Media Dependencies**: Requires only `pydantic` and `requests`. Runs entirely on CPU without GPU, PyTorch, or FFmpeg requirements.
+- **Multi-Provider LLM Routing**: Supports Groq Cloud, Google Gemini, OpenAI, local Ollama, and an offline deterministic `MockProvider`.
 
-```mermaid
-flowchart LR
-    Transcript["Raw Transcript<br/>(Whisper / YouTube / SRT)"] --> Normalizer["TranscriptNormalizer<br/>(Auto-format detection)"]
-    Normalizer --> Engine["VideoIntelligenceEngine<br/>(6-Agent ReAct Loop)"]
-    Engine --> Provider["LLM Provider<br/>(Groq / Gemini / Ollama)"]
-    Provider --> Output["Grounded JSON Answer<br/>+ Exact [MM:SS] Citations"]
+### Python API Example
 
-    style Transcript fill:#0F172A,stroke:#38BDF8,color:#FFFFFF
-    style Normalizer fill:#1E1B4B,stroke:#8B5CF6,color:#FFFFFF
-    style Engine fill:#1E1B4B,stroke:#F59E0B,color:#FFFFFF
-    style Provider fill:#1E1B4B,stroke:#34D399,color:#FFFFFF
-    style Output fill:#131B2E,stroke:#10B981,stroke-width:2px,color:#34D399
-```
-
-### SDK Quickstart (Python API):
 ```python
 from src.skill import VideoIntelligenceSkill
 
-# 1. Initialize skill with Groq Cloud provider
+# 1. Initialize skill with preferred provider
 skill = VideoIntelligenceSkill(provider="groq")
 
-# 2. Ingest transcript (Whisper JSON, SRT, YouTube JSON)
+# 2. Ingest transcript (supports Whisper JSON, YouTube JSON, SRT)
 transcript = skill.load_transcript("examples/sample_whisper.json")
 
-# 3. Whole-video overview
-summary = skill.ask("what is this video about?")
-print(summary.answer)
-
-# 4. Fact retrieval with verified [MM:SS] citation
-result = skill.ask("When was the Shinkansen bullet train launched?")
+# 3. Ask questions grounded in the video timeline
+result = skill.ask("What is this video about?")
 print(result.answer)
+
+# 4. Access verified timestamp citations
 for citation in result.citations:
     print(f"[{citation.timestamp}] {citation.text_excerpt}")
 ```
 
-### CLI Execution:
-```bash
-# Direct query execution
-python runner.py --transcript examples/sample_whisper.json --query "What caused the Lost Decades?" --provider groq
+### CLI Runner Example
 
-# Pipeline execution via STDIN
-cat transcript.json | python runner.py --query "Summarize the key events" > output.json
+```bash
+cd skills/video-transcript-temporal-rag
+
+# Run offline with MockProvider
+python runner.py --transcript examples/sample_whisper.json --query "What is this video about?" --provider mock --allow-mock
+
+# Run with Groq Cloud provider
+python runner.py --transcript examples/sample_whisper.json --query "What were the main developments?" --provider groq
 ```
 
-For full setup instructions, provider credentials, and schema specifications, visit [`skills/video-transcript-temporal-rag/README.md`](skills/video-transcript-temporal-rag/README.md).
+For complete documentation, refer to the [Developer SDK README](skills/video-transcript-temporal-rag/README.md) and [Apache 2.0 License](skills/video-transcript-temporal-rag/LICENSE).
 
 ---
 
-## 🌐 Modular Skill Ecosystem Roadmap
+## ClipForge AI Skill Ecosystem
 
-Beyond the all-in-one web application, ClipForge is evolving into a broader ecosystem of modular, decoupled AI skills engineered for autonomous developer workflows, pipeline automation, and agentic integrations:
+ClipForge AI is structured into modular capabilities suited for both developer integration and autonomous agent marketplaces:
 
 | Skill / Capability | Development Status | Distribution & Scope | Description |
 | :--- | :--- | :--- | :--- |
-| **Video Transcript Intelligence** | 🟢 **Completed & Tested (v1.0.0)** | Public Developer SDK ([`skills/video-transcript-temporal-rag`](skills/video-transcript-temporal-rag)) & Standalone Commercial Package | Deterministic temporal Q&A engine with `[MM:SS]` timestamp citations and timeline summarization (orchestrated via 6-agent ReAct loop in SDK; 6-stage cognitive workflow in Agensi edition). |
-| **Viral Moment Detector** | 🟡 *Planned (Roadmap)* | Standalone Agent Skill | Audio energy RMS peak detection, speech sentiment shifts, and visual cut boundaries to score clip virality. |
-| **Face-Centric Video Reframer** | 🟡 *Planned (Roadmap)* | Standalone Agent Skill | Dynamic OpenCV / MediaPipe face tracking and smart bounding-box interpolation from 16:9 to 9:16 vertical shorts. |
-| **Animated Subtitle Generator** | 🟡 *Planned (Roadmap)* | Standalone Agent Skill | Word-synchronized Advanced SubStation Alpha (`.ass`) karaoke subtitles with custom kinetic typography presets. |
-| **YouTube Channel Content Intelligence** | 🟡 *Planned (Roadmap)* | Standalone Agent Skill | Flat channel metadata ingestion, cross-video topical indexing, and multi-video semantic comparison. |
+| **Video Transcript Intelligence** | Completed and tested | Public Developer SDK & Standalone Commercial Package | Deterministic temporal Q&A engine with millisecond-exact `[MM:SS]` citations and timeline summarization. |
+| **Viral Moment Detector** | Planned | Standalone Agent Skill | Audio energy RMS peak detection, speech sentiment shifts, and visual cut boundaries to score clip virality. |
+| **Face-Centric Video Reframer** | Planned | Standalone Agent Skill | Dynamic OpenCV / MediaPipe face tracking and smart bounding-box interpolation from 16:9 to 9:16 vertical shorts. |
+| **Animated Subtitle Generator** | Planned | Standalone Agent Skill | Word-synchronized Advanced SubStation Alpha (`.ass`) animated subtitles with custom kinetic typography presets. |
+| **YouTube Channel Content Intelligence** | Planned | Standalone Agent Skill | Flat channel metadata ingestion, cross-video topical indexing, and multi-video semantic comparison. |
 
 > [!NOTE]
-> **Ecosystem Architecture & Packaging**: While the core web application (MIT) and Developer SDK (Apache-2.0) are open-source, specialized standalone commercial editions tailored for autonomous AI agent marketplaces (such as Agensi.io) are maintained in separate commercial repositories with specialized zero-dependency execution runtimes and marketplace-specific packaging. For full structural details, consult [docs/PROJECT_STRUCTURE.md](docs/PROJECT_STRUCTURE.md).
+> The public Developer SDK is an open-source library (Apache 2.0). Standalone commercial packages tailored for autonomous agent platforms (such as Agensi.io) feature dedicated zero-dependency runtimes, cognitive workflow stages, and marketplace-specific packaging maintained separately.
 
 ---
 
-## 💬 Grounded Video QA Live Example
+## Installation and Quick Start
 
-Below is a live, verified execution run on the indexed video:
-**`"How Japan Became a SUPERPOWER? | World's Greatest Comeback | Dhruv Rathee"`**
+### Prerequisites
 
-<details open>
-<summary><strong>Query: "what video about" (Click to expand live response)</strong></summary>
-<br>
+- **Python**: 3.10 to 3.12 installed.
+- **FFmpeg & FFprobe**: Installed and added to system `PATH`.
+  - Windows: `winget install Gyan.FFmpeg`
+  - macOS: `brew install ffmpeg`
+  - Linux: `sudo apt-get install ffmpeg`
 
-**User**:
-> what video about
-
-**ClipForge AI** *(Powered by Groq Cloud `openai/gpt-oss-20b`)*:
-> **Overview**:
-> This video explores the historical transformation of Japan from a devastated nation following World War II into a global economic and technological superpower.
->
-> **Main Points**:
-> 1. **The Devastation of Post-War Japan**: The video describes the catastrophic state of Japan after the atomic bombings and war, highlighting widespread destruction, starvation, and the collapse of infrastructure and society `[00:00–01:40]`.
-> 2. **The Impact of the Atomic Bombings**: It details the specific events of the bombings on Hiroshima and Nagasaki, noting the immense loss of life and the physical destruction that left the country in ruins `[01:28–03:04]`.
-> 3. **American Aid and Reconstruction**: The narrative covers how the United States provided significant financial aid, uniforms, and industrial parts to help rebuild Japan's economy and infrastructure in the immediate post-war years `[07:49–08:55]`.
-> 4. **Economic Growth and Industrialization**: The video discusses Japan's rapid industrial recovery, mentioning the rise of major corporations and the strategic use of capital to rebuild the manufacturing sector `[13:55–15:04]`.
-> 5. **The Role of Savings and Banking**: It highlights the cultural shift towards saving, explaining how people deposited money in banks and post offices, which provided the capital necessary for factories to restart and grow `[21:44–23:46]`.
-> 6. **Resilience and Hope**: The video concludes by emphasizing the Japanese people's determination to rise from the ashes, using the image of survivors striving for normal life as a symbol of hope and resilience `[26:59–27:57]`.
->
-> **Conclusion**:
-> The video concludes that Japan's greatest strength lies in its people's resilience and their ability to rise after falling, investing in education and hard work to rebuild their nation `[27:57]`.
-
-<p align="left">
-  <kbd>[00:00]</kbd> <kbd>[01:28]</kbd> <kbd>[07:49]</kbd> <kbd>[13:55]</kbd> <kbd>[21:44]</kbd> <kbd>[26:59]</kbd> <kbd>[27:57]</kbd>
-  <br>
-  <em>(Clicking any rendered timestamp button in the UI instantly seeks the video player to that timestamp)</em>
-</p>
-</details>
-
----
-
-## 🧪 Interactive AI Engineering Lab
-
-The application includes an integrated **AI Engineering Lab Studio** (`backend/clipforge_engine/cse473_lab.py`) offering interactive visual simulators and benchmarks for core AI/ML mechanics:
-
-> [!NOTE]
-> **Production vs. Experimental Separation**: The AI Engineering Lab operates as a dedicated sandboxed studio within the UI, completely isolated from the production Video Repurposing and RAG engines.
-
-### Lab Capabilities:
-- **Unit I: Transformer Fundamentals**:
-  - Multi-Head Attention Heatmap Generator: $\text{Attention}(Q,K,V) = \text{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right)V$
-  - BPE Subword Tokenization visualizer & compression ratio analyzer.
-  - Forward-pass tensor dimension tracer ($d_{\text{model}} \to d_{\text{ff}} \to d_{\text{model}}$).
-- **Unit II: Prompt Engineering & Tool Calling**:
-  - 6-Paradigm Prompt Benchmark: Zero-shot, Few-shot, Chain-of-Thought, Directional, Self-Consistency, and Least-to-Most.
-  - Strict JSON Tool Calling schema validator.
-- **Unit III: Fine-Tuning & Reinforcement Learning**:
-  - LoRA (Low-Rank Adaptation) Matrix Decomposition: $\Delta W = B \times A$ with rank $r$ parameter & memory savings calculator.
-  - Multi-Precision Quantization Calculator: VRAM & memory bandwidth analysis across FP32, FP16, INT8, and INT4.
-  - GridWorld Q-Learning policy convergence simulator.
-- **Unit VI: Safety, Robustness & Evaluation**:
-  - 4-Vector Adversarial Prompt Injection Test (Direct override, Base64 payload, Roleplay jailbreak, System prompt extraction).
-  - Automated 20-Question Evaluation Battery computing accuracy, groundedness, and citation reliability.
-
----
-
-## 🔬 Technical Concepts & Engineering Disciplines
-
-ClipForge AI V2 demonstrates real-world implementation of advanced engineering disciplines:
-
-### 1. Large Language Model Engineering
-- **Unified Multi-Provider Routing**: Dynamic routing across Groq Cloud, Google Gemini, Ollama, and AWS Bedrock with automatic fallback.
-- **Reasoning Model Token Budgeting**: Automatically allocates a 1500+ token buffer for reasoning models (`gpt-oss-20b`, `qwen`, `deepseek`) to prevent internal thinking tokens from truncating the final response.
-- **Structured Prompt Design**: Enforces bracketed timecode constraints, anti-hallucination guardrails, and markdown structures.
-
-### 2. Retrieval-Augmented Generation (RAG)
-- **Dense Vector Search**: Cosine similarity retrieval over 768-dimensional dense vectors via ChromaDB.
-- **Lexical BM25 Ranking**: Inverted index full-text search over SQLite transcript chunks.
-- **Reciprocal Rank Fusion**: Non-parametric rank combination eliminating score scale discrepancies.
-- **Chronological Window Expansion**: Automatic $\pm 1$ neighbor expansion restoring temporal context.
-
-### 3. Agentic AI & ReAct Loops
-- **Task Decomposition & Query Planning**: Splits complex user queries into sub-queries with intent classification.
-- **Tool Calling**: Tool registry exposing timeline assemblers, lexical lookups, and claim verifiers.
-- **Bounded ReAct Cycles**: Hard-bounded iteration limit ($\le 3$) preventing runaway execution loops.
-- **Evidence Verification**: Verifies claims against extracted transcript spans before answer synthesis.
-
-### 4. Computer Vision & Media Engineering
-- **Acoustic Audio Demuxing**: High-fidelity FFmpeg audio demuxing to 16kHz mono WAV.
-- **Facial Detection**: OpenCV Haar Cascade classifiers to identify speaker faces and track coordinates frame-by-frame.
-- **Dynamic Re-Framing**: Mathematically transforms 16:9 widescreen footage to 9:16 vertical shorts centered on detected speakers.
-- **Advanced SubStation Alpha**: Programmatic ASS subtitle styling with word-level highlight synchronization.
-
-### 5. Data Architecture & Isolation
-- **SQLite Relational Persistence**: Complete metadata schema for projects, videos, transcript chunks, chat histories, and configurations.
-- **Vector Store Isolation**: ChromaDB collections partitioned by project ID (`cf_project_{id}`), guaranteeing complete privacy between projects.
-- **Stateful Memory**: Project- and video-isolated multi-turn conversational history.
-
----
-
-## 🏛️ System Architecture
-
-<p align="center">
-  <img src="docs/assets/diagrams/system-architecture.svg" width="100%" alt="ClipForge AI V2 System Architecture">
-</p>
-
-### Architecture Layer Descriptions:
-- **Presentation Layer**: Dual UI options—Streamlit Studio (:8501) for rich analysis and timeline video seeking, and React 19 + Vite (:5173) for a lightweight, modern web experience.
-- **Application Layer**: FastAPI (:8000) REST API gateway providing SSE streaming, channel resolution, project management, and health checks.
-- **Intelligence Layer**: Multi-Agent Video QA engine with ReAct loop, Hybrid RAG with RRF fusion, and the AI Engineering Lab.
-- **Persistence Layer**: SQLite (`clipforge.db`) for relational metadata and ChromaDB for dense vector embeddings.
-- **Compute Layer**: Local Ollama runtime for 100% offline inference alongside Groq Cloud, Google Gemini, and AWS Bedrock.
-
----
-
-## 🔄 End-to-End Data Flow
-
-<p align="center">
-  <img src="docs/assets/diagrams/data-flow.svg" width="100%" alt="End-to-End Data Flow">
-</p>
-
----
-
-## 🌐 Supported LLM Backends
-
-ClipForge AI V2 features a resilient multi-provider LLM client (`backend/clipforge_engine/llm_client.py`):
-
-| Provider | Default Model | Fallback Models | Execution Mode | Best For |
-|---|---|---|---|---|
-| **Groq Cloud** | `openai/gpt-oss-20b` | `qwen/qwen3.8-27b`, `llama-3.3-70b-versatile` | Cloud (Fast) | Ultra-fast agent reasoning & synthesis (< 1.5s) |
-| **Google Gemini** | `gemini-2.5-flash` | `gemini-flash-latest`, `gemini-2.5-flash-lite` | Cloud | Large-context multimodal processing |
-| **Ollama (Local)** | `qwen2.5:3b` | `llama3.2:latest`, `mistral:latest` | Local (Offline) | 100% offline, privacy-first private compute |
-| **AWS Bedrock** | `anthropic.claude-3-haiku` | `anthropic.claude-3-5-sonnet` | Cloud | Enterprise deployments & compliance |
-
----
-
-## 📂 Repository Directory Structure
-
-```text
-ClipForge/
-├── app.py                             # Streamlit Studio (Video Chat, Viral Clips, Player, Lab)
-├── requirements.txt                   # Unified Python dependencies
-├── packages.txt                       # System binary dependencies (FFmpeg)
-├── LICENSE                            # Root MIT License
-├── .gitignore                         # Secret, database, and cache exclusion rules
-├── backend/
-│   └── clipforge_engine/
-│       ├── main.py                    # FastAPI application & REST routing
-│       ├── video_qa_agents.py         # 6-Agent ReAct loop & query normalization
-│       ├── rag.py                     # Hybrid RAG (BM25 + ChromaDB + RRF)
-│       ├── llm_client.py              # Multi-provider client (Groq, Gemini, Ollama, Bedrock)
-│       ├── channel.py                 # YouTube channel batch ingestion & search
-│       ├── db.py                      # SQLite database schema, chunks, and memory
-│       ├── cse473_lab.py              # AI Engineering Lab simulation modules
-│       ├── video_processor.py         # Video downloading, frame extraction, 9:16 clipping
-│       └── whisper_transcriber.py     # Local Whisper speech-to-text transcriber
-├── frontend/                          # Modern React 19 + Vite Frontend
-│   ├── src/
-│   │   ├── components/                # Glassmorphic UI components, chat, timeline badges
-│   │   ├── App.tsx                    # Root application component
-│   │   └── main.tsx                   # Vite entry point
-│   ├── package.json                   # Node.js dependencies
-│   └── vite.config.ts                 # Vite bundler configuration
-├── skills/
-│   └── video-transcript-temporal-rag/ # Public Developer SDK (Apache 2.0 Standalone Engine)
-│       ├── runner.py                  # CLI runner (direct args & STDIN piping)
-│       ├── src/                       # 6-agent loop, BM25 ranker, normalizers, providers
-│       ├── schemas/                   # Pydantic input/output validation contracts
-│       ├── examples/                  # Sample transcripts (Whisper, SRT, YouTube JSON)
-│       ├── tests/                     # 46-point unit & integration test battery
-│       └── README.md                  # Comprehensive Developer SDK documentation
-├── tests/
-│   ├── test_clipforge_v2.py           # 20-Point Regression & Safety Test Suite
-│   └── test_video_summary_intent.py   # Video summary intent & routing test battery
-└── docs/                              # Technical Specifications & Documentation Assets
-    ├── assets/                        # SVGs, screenshots, logos, and hero demo GIF
-    ├── PROJECT_STRUCTURE.md           # Repository architecture, module map & SDK relationship
-    ├── ARCHITECTURE.md                # System layers & data pipelines
-    ├── RAG.md                         # Hybrid retrieval & RRF mathematical formulation
-    ├── AGENTS.md                      # ReAct agent specifications & tool definitions
-    ├── EVALUATION.md                  # Evaluation rubric & benchmark battery
-    ├── SECURITY.md                    # Prompt injection & adversarial defense
-    └── CSE473_RPL_MAPPING.md          # Topic-by-topic implementation mapping
-```
-
----
-
-## 🛠️ Prerequisites & Installation
-
-### 1. System Requirements
-- **Python**: 3.10 to 3.12
-- **Node.js**: v18+ (required for React frontend)
-- **FFmpeg & FFprobe**: Must be installed and present on your system `PATH`
-  - *Windows*: `winget install Gyan.FFmpeg`
-  - *macOS*: `brew install ffmpeg`
-  - *Ubuntu/Debian*: `sudo apt-get install ffmpeg`
-
-### 2. Setup Python Virtual Environment
+### 1. Clone and Install Dependencies
 
 ```bash
-# Clone the repository
 git clone https://github.com/ravindrareddy17/ClipForge.git
 cd ClipForge
 
-# Create virtual environment
+# Create and activate virtual environment
 python -m venv .venv
 
-# Activate virtual environment
 # Windows:
 .\.venv\Scripts\activate
 # Linux / macOS:
 source .venv/bin/activate
 
-# Install dependencies
+# Install platform dependencies
 pip install -r requirements.txt
 ```
 
-### 3. (Optional) Local Ollama Models for 100% Offline Mode
+### 2. Configure Environment Variables (Optional)
 
-```bash
-ollama pull qwen2.5:3b
-ollama pull nomic-embed-text
-```
-
----
-
-## 🚀 Quick Start Guide
-
-### 1. Launch Streamlit Studio (Port 8501)
-The primary interface for video ingestion, timeline playback, clip creation, AI video chat, and the AI lab:
-
-```bash
-streamlit run app.py --server.port 8501
-```
-Open **`http://localhost:8501`** in your browser.
-
-### 2. Launch FastAPI Backend Engine (Port 8000)
-The high-performance REST API with interactive Swagger documentation:
+Configure API keys in your environment or in a local `.env` file:
 
 ```bash
 # Windows PowerShell:
-$env:PYTHONPATH='backend'; python -m uvicorn clipforge_engine.main:app --host 0.0.0.0 --port 8000 --reload
+$env:GROQ_API_KEY="your-groq-key"
+$env:GEMINI_API_KEY="your-gemini-key"
 
 # Linux / macOS:
-PYTHONPATH=backend python -m uvicorn clipforge_engine.main:app --host 0.0.0.0 --port 8000 --reload
+export GROQ_API_KEY="your-groq-key"
+export GEMINI_API_KEY="your-gemini-key"
 ```
-Interactive API Docs available at **`http://localhost:8000/docs`**.
 
-### 3. Launch React 19 Frontend (Port 5173)
-The modern glassmorphic web application:
+*(If no cloud keys are provided, ClipForge automatically falls back to local Ollama inference if installed).*
 
+### 3. Launch Applications
+
+**Run the Streamlit Studio (Default port 8501):**
 ```bash
-cd frontend
-npm install
-npm run dev -- --port 5173
+streamlit run app.py
 ```
-Open **`http://localhost:5173`** in your browser.
 
----
+**Run the FastAPI Backend (Default port 8000):**
+```bash
+# Windows PowerShell:
+$env:PYTHONPATH='backend'; python -m uvicorn clipforge_engine.main:app --port 8000 --reload
 
-## 📡 FastAPI REST API Reference
+# Linux / macOS:
+PYTHONPATH=backend python -m uvicorn clipforge_engine.main:app --port 8000 --reload
+```
 
-| Endpoint | Method | Request Payload | Description |
-|---|---|---|---|
-| `/api/health` | `GET` | — | Returns server status, active LLM provider, and database health. |
-| `/api/chat` | `POST` | `{"query": str, "project_id": str, "video_id": str}` | Multi-agent Video QA returning grounded answer and `[MM:SS]` citations. |
-| `/api/channels/resolve` | `POST` | `{"url": str}` | Extracts video catalog and metadata from a YouTube channel URL. |
-| `/api/channels/import` | `POST` | `{"videos": List[str], "project_id": str}` | Batch imports channel videos into the indexing pipeline. |
-| `/api/channels/search` | `POST` | `{"query": str, "project_id": str}` | Semantic search across entire channel video library. |
-| `/api/cse473/attention-heatmaps` | `GET` | — | Unit I: Returns scaled dot-product self-attention matrices. |
-| `/api/cse473/tokenizer-comparison` | `POST` | `{"text": str}` | Unit I: Compares BPE tokenization & compression ratios. |
-| `/api/cse473/transformer-forward` | `POST` | `{"seq_len": int}` | Unit I: Full forward-pass tensor dimension tracer. |
-| `/api/cse473/prompt-engineering-compare` | `POST` | `{"task": str}` | Unit II: Benchmarks 6 prompt engineering paradigms. |
-| `/api/cse473/tool-calling-validate` | `POST` | `{"tool_call": dict}` | Unit II: JSON tool schema enforcement validator. |
-| `/api/cse473/lora-decomposition` | `POST` | `{"rank": int}` | Unit III: Calculates LoRA rank $r$ parameter savings. |
-| `/api/cse473/quantization-benchmark` | `POST` | — | Unit III: Analyzes FP32 vs FP16 vs INT8 vs INT4 trade-offs. |
-| `/api/cse473/rl-gridworld-policy` | `POST` | `{"episodes": int}` | Unit III: Simulates Q-learning policy convergence. |
-| `/api/cse473/prompt-injection-safety` | `POST` | `{"payload": str}` | Unit VI: Tests 4 adversarial injection attack vectors. |
-| `/api/cse473/evaluation-benchmark` | `POST` | `{"video_id": str}` | Unit VI: Runs the automated 20-question evaluation battery. |
-
----
-
-## 🧪 Automated Testing & Verification
-
-ClipForge AI V2 includes rigorous automated test suites validating retrieval, agents, safety, and database consistency:
-
-### 1. Developer SDK Test Battery (46 Tests, 100% Offline)
-Validates query planning, chunking, BM25 scoring, normalizers, and the ReAct coordinator:
+**Run the Developer SDK Offline Test Suite (46 Tests):**
 ```bash
 python -m unittest discover -s skills/video-transcript-temporal-rag/tests -v
 ```
+
+---
+
+## Project Structure
+
 ```text
-Ran 46 tests in 0.603s - ALL PASS (46/46)
-```
-
-### 2. Video Summary & Intent Routing Suite
-Tests informal query normalization, intent classification, whole-video sampling, and diagnostics:
-```bash
-python -m unittest tests/test_video_summary_intent.py -v
-```
-```text
-Ran 6 tests in 2.133s - ALL PASS
-```
-
-### 3. Full System Regression & Safety Battery
-20-point test battery covering ChromaDB isolation, RRF scoring, ReAct loops, prompt injections, and deep-video retrieval:
-```bash
-python -m unittest tests/test_clipforge_v2.py -v
-```
-```text
-Ran 20 tests in 145.898s - ALL PASS (20/20)
+ClipForge/
+├── app.py                             # Streamlit Studio (Interactive UI, Video Player, AI Lab)
+├── requirements.txt                   # Platform Python dependencies
+├── packages.txt                       # System binary dependencies (FFmpeg)
+├── LICENSE                            # Root MIT License
+├── .gitignore                         # Secret, database, and cache exclusion rules
+├── backend/
+│   └── clipforge_engine/
+│       ├── main.py                    # FastAPI REST API application & routing
+│       ├── pipeline.py                # Video ingestion, scene detection & clipping pipeline
+│       ├── video_qa_agents.py         # 6-Agent bounded ReAct loop for video QA
+│       ├── rag.py                     # Hybrid RAG engine (ChromaDB + SQLite BM25 + RRF)
+│       ├── llm_client.py              # Multi-provider client (Groq, Gemini, Ollama)
+│       ├── db.py                      # SQLite database schema, chunks, and session memory
+│       ├── channel.py                 # YouTube channel batch ingestion & search
+│       ├── cse473_lab.py              # AI Engineering Lab interactive simulation modules
+│       └── services/                  # Core processing services
+│           ├── video.py               # Scene detection, Haar Cascade face tracking, clipping
+│           ├── transcribe.py          # Audio extraction and Whisper transcription
+│           ├── subtitles.py          # Advanced SubStation Alpha (.ass) subtitle generator
+│           └── ai.py                  # Audio RMS peak & hook virality detection
+├── frontend/                          # React 19 + TypeScript + Vite web client
+├── skills/
+│   └── video-transcript-temporal-rag/ # Public Developer SDK (Apache 2.0 Video Intelligence Engine)
+├── tests/                             # Automated test batteries
+└── docs/                              # Technical specifications and documentation assets
 ```
 
 ---
 
-## 🔐 Security & Secrets Protection
+## Licensing
 
-ClipForge AI strictly enforces security and privacy safeguards:
-- **API Key Scrubbing & Masking**: All API keys (Groq, Gemini, Bedrock) are scrubbed and masked (`••••••••`) across logs, error traces, and user interfaces.
-- **Hierarchical Secret Resolution**: Keys are resolved in order from:
-  1. Streamlit Secrets (`st.secrets`) or `.streamlit/secrets.toml`
-  2. Operating System Environment Variables (`GROQ_API_KEY`, `GEMINI_API_KEY`)
-  3. Local encrypted SQLite configuration table
-- **Adversarial Audio Sanitization**: Transcripts are passed through defensive safety guardrails to neutralize indirect prompt injection payloads hidden within video speech.
-- **Workspace & Video Isolation**: Data is partitioned by project and video IDs, preventing cross-video chunk leakage.
+ClipForge AI maintains a dual-licensing structure:
+
+- **Core ClipForge Application**: The platform engine (`app.py`, `backend/`, `frontend/`, `tests/`) is open-source under the [MIT License](LICENSE).
+- **Public Developer SDK**: The standalone Video Intelligence engine in [`skills/video-transcript-temporal-rag/`](skills/video-transcript-temporal-rag/) is open-source under the [Apache License, Version 2.0](skills/video-transcript-temporal-rag/LICENSE).
+- **Commercial Standalone Skills**: Specialized commercial distributions and autonomous agent marketplace packages are distributed under separate commercial licensing terms with applicable open-source notices preserved.
 
 ---
 
-## 📚 Technical Documentation
+## Interested in standalone ClipForge AI skills?
 
-For in-depth architectural and mathematical specifications, refer to the `docs/` directory:
-- [Repository Structure & SDK Guide](docs/PROJECT_STRUCTURE.md)
-- [System Architecture Specification](docs/ARCHITECTURE.md)
-- [Hybrid RAG & RRF Retrieval Engine](docs/RAG.md)
-- [Multi-Agent Reasoning & Tool Registry](docs/AGENTS.md)
-- [Evaluation Metrics & Benchmark Rubric](docs/EVALUATION.md)
-- [Security & Prompt Injection Defense](docs/SECURITY.md)
-- [CSE473 Academic Syllabus Mapping](docs/CSE473_RPL_MAPPING.md)
+Additional commercial AI skills and marketplace-ready agent packages are maintained separately.
 
----
+Interested developers, creators, and businesses can contact the creator to discuss:
 
-## 📄 License & Distribution
+- Available standalone skills
+- Commercial licensing options
+- Private repository access
+- Custom AI skill development
+- Collaboration and integration opportunities
 
-ClipForge AI maintains a dual open-source licensing structure:
+Among the five skills outlined in the ecosystem roadmap, **Video Transcript Intelligence** is completed, locally tested, and available.
 
-- **Core Web Application & Engine**: The ClipForge AI V2 platform (`app.py`, `backend/`, `frontend/`, `tests/`) is licensed under the permissive [MIT License](LICENSE).
-- **Public Developer SDK**: The standalone Video Intelligence engine located in [`skills/video-transcript-temporal-rag/`](skills/video-transcript-temporal-rag/) is licensed under the [Apache License, Version 2.0](skills/video-transcript-temporal-rag/LICENSE).
-
-> [!NOTE]
-> **Commercial Ecosystem Editions**: Commercial standalone marketplace editions (such as the Agensi.io commercial skill distribution) are maintained separately under proprietary commercial terms with appropriate open-source attribution notices. See [docs/PROJECT_STRUCTURE.md](docs/PROJECT_STRUCTURE.md) for full licensing architecture.
+To discuss commercial access or custom skill integrations, reach out via the [creator's portfolio](https://ravindrareddypasam.netlify.app).
 
 ---
 
-## 🚧 Project Status & Roadmap
+## Connect
 
-> [!NOTE]
-> **Active Development & Evolution**: ClipForge AI V2 is under active, continuous development. While core functionalities—including Multi-Agent Video QA, whole-video summarization, hybrid RAG retrieval, YouTube channel ingestion, the Developer SDK, and the AI Engineering Lab Studio—are operational and rigorously tested, this project is continually evolving and still undergoing improvements.
-
-### 🔮 Planned Enhancements & Changes Needed
-
-1. **Multimodal Visual & OCR RAG**:
-   - Integrating vision-language models (e.g., CLIP, VideoLLaMA, Qwen2-VL) to index visual frames, slides, charts, on-screen text/code, and scene transitions alongside spoken audio transcripts.
-
-2. **Animated Subtitles & Automated B-Roll Insertion**:
-   - Implementing word-by-word karaoke-style animated captions and automated semantic stock B-roll insertion for generated 9:16 vertical shorts.
-
-3. **Asynchronous Distributed Processing**:
-   - Adding background task queues (Celery / Redis / RQ) for high-throughput batch video ingestion, distributed Whisper GPU transcription, and background clip rendering.
-
-4. **UI/UX Polish & Responsive Theming**:
-   - Refining component color schemes, improving accessibility and contrast ratios, adding mobile-responsive layouts, and integrating custom waveform audio scrubbers.
-
-5. **Direct Social Media Export**:
-   - One-click publishing and scheduled export to YouTube Shorts, Instagram Reels, and TikTok via official developer APIs.
-
-6. **Expanded Multilingual Translation & Synchronized Dubbing**:
-   - Cross-lingual transcript translation and AI voice dubbing to repurpose video content across multiple languages seamlessly.
-
-7. **Collaborative Multi-User Workspaces**:
-   - Introducing team projects, role-based access control (RBAC), and shared video knowledge bases.
-
----
-
-Contributions, feedback, and issue reports are welcome as we actively shape and expand ClipForge AI!
+- **Portfolio**: [ravindrareddypasam.netlify.app](https://ravindrareddypasam.netlify.app)
+- **GitHub**: [@ravindrareddy17](https://github.com/ravindrareddy17)
