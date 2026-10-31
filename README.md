@@ -32,10 +32,6 @@
   <img src="https://img.shields.io/badge/license-MIT-green.svg" alt="License MIT">
 </p>
 
----
-
-## 📽️ Product Showcase
-
 <p align="center">
   <img src="docs/assets/hero/hero-banner.svg" width="100%" alt="ClipForge AI V2 Platform Architecture and Overview">
 </p>
@@ -44,29 +40,29 @@
 
 ## 📑 Table of Contents
 
-- [What is ClipForge AI V2?](#-what-is-clipforge-ai-v2)
-- [ClipForge AI Skill Ecosystem](#-clipforge-ai-skill-ecosystem)
-- [Feature Showcase](#-feature-showcase)
-- [Product Showcase](#-product-showcase)
-- [Video → Shorts Pipeline](#-video--shorts-pipeline)
-- [Video Intelligence Engine (Hybrid RAG)](#-video-intelligence-engine-hybrid-rag)
-- [Multi-Agent Video QA Engine](#-multi-agent-video-qa-engine)
-- [Public Developer SDK (Video Intelligence Engine)](#-public-developer-sdk-video-intelligence-engine)
-- [Grounded Video QA Live Example](#-grounded-video-qa-live-example)
-- [Interactive AI Engineering Lab](#-interactive-ai-engineering-lab)
-- [Technical Concepts & Engineering](#-technical-concepts--engineering)
-- [System Architecture](#-system-architecture)
-- [End-to-End Data Flow](#-end-to-end-data-flow)
-- [Supported LLM Backends](#-supported-llm-backends)
-- [Repository Directory Structure](#-repository-directory-structure)
-- [Prerequisites & Installation](#-prerequisites--installation)
-- [Quick Start Guide](#-quick-start-guide)
-- [FastAPI REST API Reference](#-fastapi-rest-api-reference)
-- [Automated Testing & Verification](#-automated-testing--verification)
-- [Security & Secrets Protection](#-security--secrets-protection)
-- [Technical Documentation](#-technical-documentation)
-- [License](#-license)
-- [Project Status & Ongoing Improvements](#-project-status--ongoing-improvements)
+- [💡 What is ClipForge AI V2?](#what-is-clipforge-ai-v2)
+- [⚡ Feature Highlights](#feature-highlights)
+- [🖥️ UI & Product Showcase](#ui--product-showcase)
+- [🎬 Video → Shorts Repurposing Pipeline](#video--shorts-repurposing-pipeline)
+- [🧠 Hybrid Video RAG Engine](#hybrid-video-rag-engine)
+- [🤖 Multi-Agent Video QA Engine](#multi-agent-video-qa-engine)
+- [📦 Public Developer SDK](#public-developer-sdk)
+- [🌐 Modular Skill Ecosystem Roadmap](#modular-skill-ecosystem-roadmap)
+- [💬 Grounded Video QA Live Example](#grounded-video-qa-live-example)
+- [🧪 Interactive AI Engineering Lab](#interactive-ai-engineering-lab)
+- [🔬 Technical Concepts & Engineering Disciplines](#technical-concepts--engineering-disciplines)
+- [🏛️ System Architecture](#system-architecture)
+- [🔄 End-to-End Data Flow](#end-to-end-data-flow)
+- [🌐 Supported LLM Backends](#supported-llm-backends)
+- [📂 Repository Directory Structure](#repository-directory-structure)
+- [🛠️ Prerequisites & Installation](#prerequisites--installation)
+- [🚀 Quick Start Guide](#quick-start-guide)
+- [📡 FastAPI REST API Reference](#fastapi-rest-api-reference)
+- [🧪 Automated Testing & Verification](#automated-testing--verification)
+- [🔐 Security & Secrets Protection](#security--secrets-protection)
+- [📚 Technical Documentation](#technical-documentation)
+- [📄 License & Distribution](#license--distribution)
+- [🚧 Project Status & Roadmap](#project-status--roadmap)
 
 ---
 
@@ -99,24 +95,7 @@ A single video ingested into ClipForge simultaneously produces:
 
 ---
 
-### 🌐 ClipForge AI Skill Ecosystem
-
-Beyond the all-in-one web application, ClipForge is evolving into a broader ecosystem of modular, decoupled AI skills engineered for autonomous developer workflows, pipeline automation, and agentic integrations:
-
-| Skill / Capability | Development Status | Distribution & Scope | Description |
-| :--- | :--- | :--- | :--- |
-| **Video Transcript Intelligence** | 🟢 **Completed & Tested (v1.0.0)** | Public Developer SDK ([`skills/video-transcript-temporal-rag`](skills/video-transcript-temporal-rag)) & Standalone Commercial Package | Deterministic temporal Q&A engine with `[MM:SS]` timestamp citations and timeline summarization (orchestrated via 6-agent ReAct loop in SDK; 6-stage cognitive workflow in Agensi edition). |
-| **Viral Moment Detector** | 🟡 *Planned (Roadmap)* | Standalone Agent Skill | Audio energy RMS peak detection, speech sentiment shifts, and visual cut boundaries to score clip virality. |
-| **Face-Centric Video Reframer** | 🟡 *Planned (Roadmap)* | Standalone Agent Skill | Dynamic OpenCV / MediaPipe face tracking and smart bounding-box interpolation from 16:9 to 9:16 vertical shorts. |
-| **Animated Subtitle Generator** | 🟡 *Planned (Roadmap)* | Standalone Agent Skill | Word-synchronized Advanced SubStation Alpha (`.ass`) karaoke subtitles with custom kinetic typography presets. |
-| **YouTube Channel Content Intelligence** | 🟡 *Planned (Roadmap)* | Standalone Agent Skill | Flat channel metadata ingestion, cross-video topical indexing, and multi-video semantic comparison. |
-
-> [!NOTE]
-> **Ecosystem Architecture & Packaging**: While the core web application (MIT) and Developer SDK (Apache-2.0) are open-source, specialized standalone commercial editions tailored for autonomous AI agent marketplaces (such as Agensi.io) are maintained in separate commercial repositories with specialized zero-dependency execution runtimes and marketplace-specific packaging. For full structural details, consult [docs/PROJECT_STRUCTURE.md](docs/PROJECT_STRUCTURE.md).
-
----
-
-## ⚡ Feature Showcase
+## ⚡ Feature Highlights
 
 | 🎬 Smart Repurposing | 🧠 Video Intelligence | 🔎 Hybrid Grounded RAG |
 |---|---|---|
@@ -130,7 +109,7 @@ Beyond the all-in-one web application, ClipForge is evolving into a broader ecos
 
 ---
 
-## 🖥️ Product Showcase
+## 🖥️ UI & Product Showcase
 
 ### 1. Multi-Agent AI Video Chatbot
 Ask natural-language questions about indexed videos and receive concise, grounded answers with interactive timestamp buttons that seek the video player to the exact second.
@@ -176,7 +155,7 @@ Visual simulator for testing transformer attention mechanisms, prompt engineerin
 
 ---
 
-## 🎬 Video → Shorts Pipeline
+## 🎬 Video → Shorts Repurposing Pipeline
 
 ClipForge AI V2 automates the complete lifecycle from long-form video download to platform-ready vertical shorts:
 
@@ -213,7 +192,7 @@ flowchart LR
 
 ---
 
-## 🧠 Video Intelligence Engine (Hybrid RAG)
+## 🧠 Hybrid Video RAG Engine
 
 Standard vector search fails on long-form video because broad queries (e.g., *"summarize this"*, *"what is the video about"*) lack isolated lexical keywords. ClipForge AI V2 deploys a **Segment-Aware Hybrid RAG Engine**:
 
@@ -317,7 +296,7 @@ flowchart TD
 
 ---
 
-## 📦 Public Developer SDK (Video Intelligence Engine)
+## 📦 Public Developer SDK
 
 For software developers, AI engineers, and autonomous agent builders who need video transcript question answering **without** running the full ClipForge media stack (OpenCV, FFmpeg, Torch, ChromaDB), the project provides the standalone **ClipForge Video Intelligence Developer SDK** ([`skills/video-transcript-temporal-rag`](skills/video-transcript-temporal-rag/)):
 
@@ -329,7 +308,7 @@ For software developers, AI engineers, and autonomous agent builders who need vi
 </p>
 
 ### SDK Architecture Highlights:
-- **Zero Heavy Media Dependencies**: Requires only `pydantic` and `requests`. No PyTorch, no OpenCV, no FFmpeg, and no local GPU required.
+- **Zero Heavy Media Dependencies**: Requires only `pydantic` and `requests`. No PyTorch, OpenCV, FFmpeg, or local GPU required.
 - **Universal Transcript Ingestion**: Built-in `TranscriptNormalizer` auto-detects and ingests OpenAI Whisper JSON, YouTube Transcript API, SRT, WebVTT, flat word arrays (AssemblyAI/Deepgram), and timestamped show notes.
 - **6-Agent Cognitive ReAct Loop**: Query planning, hierarchical context vs. BM25 retrieval, chronological sorting, claim verification ($0.0-1.0$), structured synthesis, and safety guardrail refusal.
 - **Multi-Provider LLM Routing**: Native support for Groq Cloud (`openai/gpt-oss-20b`), Google Gemini (`gemini-2.5-flash`), OpenAI (`gpt-4o-mini`), local Ollama (`qwen2.5:3b`), and deterministic offline `MockProvider`.
@@ -352,17 +331,17 @@ flowchart LR
 ```python
 from src.skill import VideoIntelligenceSkill
 
-# Initialize skill with high-speed Groq Cloud provider
+# 1. Initialize skill with Groq Cloud provider
 skill = VideoIntelligenceSkill(provider="groq")
 
-# Ingest transcript
+# 2. Ingest transcript (Whisper JSON, SRT, YouTube JSON)
 transcript = skill.load_transcript("examples/sample_whisper.json")
 
-# 1. Whole-video summary
+# 3. Whole-video overview
 summary = skill.ask("what is this video about?")
 print(summary.answer)
 
-# 2. Fact retrieval with verified [MM:SS] citation
+# 4. Fact retrieval with verified [MM:SS] citation
 result = skill.ask("When was the Shinkansen bullet train launched?")
 print(result.answer)
 for citation in result.citations:
@@ -379,6 +358,23 @@ cat transcript.json | python runner.py --query "Summarize the key events" > outp
 ```
 
 For full setup instructions, provider credentials, and schema specifications, visit [`skills/video-transcript-temporal-rag/README.md`](skills/video-transcript-temporal-rag/README.md).
+
+---
+
+## 🌐 Modular Skill Ecosystem Roadmap
+
+Beyond the all-in-one web application, ClipForge is evolving into a broader ecosystem of modular, decoupled AI skills engineered for autonomous developer workflows, pipeline automation, and agentic integrations:
+
+| Skill / Capability | Development Status | Distribution & Scope | Description |
+| :--- | :--- | :--- | :--- |
+| **Video Transcript Intelligence** | 🟢 **Completed & Tested (v1.0.0)** | Public Developer SDK ([`skills/video-transcript-temporal-rag`](skills/video-transcript-temporal-rag)) & Standalone Commercial Package | Deterministic temporal Q&A engine with `[MM:SS]` timestamp citations and timeline summarization (orchestrated via 6-agent ReAct loop in SDK; 6-stage cognitive workflow in Agensi edition). |
+| **Viral Moment Detector** | 🟡 *Planned (Roadmap)* | Standalone Agent Skill | Audio energy RMS peak detection, speech sentiment shifts, and visual cut boundaries to score clip virality. |
+| **Face-Centric Video Reframer** | 🟡 *Planned (Roadmap)* | Standalone Agent Skill | Dynamic OpenCV / MediaPipe face tracking and smart bounding-box interpolation from 16:9 to 9:16 vertical shorts. |
+| **Animated Subtitle Generator** | 🟡 *Planned (Roadmap)* | Standalone Agent Skill | Word-synchronized Advanced SubStation Alpha (`.ass`) karaoke subtitles with custom kinetic typography presets. |
+| **YouTube Channel Content Intelligence** | 🟡 *Planned (Roadmap)* | Standalone Agent Skill | Flat channel metadata ingestion, cross-video topical indexing, and multi-video semantic comparison. |
+
+> [!NOTE]
+> **Ecosystem Architecture & Packaging**: While the core web application (MIT) and Developer SDK (Apache-2.0) are open-source, specialized standalone commercial editions tailored for autonomous AI agent marketplaces (such as Agensi.io) are maintained in separate commercial repositories with specialized zero-dependency execution runtimes and marketplace-specific packaging. For full structural details, consult [docs/PROJECT_STRUCTURE.md](docs/PROJECT_STRUCTURE.md).
 
 ---
 
@@ -443,7 +439,7 @@ The application includes an integrated **AI Engineering Lab Studio** (`backend/c
 
 ---
 
-## 🔬 Technical Concepts & Engineering
+## 🔬 Technical Concepts & Engineering Disciplines
 
 ClipForge AI V2 demonstrates real-world implementation of advanced engineering disciplines:
 
@@ -516,10 +512,12 @@ ClipForge AI V2 features a resilient multi-provider LLM client (`backend/clipfor
 ## 📂 Repository Directory Structure
 
 ```text
-ai forge/
+ClipForge/
 ├── app.py                             # Streamlit Studio (Video Chat, Viral Clips, Player, Lab)
 ├── requirements.txt                   # Unified Python dependencies
 ├── packages.txt                       # System binary dependencies (FFmpeg)
+├── LICENSE                            # Root MIT License
+├── .gitignore                         # Secret, database, and cache exclusion rules
 ├── backend/
 │   └── clipforge_engine/
 │       ├── main.py                    # FastAPI application & REST routing
@@ -661,49 +659,30 @@ Open **`http://localhost:5173`** in your browser.
 
 ClipForge AI V2 includes rigorous automated test suites validating retrieval, agents, safety, and database consistency:
 
-### 1. Video Summary & Intent Routing Suite
+### 1. Developer SDK Test Battery (46 Tests, 100% Offline)
+Validates query planning, chunking, BM25 scoring, normalizers, and the ReAct coordinator:
+```bash
+python -m unittest discover -s skills/video-transcript-temporal-rag/tests -v
+```
+```text
+Ran 46 tests in 0.603s - ALL PASS (46/46)
+```
+
+### 2. Video Summary & Intent Routing Suite
 Tests informal query normalization, intent classification, whole-video sampling, and diagnostics:
 ```bash
 python -m unittest tests/test_video_summary_intent.py -v
 ```
 ```text
-test_01_query_normalization ... ok
-test_02_intent_classification_variants ... ok
-test_03_detailed_questions_intent_routing ... ok
-test_04_whole_video_evidence_assembly ... ok
-test_05_unindexed_video_diagnostic ... ok
-test_06_video_summary_full_pipeline_execution ... ok
-----------------------------------------------------------------------
 Ran 6 tests in 2.133s - ALL PASS
 ```
 
-### 2. Full System Regression & Safety Battery
+### 3. Full System Regression & Safety Battery
 20-point test battery covering ChromaDB isolation, RRF scoring, ReAct loops, prompt injections, and deep-video retrieval:
 ```bash
 python -m unittest tests/test_clipforge_v2.py -v
 ```
 ```text
-test_01_project_id_consistency ... ok
-test_02_embedding_health ... ok
-test_03_chunk_creation_with_overlap ... ok
-test_04_idempotent_indexing ... ok
-test_05_vector_retrieval ... ok
-test_06_lexical_retrieval ... ok
-test_07_hybrid_retrieval_rrf ... ok
-test_08_timestamp_accuracy ... ok
-test_09_video_isolation ... ok
-test_10_conversation_memory ... ok
-test_11_evidence_verification ... ok
-test_12_unsupported_question_handling ... ok
-test_13_prompt_injection_protection ... ok
-test_14_channel_video_separation ... ok
-test_15_agent_workflow ... ok
-test_16_tool_selection ... ok
-test_17_react_loop_limits ... ok
-test_18_citation_generation ... ok
-test_19_end_of_video_retrieval ... ok
-test_20_beginning_vs_ending_comparison ... ok
-----------------------------------------------------------------------
 Ran 20 tests in 145.898s - ALL PASS (20/20)
 ```
 
@@ -725,6 +704,7 @@ ClipForge AI strictly enforces security and privacy safeguards:
 ## 📚 Technical Documentation
 
 For in-depth architectural and mathematical specifications, refer to the `docs/` directory:
+- [Repository Structure & SDK Guide](docs/PROJECT_STRUCTURE.md)
 - [System Architecture Specification](docs/ARCHITECTURE.md)
 - [Hybrid RAG & RRF Retrieval Engine](docs/RAG.md)
 - [Multi-Agent Reasoning & Tool Registry](docs/AGENTS.md)
@@ -746,10 +726,10 @@ ClipForge AI maintains a dual open-source licensing structure:
 
 ---
 
-## 🚧 Project Status & Ongoing Improvements
+## 🚧 Project Status & Roadmap
 
 > [!NOTE]
-> **Active Development & Evolution**: ClipForge AI V2 is under active, continuous development. While core functionalities—including Multi-Agent Video QA, whole-video summarization, hybrid RAG retrieval, YouTube channel ingestion, and the AI Engineering Lab Studio—are operational and rigorously tested, this project is continually evolving and still undergoing improvements.
+> **Active Development & Evolution**: ClipForge AI V2 is under active, continuous development. While core functionalities—including Multi-Agent Video QA, whole-video summarization, hybrid RAG retrieval, YouTube channel ingestion, the Developer SDK, and the AI Engineering Lab Studio—are operational and rigorously tested, this project is continually evolving and still undergoing improvements.
 
 ### 🔮 Planned Enhancements & Changes Needed
 
@@ -775,4 +755,5 @@ ClipForge AI maintains a dual open-source licensing structure:
    - Introducing team projects, role-based access control (RBAC), and shared video knowledge bases.
 
 ---
+
 Contributions, feedback, and issue reports are welcome as we actively shape and expand ClipForge AI!
