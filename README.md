@@ -44,13 +44,6 @@ Features are categorized based on their current implementation and verification 
 
 ## Product Showcase
 
-### Conversational Video Intelligence
-Users can ask natural-language questions about an indexed video and receive timeline-grounded responses with clickable `[MM:SS]` timestamp badges that seek the video player to the exact moment.
-
-<p align="center">
-  <img src="docs/assets/screenshots/video-chat.png" width="92%" alt="ClipForge AI Video Chatbot Interface">
-</p>
-
 ### Automated Short Generation
 The repurposing pipeline extracts high-energy moments, assigns virality scores, tracks the active speaker, and renders vertical 9:16 cuts ready for short-form platforms.
 
@@ -292,11 +285,11 @@ Interested developers, creators, and businesses can contact the creator to discu
 
 Among the five skills outlined in the ecosystem roadmap, **Video Transcript Intelligence** is completed, locally tested, and available.
 
-To discuss commercial access or custom skill integrations, reach out via the [creator's portfolio](https://ravindrareddypasam.netlify.app).
+To discuss commercial access or custom skill integrations, reach out via email at [pasamravindrareddy8@gmail.com](mailto:pasamravindrareddy8@gmail.com).
 
 ---
 
 ## Connect
 
-- **Portfolio**: [ravindrareddypasam.netlify.app](https://ravindrareddypasam.netlify.app)
+- **Email**: [pasamravindrareddy8@gmail.com](mailto:pasamravindrareddy8@gmail.com)
 - **GitHub**: [@ravindrareddy17](https://github.com/ravindrareddy17)
